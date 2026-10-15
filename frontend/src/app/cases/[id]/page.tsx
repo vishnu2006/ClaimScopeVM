@@ -12,6 +12,8 @@ import {
   GitCompare,
   Cpu,
   Globe,
+  PlusCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { useCase } from '@/hooks/useCase';
 import { useDocuments } from '@/hooks/useDocuments';
@@ -53,7 +55,9 @@ export default function CaseDetailPage() {
     refetch: refetchDocs,
   } = useDocuments(caseId);
 
-  const [activeTab, setActiveTab] = useState<'documents' | 'evidence' | 'vision' | 'discrepancies' | 'verification' | 'report'>('documents');
+  const [activeTab, setActiveTab] = useState<
+    'documents' | 'evidence' | 'vision' | 'discrepancies' | 'verification' | 'report'
+  >('documents');
   const [investigationState, setInvestigationState] = useState<CaseState | null>(null);
   const [isInvestigating, setIsInvestigating] = useState(false);
   const [investigationError, setInvestigationError] = useState<string | null>(null);
@@ -144,7 +148,8 @@ export default function CaseDetailPage() {
         setActiveTab('evidence');
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to execute adaptive investigation pipeline.';
+      const msg =
+        err instanceof Error ? err.message : 'Failed to execute adaptive investigation pipeline.';
       setInvestigationError(msg);
     } finally {
       setIsInvestigating(false);
@@ -186,12 +191,9 @@ export default function CaseDetailPage() {
         isDownloadingPdf={isDownloadingPdf}
       />
 
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
-        {/* Pipeline Progress */}
-        <CaseTimeline
-          documents={documents}
-          report={caseData.report}
-        />
+      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-5">
+        {/* Pipeline Progress Status */}
+        <CaseTimeline documents={documents} report={caseData.report} />
 
         {/* Adaptive LangGraph Stepper */}
         <InvestigationStepper
@@ -199,117 +201,124 @@ export default function CaseDetailPage() {
           isInvestigating={isInvestigating}
         />
 
-        {/* Action & Tab Navigation Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-surface-200 pb-2">
-          <div className="flex flex-wrap items-center gap-2">
+        {/* Linear-Style Tabs & Action Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-surface-200 pb-2">
+          {/* Tabs Group */}
+          <div className="flex flex-wrap items-center gap-1">
+            {/* Tab 1: Documents */}
             <button
               type="button"
               onClick={() => setActiveTab('documents')}
-              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 activeTab === 'documents'
-                  ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
+                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
                   : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
               }`}
             >
-              <FileText className="h-4 w-4" />
-              <span>Incident Documents</span>
-              <span className="ml-1 rounded-full bg-surface-200 px-1.5 py-0.2 text-[10px] text-surface-700 font-mono">
+              <FileText className="h-3.5 w-3.5" />
+              <span>Incident Package</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-600 border border-surface-200">
                 {documents.length}
               </span>
             </button>
 
+            {/* Tab 2: Extracted Facts */}
             <button
               type="button"
               onClick={() => setActiveTab('evidence')}
-              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 activeTab === 'evidence'
-                  ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
+                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
                   : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
               }`}
             >
-              <Search className="h-4 w-4" />
+              <Search className="h-3.5 w-3.5" />
               <span>Extracted Facts</span>
-              <span className="ml-1 rounded-full bg-surface-200 px-1.5 py-0.2 text-[10px] text-surface-700 font-mono">
+              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-600 border border-surface-200">
                 {evidenceList.length}
               </span>
             </button>
 
+            {/* Tab 3: Vision Analysis */}
             <button
               type="button"
               onClick={() => setActiveTab('vision')}
-              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 activeTab === 'vision'
-                  ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
+                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
                   : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
               }`}
             >
-              <Camera className="h-4 w-4" />
+              <Camera className="h-3.5 w-3.5" />
               <span>Vision Analysis</span>
               {visionEntries.length > 0 && (
-                <span className="ml-1 rounded-full bg-surface-200 px-1.5 py-0.2 text-[10px] text-surface-700 font-mono">
+                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-600 border border-surface-200">
                   {visionEntries.length}
                 </span>
               )}
             </button>
 
+            {/* Tab 4: Discrepancies */}
             <button
               type="button"
               onClick={() => setActiveTab('discrepancies')}
-              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 activeTab === 'discrepancies'
-                  ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
+                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
                   : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
               }`}
             >
-              <GitCompare className="h-4 w-4" />
+              <GitCompare className="h-3.5 w-3.5" />
               <span>Discrepancies</span>
               {discrepancies.length > 0 ? (
-                <span className="ml-1 rounded-full bg-rose-100 text-rose-700 font-bold px-1.5 py-0.2 text-[10px]">
+                <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200">
                   {discrepancies.length}
                 </span>
               ) : (
-                <span className="ml-1 rounded-full bg-surface-200 px-1.5 py-0.2 text-[10px] text-surface-700 font-mono">
+                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-400">
                   0
                 </span>
               )}
             </button>
 
+            {/* Tab 5: External Grounding */}
             <button
               type="button"
               onClick={() => setActiveTab('verification')}
-              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 activeTab === 'verification'
-                  ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
+                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
                   : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
               }`}
             >
-              <Globe className="h-4 w-4" />
+              <Globe className="h-3.5 w-3.5" />
               <span>External Grounding</span>
               {verifications.length > 0 && (
-                <span className="ml-1 rounded-full bg-surface-200 px-1.5 py-0.2 text-[10px] text-surface-700 font-mono">
+                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-600 border border-surface-200">
                   {verifications.length}
                 </span>
               )}
             </button>
 
+            {/* Tab 6: Report */}
             <button
               type="button"
               onClick={() => setActiveTab('report')}
-              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                 activeTab === 'report'
-                  ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
+                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
                   : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
               }`}
             >
-              <FileCheck2 className="h-4 w-4" />
-              <span>Investigation Report</span>
+              <FileCheck2 className="h-3.5 w-3.5" />
+              <span>Report</span>
               {caseData.report && (
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               )}
             </button>
           </div>
 
-          {/* Adaptive Investigation Action Trigger */}
+          {/* Action Button: Run / Re-run Investigation */}
           <div className="flex items-center gap-2">
             <Button
               variant="primary"
@@ -317,9 +326,13 @@ export default function CaseDetailPage() {
               onClick={handleRunInvestigation}
               loading={isInvestigating}
               disabled={isInvestigating || documents.length === 0}
-              leftIcon={<Cpu className="h-4 w-4" />}
+              leftIcon={<Cpu className="h-3.5 w-3.5" />}
             >
-              {isInvestigating ? 'Investigating Package...' : investigationState ? 'Re-run Investigation' : 'Run Adaptive Investigation'}
+              {isInvestigating
+                ? 'Investigating Package...'
+                : investigationState
+                ? 'Re-run Investigation'
+                : 'Run Adaptive Investigation'}
             </Button>
           </div>
         </div>
@@ -336,9 +349,9 @@ export default function CaseDetailPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
-                <div className="sticky top-24">
+                <div className="sticky top-20">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700 mb-2">
-                    Add Incident Files
+                    Ingest Incident Files
                   </h3>
                   <DocumentUpload
                     caseId={caseId}
@@ -358,9 +371,9 @@ export default function CaseDetailPage() {
                   {documents.length > 0 && (
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="xs"
                       onClick={() => refetchDocs()}
-                      leftIcon={<RefreshCw className="h-3.5 w-3.5" />}
+                      leftIcon={<RefreshCw className="h-3 w-3" />}
                     >
                       Refresh
                     </Button>
@@ -419,7 +432,7 @@ export default function CaseDetailPage() {
             ) : (
               <EmptyState
                 title="No report generated yet"
-                description="Run the investigation or click Generate Report to create a comprehensive findings report."
+                description="Run the adaptive investigation or click Generate Report to compile multi-document findings."
               />
             )}
           </div>

@@ -7,10 +7,9 @@ import {
   LayoutDashboard,
   FolderOpen,
   PlusCircle,
+  FlaskConical,
   Shield,
-  FileText,
   Activity,
-  Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -19,20 +18,36 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   exact?: boolean;
+  badge?: string;
 }
 
-const navItems: NavItem[] = [
+const operationalItems: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard, exact: true },
-  { name: 'Cases', href: '/cases', icon: FolderOpen, exact: false },
-  { name: 'Create Case', href: '/cases/new', icon: PlusCircle, exact: true },
+  { name: 'All Cases', href: '/cases', icon: FolderOpen, exact: false },
+  { name: 'New Intake', href: '/cases/new', icon: PlusCircle, exact: true },
 ];
 
-function NavLinks({ onClose }: { onClose?: () => void }) {
+const labItems: NavItem[] = [
+  { name: 'Demo Lab', href: '/demo', icon: FlaskConical, exact: true, badge: '5 Tests' },
+];
+
+function NavGroup({
+  label,
+  items,
+  onClose,
+}: {
+  label: string;
+  items: NavItem[];
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <>
-      {navItems.map((item) => {
+    <div className="space-y-1">
+      <div className="px-3 pb-1.5 text-[10px] font-semibold tracking-wider text-surface-400 uppercase">
+        {label}
+      </div>
+      {items.map((item) => {
         const isActive = item.exact
           ? pathname === item.href
           : pathname === item.href ||
@@ -46,26 +61,31 @@ function NavLinks({ onClose }: { onClose?: () => void }) {
             href={item.href}
             onClick={onClose}
             className={cn(
-              'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+              'group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all duration-150',
               isActive
                 ? 'bg-brand-50 text-brand-700 font-semibold'
                 : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
             )}
           >
+            {isActive && (
+              <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-r bg-brand-600" />
+            )}
             <Icon
               className={cn(
-                'h-4 w-4 shrink-0 transition-colors',
-                isActive ? 'text-brand-600' : 'text-surface-400'
+                'h-3.5 w-3.5 shrink-0 transition-colors',
+                isActive ? 'text-brand-600' : 'text-surface-400 group-hover:text-surface-600'
               )}
             />
-            <span>{item.name}</span>
-            {isActive && (
-              <span className="ml-auto h-1.5 w-1.5 rounded-full bg-brand-600" />
+            <span className="truncate">{item.name}</span>
+            {item.badge && (
+              <span className="ml-auto font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-200 text-surface-600 group-hover:bg-surface-300 transition-colors">
+                {item.badge}
+              </span>
             )}
           </Link>
         );
       })}
-    </>
+    </div>
   );
 }
 
@@ -80,7 +100,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
       {/* Mobile backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-surface-900/50 backdrop-blur-xs lg:hidden"
+          className="fixed inset-0 z-40 bg-surface-900/40 backdrop-blur-xs lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -94,59 +114,44 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         )}
       >
         {/* Brand / Logo */}
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-surface-200 px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-white shadow-subtle">
-            <Shield className="h-5 w-5" />
+        <div className="flex h-14 shrink-0 items-center gap-2.5 border-b border-surface-200 px-5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-surface-900 text-white shadow-xs">
+            <Shield className="h-4 w-4" />
           </div>
           <div className="flex flex-col">
-            <span className="text-base font-bold tracking-tight text-surface-900 leading-tight">
+            <span className="text-sm font-bold tracking-tight text-surface-900 leading-tight">
               ClaimScope
             </span>
-            <span className="text-[11px] font-medium tracking-wide text-surface-500 uppercase">
-              Investigation AI
+            <span className="text-[10px] font-medium tracking-wider text-surface-400 uppercase">
+              Investigation Platform
             </span>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1.5 px-3 py-4 overflow-y-auto">
-          <div className="px-3 pb-2 text-[11px] font-semibold tracking-wider text-surface-400 uppercase">
-            Investigation
-          </div>
-          <Suspense fallback={<div className="h-28 animate-pulse bg-surface-100 rounded-md" />}>
-            <NavLinks onClose={onClose} />
+        <nav className="flex-1 space-y-5 px-3 py-4 overflow-y-auto">
+          <Suspense fallback={<div className="h-32 animate-pulse bg-surface-100 rounded-md" />}>
+            <NavGroup label="Operations" items={operationalItems} onClose={onClose} />
+            <div className="border-t border-surface-100 my-2" />
+            <NavGroup label="Evaluation & Testing" items={labItems} onClose={onClose} />
           </Suspense>
-
-          <div className="pt-6 px-3 pb-2 text-[11px] font-semibold tracking-wider text-surface-400 uppercase">
-            Overview & Telemetry
-          </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-3 rounded-md px-3 py-2 text-xs text-surface-500">
-              <Activity className="h-3.5 w-3.5 text-surface-400" />
-              <span>Multi-Doc Reasoning</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-md px-3 py-2 text-xs text-surface-500">
-              <FileText className="h-3.5 w-3.5 text-surface-400" />
-              <span>Document AI Parser</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-md px-3 py-2 text-xs text-surface-500">
-              <Layers className="h-3.5 w-3.5 text-surface-400" />
-              <span>Cross-Ref Verification</span>
-            </div>
-          </div>
         </nav>
 
         {/* System Version & Status */}
-        <div className="shrink-0 border-t border-surface-200 p-4 bg-surface-50/60">
-          <div className="flex items-center justify-between text-xs text-surface-500 mb-1">
-            <span className="font-medium text-surface-600">ClaimScope Core</span>
-            <span className="font-mono text-[11px] bg-surface-200/70 px-1.5 py-0.5 rounded text-surface-700">
+        <div className="shrink-0 border-t border-surface-200 p-3.5 bg-surface-50/70">
+          <div className="flex items-center justify-between text-xs text-surface-500 mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-medium text-surface-700">System Ready</span>
+            </div>
+            <span className="font-mono text-[10px] bg-surface-200/80 px-1.5 py-0.5 rounded text-surface-600">
               v1.0.0
             </span>
           </div>
-          <p className="text-[11px] text-surface-400 leading-tight">
-            Auto Accident Claim Investigation Assistant
-          </p>
+          <div className="flex items-center justify-between text-[10px] text-surface-400 font-mono">
+            <span>LangGraph Engine</span>
+            <span>Gemini AI</span>
+          </div>
         </div>
       </aside>
     </>

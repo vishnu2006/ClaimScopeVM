@@ -248,3 +248,34 @@ ClaimScope is pre-configured to operate on Google Gemini without requiring any p
    # Terminal 2: Frontend Server
    cd frontend; npm run dev
    ```
+
+---
+
+## 8. Enterprise Design System & UX Architecture
+
+The ClaimScope interface was refined to align with enterprise insurance operations and Linear's design principles:
+
+1. **Design Tokens & Surfaces**:
+   - Crisp 1px surface borders (`border-surface-200`) and soft, restrained shadows (`shadow-card`, `shadow-subtle`).
+   - Restrained color system: deep navy brand tokens, muted status dots, monospace typography for technical identifiers (`JetBrains Mono`).
+
+2. **Dedicated Evaluation Lab (`/demo`)**:
+   - Isolated the 5 synthetic test packages from the main operational dashboard.
+   - Dedicated evaluation sandbox explaining each scenario's test assertions, input assets, and expected agent routing.
+   - 1-click loading into PostgreSQL with automatic transition to the investigation workbench.
+
+3. **High-Density Operations Hub (`/`)**:
+   - Compact workspace header with live operational indicators.
+   - Persisted KPI aggregate cards derived directly from database records.
+   - High-density `RecentCasesTable` displaying case IDs, loss descriptions, claimants, policy numbers, priorities, statuses, and direct workbench triggers.
+
+4. **Multi-View Claims Registry (`/cases`)**:
+   - Supports both high-density Table view and Grid view toggles.
+   - Live multi-field search and status filters.
+
+5. **Investigation Workbench UX (`/cases/[id]`)**:
+   - Compact 2-row `CaseHeader` with integrated status pills, priority badges, and report export.
+   - Linear-style `InvestigationStepper` showing the adaptive LangGraph agent execution status, skip rationale, and duration.
+   - First-class evidence provenance modal with confidence metrics and raw source citations.
+   - Side-by-side contradiction diff viewer in `DiscrepancyList` with human adjuster review advisories.
+

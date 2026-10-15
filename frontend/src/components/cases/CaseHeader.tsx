@@ -2,7 +2,16 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2, Calendar, ShieldCheck, User, ArrowLeft, Clock, Download } from 'lucide-react';
+import {
+  Trash2,
+  Calendar,
+  ShieldCheck,
+  User,
+  ArrowLeft,
+  Clock,
+  Download,
+  AlertCircle,
+} from 'lucide-react';
 import { CaseDetail } from '@/lib/types';
 import {
   formatDate,
@@ -55,96 +64,97 @@ export const CaseHeader: React.FC<CaseHeaderProps> = ({
 
   return (
     <>
-      <div className="border-b border-surface-200 bg-surface-0 px-6 py-5 shadow-subtle">
-        {/* Navigation & Case Number */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push('/cases')}
-              leftIcon={<ArrowLeft className="h-4 w-4" />}
-            >
-              All Cases
-            </Button>
-            <span className="font-mono text-xs font-semibold px-2.5 py-1 rounded bg-surface-100 text-surface-800 border border-surface-200">
-              {caseData.case_number}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Badge variant={getStatusBadgeVariant(caseData.status)} size="md">
-              {formatStatus(caseData.status)}
-            </Badge>
-            <Badge variant={getPriorityBadgeVariant(caseData.priority)} size="md">
-              {formatPriority(caseData.priority)} Priority
-            </Badge>
-            {caseData.report && onDownloadPdf && (
+      <div className="border-b border-surface-200 bg-surface-0 px-4 sm:px-6 py-3.5 shadow-subtle">
+        <div className="max-w-7xl mx-auto space-y-3">
+          {/* Top Row: Back button, Case Number, Status, Priority, and Primary Actions */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
               <Button
-                variant="secondary"
-                size="sm"
-                onClick={onDownloadPdf}
-                loading={isDownloadingPdf}
-                leftIcon={<Download className="h-4 w-4" />}
-                className="ml-1"
+                variant="ghost"
+                size="xs"
+                onClick={() => router.push('/cases')}
+                leftIcon={<ArrowLeft className="h-3.5 w-3.5" />}
+                className="text-surface-500 hover:text-surface-900"
               >
-                PDF Report
+                Cases
               </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setDeleteModalOpen(true)}
-              className="text-surface-500 hover:text-status-error hover:bg-rose-50 ml-2"
-              title="Delete Case"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+              <span className="text-surface-300">/</span>
+              <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-surface-100 text-surface-800 border border-surface-200">
+                {caseData.case_number}
+              </span>
+              <Badge variant={getStatusBadgeVariant(caseData.status)} size="xs" dot>
+                {formatStatus(caseData.status)}
+              </Badge>
+              <Badge variant={getPriorityBadgeVariant(caseData.priority)} size="xs" dot>
+                {formatPriority(caseData.priority)} Priority
+              </Badge>
+            </div>
 
-        {/* Title */}
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-surface-900 mb-3">
-          {caseData.title}
-        </h1>
-
-        {caseData.description && (
-          <p className="text-sm text-surface-600 mb-4 max-w-3xl leading-relaxed">
-            {caseData.description}
-          </p>
-        )}
-
-        {/* Metadata grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-3 border-t border-surface-100 text-xs">
-          <div>
-            <span className="text-surface-400 block mb-0.5 font-medium">Claimant</span>
-            <div className="flex items-center gap-1.5 font-semibold text-surface-800 truncate">
-              <User className="h-3.5 w-3.5 text-surface-400 shrink-0" />
-              <span>{caseData.claimant_name || 'Not specified'}</span>
+            <div className="flex items-center gap-2">
+              {caseData.report && onDownloadPdf && (
+                <Button
+                  variant="secondary"
+                  size="xs"
+                  onClick={onDownloadPdf}
+                  loading={isDownloadingPdf}
+                  leftIcon={<Download className="h-3 w-3" />}
+                >
+                  PDF Report
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={() => setDeleteModalOpen(true)}
+                className="text-surface-400 hover:text-status-error hover:bg-rose-50"
+                title="Delete Case"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
 
-          <div>
-            <span className="text-surface-400 block mb-0.5 font-medium">Policy Number</span>
-            <div className="flex items-center gap-1.5 font-semibold text-surface-800 font-mono truncate">
-              <ShieldCheck className="h-3.5 w-3.5 text-surface-400 shrink-0" />
-              <span>{caseData.policy_number || 'Not provided'}</span>
+          {/* Title & Metadata Strip */}
+          <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-2 pt-1 border-t border-surface-100">
+            <div className="space-y-0.5">
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-surface-900 leading-snug">
+                {caseData.title}
+              </h1>
+              {caseData.description && (
+                <p className="text-xs text-surface-500 line-clamp-1 max-w-3xl">
+                  {caseData.description}
+                </p>
+              )}
             </div>
-          </div>
 
-          <div>
-            <span className="text-surface-400 block mb-0.5 font-medium">Incident Date</span>
-            <div className="flex items-center gap-1.5 font-semibold text-surface-800">
-              <Calendar className="h-3.5 w-3.5 text-surface-400 shrink-0" />
-              <span>{formatDate(caseData.incident_date)}</span>
-            </div>
-          </div>
+            {/* Compact Metadata Chips */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-surface-600 font-medium">
+              <div className="flex items-center gap-1.5">
+                <User className="h-3 w-3 text-surface-400" />
+                <span className="text-surface-500">Claimant:</span>
+                <span className="text-surface-900 font-semibold">
+                  {caseData.claimant_name || 'Not specified'}
+                </span>
+              </div>
 
-          <div>
-            <span className="text-surface-400 block mb-0.5 font-medium">Created</span>
-            <div className="flex items-center gap-1.5 text-surface-600">
-              <Clock className="h-3.5 w-3.5 text-surface-400 shrink-0" />
-              <span>{formatDateTime(caseData.created_at)}</span>
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="h-3 w-3 text-surface-400" />
+                <span className="text-surface-500">Policy:</span>
+                <span className="font-mono text-surface-800">
+                  {caseData.policy_number || 'N/A'}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <Calendar className="h-3 w-3 text-surface-400" />
+                <span className="text-surface-500">Incident:</span>
+                <span className="text-surface-800">{formatDate(caseData.incident_date)}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-surface-400">
+                <Clock className="h-3 w-3" />
+                <span>{formatDateTime(caseData.created_at)}</span>
+              </div>
             </div>
           </div>
         </div>
