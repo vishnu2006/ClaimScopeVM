@@ -1,0 +1,29 @@
+@import 'tailwindcss';
+@config "../../tailwind.config.ts";
+
+@layer base {
+  :root {
+    --color-brand-600: #2563eb;
+    --sidebar-width: 260px;
+  }
+  
+  body {
+    @apply bg-surface-50 text-surface-800 antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+  
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-surface-300 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-400;
+  }
+}

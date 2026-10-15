@@ -1,0 +1,16 @@
+from fastapi import APIRouter
+
+from app.api.cases import router as cases_router
+from app.api.documents import router as documents_router
+from app.api.reports import router as reports_router
+
+api_router = APIRouter(prefix="/api/v1")
+
+# Case CRUD and case evidence
+api_router.include_router(cases_router)
+
+# Document upload, retrieval, and processing
+api_router.include_router(documents_router)
+
+# Case reports
+api_router.include_router(reports_router)

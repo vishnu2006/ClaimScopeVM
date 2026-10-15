@@ -1,0 +1,90 @@
+Capstone Case Study: Auto Accident Claim Investigation Assistant
+Track: AI Engineers | Domain: US P&C Insurance — Auto Claims | System Type: Agentic, Multi-Document AI Pipeline | Duration: 4 Weeks | Author: Rahul
+
+Problem Statement
+When an auto accident is reported, the claim rarely arrives as one clean record. It shows up as a bundle of mismatched documents: a first-notice-of-loss form, a handful of damage photos, sometimes a police report or a repair shop estimate, occasionally a handwritten statement. An adjustor has to read every piece, cross-check that the story is consistent across all of them, independently verify facts that aren’t in any document (like a fair repair cost), and write up an assessment before a decision can even be made.
+This is slow, entirely manual, and inconsistent — the quality of the assessment depends on how thorough that particular adjustor happens to be that day. There is no first-pass system that reads the full incident package the way an adjustor would and hands back an organized, verified starting point.
+The ask: build an AI agent that takes in a complete accident incident package — forms, images, and supporting documents — analyzes all of it together, verifies the details against real-world information, and produces a structured investigation report ready for an adjustor to review.
+
+What You’ll Build
+An agentic system that:
+Takes in a full incident package (whatever mix of form + images + supporting docs is submitted for that claim) through a working interface — a chat assistant, a “case” style dashboard where you upload a package and get a report, or any other UI approach your team prefers. The interface is your call; the system behind it is what’s being assessed.
+Uses Document AI to read and extract structured data from whatever document types are actually present — typed forms, scanned/handwritten text, and photos.
+Cross-references what it found across the available documents to catch inconsistencies (e.g. the form calls it a minor scrape, but the photo shows serious damage).
+Uses real-time web search to verify or ground facts no document can tell you — realistic repair costs, part prices, whether the described damage is plausible for the incident described.
+Produces a single, structured investigation report with a recommendation, every claim backed by a source, and a confidence level per fact.
+This is not a single prompt. It is an agent: a chain of specialized steps, each reading and adding to one shared case file, the same way a real investigation would build up a file piece by piece.
+Important — this is a genuinely agentic system, not a fixed pipeline. Not every incident package will need every step. If a package has no police report, there’s nothing to extract there. If a package is just a form with a clear, consistent story and no photos, there may be nothing to cross-reference or even nothing worth a web search. The system should look at what’s actually in the package and decide which of its capabilities to invoke — it shouldn’t blindly run all steps every time just because they exist. What must stay constant is the shape of the final report — regardless of which steps ran, the output should be structured and readable the same way every time, clearly noting what was and wasn’t available to base the assessment on.
+
+System Architecture
+   Incident Package
+   (Form + Photos + Supporting Docs)
+            |
+            v
+   Document Intake & Classification
+            |
+            v
+   ┌─────────────────────────────┐
+   │      Document AI Extraction   │
+   │  Form fields | Photos | Reports │   (only what's present runs)
+   └───────────────┬─────────────┘
+                   v
+          Cross-Referencing
+       (consistency check across sources)
+                   |
+                   v
+        Real-Time Web Verification
+        (repair cost, plausibility)
+                   |
+                   v
+              Assessment
+        (routine  vs.  flag for review)
+                   |
+                   v
+        Investigation Report
+     (summary, sources, confidence,
+        recommendation)
+
+Concepts & Tech This Project Covers
+Document AI / multi-format extraction — reading structured forms, unstructured free text, and scanned/handwritten content, each needing a different extraction approach.
+Vision-based analysis — using a vision-capable model to read accident/damage photos and describe what’s visible in a structured way.
+Cross-document reasoning — reconciling facts pulled from different sources into one consistent case record, and explicitly flagging where they disagree.
+Real-time web grounding — using a live search tool so estimates and facts are checked against real information instead of the model’s memory.
+Agent orchestration — designing a shared “case file” data structure that every step reads from and writes to, and building the logic that decides which steps a given package actually needs, rather than a fixed always-run-everything pipeline.
+Interface design — presenting the system through a usable interface (chat-based or a case-view dashboard) that fits how an adjustor would actually want to interact with it.
+Domain-informed rule design — translating how real adjustors actually evaluate a claim into explainable logic the agent can apply consistently (see Research below).
+Evaluation of an agentic system — measuring extraction accuracy, consistency-check performance, and report quality against a labelled set, not just eyeballing results.
+
+Sample Workflow — How It Should Work
+Here’s a worked example of one incident moving through the system end to end.
+Incident package received: - incident_form.pdf — the policyholder’s first-notice-of-loss form (typed, some fields handwritten) - photo_1.jpg, photo_2.jpg — damage photos from the scene - police_report.pdf — a short scanned police report (optional document, not always present)
+Step 1 — Document Intake & Classification The agent looks at everything submitted and identifies what each file is (form, photo, report) so it knows which extraction method to apply to each.
+Step 2 — Document AI Extraction - The form is parsed for structured fields: policy number, date/time, location, described damage, parties involved. - The police report (if present) is OCR’d and key facts are pulled out: officer’s account, fault determination if noted, citations issued. - Each photo is analyzed by a vision model to describe visible damage: location on the vehicle, apparent severity, anything else notable in the frame (e.g. another vehicle, road conditions).
+Step 3 — Cross-Referencing The agent compares what it extracted across all three sources. Example: the form says “minor rear bumper scrape,” but the photo shows a caved-in trunk and a cracked tail light. This is flagged as an inconsistency in the case file rather than silently resolved.
+Step 4 — Real-Time Web Verification The agent searches for information no document provides: a realistic repair cost range for that damage on that vehicle type, whether reported weather/road conditions at that date and location are plausible, or general repair-shop cost benchmarks. Every fact pulled this way is tagged with its source.
+Step 5 — Assessment Using a simple, explainable rule set (informed by the research phase below — e.g. “flag if described severity and photo severity disagree,” or “flag if estimated cost is near the coverage limit”), the agent decides: routine, or flag for closer human review.
+Step 6 — Report Generation The agent produces one structured investigation report: incident summary, extracted facts from each document (with confidence), the inconsistency it caught, the grounded cost estimate with its source, and a clear recommendation — written so an adjustor can act on it in under a minute of reading.
+A different, simpler incident — say, just a form and one clear photo with a consistent story — would skip the police-report extraction (nothing to extract) and might skip the web search entirely if the agent judges there’s nothing to verify. The report generated for that case should still follow the same structure as above, just with those sections noting “not applicable” or “not available” rather than being missing or breaking the format. Deciding when a step is worth running is itself part of the agent design you’re building, not an afterthought.
+
+Research Component (Required)
+Before finalizing your flagging logic and report format, spend time researching how real claims adjustors actually evaluate an accident claim: what red flags they look for, what makes them escalate a case, what a real investigation report looks like. Use public sources — industry articles, adjustor training material, insurance company claims-handling guides, YouTube walkthroughs, whatever you can find credibly.
+Use these findings to justify your design decisions: why your flagging rule looks the way it does, why your report is structured the way it is, and what an experienced adjustor would still want that your current system doesn’t do. This turns the project from “an AI demo” into a system genuinely informed by how the job is actually done — and it’s expected to visibly shape your final design.
+
+UI & Presentation Expectations
+Whatever interface you choose — chat assistant, case-view dashboard, or something else — it needs to look and feel like an internal enterprise tool, not a student script running in a terminal. That means: a clean, consistent layout; proper loading/progress states while the agent works (not a frozen screen); readable typography and spacing; sensible error handling if a document fails to parse; and a final report view that looks like something you’d actually hand to a manager, not a JSON dump or an unstyled text block. This is being demoed to leadership — the UI is part of the deliverable, not an afterthought bolted on in the last hour.
+
+Deliverables
+A short research summary: what you learned about real adjustor workflows, and how it shaped your system’s design.
+A working system with a usable interface (chat assistant or case-view dashboard — your choice) that accepts an incident package and returns a report.
+Agent logic that adapts to what’s actually in the package — demonstrate at least one “full” package (form + images + supporting doc) and one “partial” package (e.g. form only, or form + photo), and show the system correctly running only the relevant steps for each.
+Sample incident packages you built or sourced yourself, of varying completeness, including at least one deliberately inconsistent case.
+A generated investigation report for 3–5 sample incidents, including at least one correctly flagged case, with report structure kept consistent across all of them regardless of which steps ran.
+A labelled evaluation set with measured results (extraction accuracy, whether inconsistencies were correctly caught, whether flagging matched expectation).
+A short reflection: current limitations, and what you’d add next based on your research (e.g. “real adjustors also check X, which we don’t yet”).
+Final presentation: problem, system walkthrough, live demo, research findings, evaluation results.
+
+Guardrails
+This is an investigation assistant, not an auto-decision system — always frame the output as input to a human adjustor’s judgment.
+Don’t attempt real pixel-level damage measurement — the vision step should describe and rate what it sees, not perform image analysis.
+Every fact from web search must be traceable to what was searched — no ungrounded numbers presented as verified.
+Use only synthetic or self-created sample data — no real personal or customer information.
