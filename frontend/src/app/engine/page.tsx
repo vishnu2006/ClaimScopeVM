@@ -163,25 +163,37 @@ export default function AgenticEnginePage() {
 
   // Set initial case selection
   useEffect(() => {
+    let mounted = true;
     if (cases && cases.length > 0 && !selectedCaseId) {
-      setSelectedCaseId(cases[0].id);
+      Promise.resolve().then(() => {
+        if (mounted) setSelectedCaseId(cases[0].id);
+      });
     }
+    return () => {
+      mounted = false;
+    };
   }, [cases, selectedCaseId]);
 
   // Fetch real investigation telemetry when case changes
   useEffect(() => {
+    let mounted = true;
     if (!selectedCaseId) return;
-    setLoadingTelemetry(true);
+    Promise.resolve().then(() => {
+      if (mounted) setLoadingTelemetry(true);
+    });
     api.getInvestigation(selectedCaseId)
       .then((state) => {
-        setLiveState(state);
+        if (mounted) setLiveState(state);
       })
       .catch(() => {
-        setLiveState(null);
+        if (mounted) setLiveState(null);
       })
       .finally(() => {
-        setLoadingTelemetry(false);
+        if (mounted) setLoadingTelemetry(false);
       });
+    return () => {
+      mounted = false;
+    };
   }, [selectedCaseId]);
 
   return (

@@ -56,7 +56,7 @@ export default function CasesPage() {
   const filteredAndSortedCases = useMemo(() => {
     if (!cases) return [];
 
-    let result = cases.filter((c) => {
+    const result = cases.filter((c) => {
       // Search term
       if (searchTerm.trim()) {
         const q = searchTerm.toLowerCase();

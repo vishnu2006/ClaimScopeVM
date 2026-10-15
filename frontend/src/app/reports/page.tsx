@@ -50,11 +50,17 @@ export default function InvestigationReportsPage() {
   useEffect(() => {
     let mounted = true;
     if (!cases || cases.length === 0) {
-      if (!casesLoading) setLoading(false);
+      if (!casesLoading) {
+        Promise.resolve().then(() => {
+          if (mounted) setLoading(false);
+        });
+      }
       return;
     }
 
-    setLoading(true);
+    Promise.resolve().then(() => {
+      if (mounted) setLoading(true);
+    });
     Promise.allSettled(
       cases.map(async (c) => {
         try {

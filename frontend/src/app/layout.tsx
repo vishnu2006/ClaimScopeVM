@@ -13,6 +13,11 @@ export const metadata: Metadata = {
   title: 'ClaimScope — Auto Accident Claim Investigation Assistant',
   description:
     'Enterprise multi-document AI investigation pipeline for US P&C Auto Claims. Automated intake, damage extraction, cross-referencing, and adjustor reporting.',
+  icons: {
+    icon: '/brand/claimscope-logo.png',
+    shortcut: '/brand/claimscope-logo.png',
+    apple: '/brand/claimscope-logo.png',
+  },
 };
 
 export default function RootLayout({

@@ -199,6 +199,29 @@ class ApiClient {
       return null;
     }
   }
+
+  // Gemini & System Diagnostics Check
+  async checkDiagnostics(): Promise<{
+    provider: string;
+    configured_model: string;
+    api_key_configured: boolean;
+    masked_key: string | null;
+    connectivity_status: 'connected' | 'unconfigured' | 'error';
+    message: string;
+  } | null> {
+    try {
+      return await this.request<{
+        provider: string;
+        configured_model: string;
+        api_key_configured: boolean;
+        masked_key: string | null;
+        connectivity_status: 'connected' | 'unconfigured' | 'error';
+        message: string;
+      }>('/diagnostics/gemini');
+    } catch {
+      return null;
+    }
+  }
 }
 
 export const api = new ApiClient(API_BASE);

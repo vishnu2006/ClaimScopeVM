@@ -2,6 +2,7 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -13,9 +14,11 @@ import {
   FileCheck2,
   Cpu,
   FlaskConical,
-  Shield,
   ArrowUpRight,
-  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  Server,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
@@ -110,23 +113,55 @@ export interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => {
-  const [backendStatus, setBackendStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+  const [backendStatus, setBackendStatus] = useState<'Checking' | 'Available' | 'Unavailable'>('Checking');
+  const [geminiStatus, setGeminiStatus] = useState<'Checking' | 'Available' | 'Not configured' | 'Unavailable'>('Checking');
+  const [geminiDetails, setGeminiDetails] = useState<{ model?: string; maskedKey?: string | null; message?: string }>({});
   const [backendVersion, setBackendVersion] = useState<string>('0.2.0');
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+
+    // Check backend health
     api.checkHealth()
       .then((res) => {
         if (!mounted) return;
         if (res && res.status === 'healthy') {
-          setBackendStatus('connected');
+          setBackendStatus('Available');
           if (res.version) setBackendVersion(res.version);
         } else {
-          setBackendStatus('disconnected');
+          setBackendStatus('Unavailable');
         }
       })
       .catch(() => {
-        if (mounted) setBackendStatus('disconnected');
+        if (mounted) setBackendStatus('Unavailable');
+      });
+
+    // Check Gemini AI diagnostics independently
+    api.checkDiagnostics()
+      .then((res) => {
+        if (!mounted) return;
+        if (!res) {
+          setGeminiStatus('Unavailable');
+          return;
+        }
+
+        if (res.connectivity_status === 'connected') {
+          setGeminiStatus('Available');
+        } else if (res.connectivity_status === 'unconfigured' || !res.api_key_configured) {
+          setGeminiStatus('Not configured');
+        } else {
+          setGeminiStatus('Unavailable');
+        }
+
+        setGeminiDetails({
+          model: res.configured_model,
+          maskedKey: res.masked_key,
+          message: res.message,
+        });
+      })
+      .catch(() => {
+        if (mounted) setGeminiStatus('Unavailable');
       });
 
     return () => {
@@ -155,8 +190,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
         {/* Brand / Logo */}
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-surface-200 px-5">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-900 text-white shadow-xs group-hover:bg-brand-600 transition-colors">
-              <Shield className="h-4.5 w-4.5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-900 text-white shadow-xs group-hover:bg-brand-600 transition-colors p-1">
+              <Image
+                src="/brand/claimscope-logo.png"
+                alt="ClaimScope Logo"
+                width={28}
+                height={28}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <div className="flex flex-col">
               <span className="text-base font-bold tracking-tight text-surface-900 leading-tight">
@@ -188,37 +230,129 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
           </Suspense>
         </nav>
 
-        {/* Real System Telemetry Footer */}
-        <div className="shrink-0 border-t border-surface-200 p-4 bg-surface-50/70">
-          <div className="flex items-center justify-between text-xs mb-1.5">
-            <div className="flex items-center gap-1.5">
-              <span
-                className={cn(
-                  'h-2 w-2 rounded-full',
-                  backendStatus === 'connected'
-                    ? 'bg-emerald-500 animate-pulse'
-                    : backendStatus === 'checking'
-                    ? 'bg-amber-400 animate-spin'
-                    : 'bg-rose-500'
-                )}
-              />
-              <span className="text-xs font-medium text-surface-700">
-                {backendStatus === 'connected'
-                  ? 'API Connected (8000)'
-                  : backendStatus === 'checking'
-                  ? 'Checking API...'
-                  : 'Backend Disconnected'}
-              </span>
-            </div>
-            <span className="font-mono text-[10px] bg-surface-200/80 px-1.5 py-0.5 rounded text-surface-700 font-medium">
-              v{backendVersion}
+        {/* Compact, Dignified System Status */}
+        <div className="shrink-0 border-t border-surface-200 p-3.5 bg-surface-50/70 space-y-2">
+          {/* Header Row */}
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-surface-500 uppercase tracking-wider text-[10px]">
+              System Status
             </span>
+            <button
+              type="button"
+              onClick={() => setDetailsOpen(!detailsOpen)}
+              className="text-[11px] text-surface-400 hover:text-surface-700 transition-colors flex items-center gap-0.5 cursor-pointer"
+              title="Toggle system details"
+            >
+              <span>{detailsOpen ? 'Hide' : 'Details'}</span>
+              {detailsOpen ? (
+                <ChevronUp className="h-3 w-3" />
+              ) : (
+                <ChevronDown className="h-3 w-3" />
+              )}
+            </button>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-surface-400 font-mono pt-1 border-t border-surface-200/60">
-            <span>LangGraph 0.2</span>
-            <span>Gemini 2.5</span>
+          {/* Status Badges Row */}
+          <div className="space-y-1.5 text-xs">
+            {/* Backend Service Status */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-surface-700">
+                <Server className="h-3.5 w-3.5 text-surface-400" />
+                <span className="text-[11px] font-medium">Core API</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    backendStatus === 'Available'
+                      ? 'bg-emerald-500'
+                      : backendStatus === 'Checking'
+                      ? 'bg-amber-400 animate-spin'
+                      : 'bg-rose-500'
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-[11px] font-medium',
+                    backendStatus === 'Available'
+                      ? 'text-emerald-700'
+                      : backendStatus === 'Checking'
+                      ? 'text-surface-500'
+                      : 'text-rose-700'
+                  )}
+                >
+                  {backendStatus}
+                </span>
+              </div>
+            </div>
+
+            {/* Gemini AI Status (Independent from backend health) */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-surface-700">
+                <Sparkles className="h-3.5 w-3.5 text-surface-400" />
+                <span className="text-[11px] font-medium">Gemini AI</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    geminiStatus === 'Available'
+                      ? 'bg-emerald-500'
+                      : geminiStatus === 'Not configured'
+                      ? 'bg-amber-400'
+                      : geminiStatus === 'Checking'
+                      ? 'bg-surface-400 animate-spin'
+                      : 'bg-rose-500'
+                  )}
+                />
+                <span
+                  className={cn(
+                    'text-[11px] font-medium',
+                    geminiStatus === 'Available'
+                      ? 'text-emerald-700'
+                      : geminiStatus === 'Not configured'
+                      ? 'text-amber-800'
+                      : geminiStatus === 'Checking'
+                      ? 'text-surface-500'
+                      : 'text-rose-700'
+                  )}
+                >
+                  {geminiStatus}
+                </span>
+              </div>
+            </div>
           </div>
+
+          {/* Expandable Technical Details */}
+          {detailsOpen && (
+            <div className="pt-2 border-t border-surface-200/60 text-[10px] text-surface-500 space-y-1 font-mono animate-fade-in">
+              <div className="flex items-center justify-between">
+                <span>API Version</span>
+                <span className="text-surface-800">v{backendVersion}</span>
+              </div>
+              {geminiDetails.model && (
+                <div className="flex items-center justify-between">
+                  <span>AI Model</span>
+                  <span className="text-surface-800">{geminiDetails.model}</span>
+                </div>
+              )}
+              {geminiDetails.maskedKey && (
+                <div className="flex items-center justify-between">
+                  <span>API Key</span>
+                  <span className="text-surface-800">{geminiDetails.maskedKey}</span>
+                </div>
+              )}
+              <div className="pt-1">
+                <Link
+                  href="/engine"
+                  className="text-brand-600 hover:text-brand-800 font-sans text-[11px] font-medium inline-flex items-center gap-1"
+                >
+                  <span>System Architecture Overview</span>
+                  <ArrowUpRight className="h-3 w-3" />
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
     </>

@@ -46,11 +46,17 @@ export default function DocumentIntelligencePage() {
   useEffect(() => {
     let mounted = true;
     if (!cases || cases.length === 0) {
-      if (!casesLoading) setLoadingDocs(false);
+      if (!casesLoading) {
+        Promise.resolve().then(() => {
+          if (mounted) setLoadingDocs(false);
+        });
+      }
       return;
     }
 
-    setLoadingDocs(true);
+    Promise.resolve().then(() => {
+      if (mounted) setLoadingDocs(true);
+    });
     Promise.allSettled(
       cases.map(async (c) => {
         try {

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Shield,
   ArrowRight,
@@ -32,8 +33,15 @@ export default function PublicHomePage() {
       <header className="sticky top-0 z-50 border-b border-surface-200/80 bg-surface-0/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-900 text-white shadow-xs group-hover:bg-brand-600 transition-colors">
-              <Shield className="h-4.5 w-4.5" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-900 text-white shadow-xs group-hover:bg-brand-600 transition-colors p-1">
+              <Image
+                src="/brand/claimscope-logo.png"
+                alt="ClaimScope Logo"
+                width={28}
+                height={28}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <div className="flex flex-col">
               <span className="text-base font-bold tracking-tight text-surface-900 leading-tight">
@@ -76,52 +84,80 @@ export default function PublicHomePage() {
         </div>
       </header>
 
-      {/* 2. Hero Section */}
-      <section className="relative pt-20 pb-16 md:pt-28 md:pb-24 border-b border-surface-200/70 bg-gradient-to-b from-surface-0 via-surface-0 to-surface-50">
-        <div className="max-w-5xl mx-auto px-6 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200/80 text-brand-700 text-xs font-semibold shadow-2xs">
-            <Shield className="h-3.5 w-3.5" />
-            <span>US P&amp;C Auto Claim Investigation Intelligence</span>
-          </div>
+      {/* 2. Hero Section with Atmospheric Brand Background */}
+      <section className="relative pt-16 pb-20 md:pt-24 md:pb-28 border-b border-surface-200/80 overflow-hidden bg-surface-0">
+        {/* Subtle Atmospheric Background Image */}
+        <div
+          className="absolute inset-0 pointer-events-none z-0"
+          aria-hidden="true"
+        >
+          <Image
+            src="/brand/hero-background.jpg"
+            alt=""
+            fill
+            className="object-cover object-center opacity-[0.5]"
+            priority
+          />
+          {/* Subtle multi-layer white/neutral vignette gradient for perfect contrast and editorial elegance */}
+          <div className="absolute inset-0 bg-gradient-to-b from-surface-0/60 via-transparent to-surface-0" />
+          <div className="absolute inset-0 bg-radial-gradient from-transparent via-surface-0/40 to-surface-0/90" />
+        </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-surface-900 leading-[1.1] max-w-4xl mx-auto">
-            Every claim tells a story.{' '}
-            <span className="text-brand-600 block sm:inline">ClaimScope connects the evidence.</span>
-          </h1>
+        <div className="relative z-10 max-w-7xl mx-auto px-6">
+          <div className="max-w-4xl space-y-6 text-left sm:text-center sm:mx-auto">
+            {/* Category / Context Eyebrow */}
+            <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-surface-50 border border-surface-200/80 text-surface-700 text-xs font-semibold shadow-2xs backdrop-blur-xs">
+              <span className="flex h-2 w-2 rounded-full bg-brand-600" />
+              <span className="font-medium text-surface-900">ClaimScope</span>
+              <span className="text-surface-300">•</span>
+              <span className="text-surface-500 font-normal">Autonomous P&amp;C Auto Investigation Intelligence</span>
+            </div>
 
-          <p className="text-base sm:text-lg text-surface-600 max-w-2xl mx-auto leading-relaxed">
-            An adaptive agentic investigation platform for auto insurance adjusters.
-            Ingest incident packages, analyze damage photographs, cross-examine physical facts against police records,
-            and generate audit-ready, evidence-backed reports.
-          </p>
+            {/* Core Value Statement */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-surface-900 leading-[1.08] sm:max-w-3xl sm:mx-auto">
+              Every claim tells a story.{' '}
+              <span className="text-brand-600 block sm:inline">ClaimScope connects the evidence.</span>
+            </h1>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
-            <Link href="/dashboard">
-              <Button variant="primary" size="lg" rightIcon={<ArrowRight className="h-4 w-4" />}>
-                Launch Adjuster Workspace
-              </Button>
-            </Link>
-            <Link href="/demo">
-              <Button variant="secondary" size="lg">
-                Explore Demo Lab (Cases A – E)
-              </Button>
-            </Link>
-          </div>
+            {/* Subtitle */}
+            <p className="text-base sm:text-lg text-surface-600 max-w-2xl sm:mx-auto leading-relaxed">
+              An adaptive agentic investigation platform for auto insurance adjusters.
+              Ingest incident packages, analyze damage photographs, cross-examine physical facts against police records,
+              and generate audit-ready, evidence-backed reports.
+            </p>
 
-          {/* Micro-statement on safety */}
-          <div className="pt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-surface-500 font-medium">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>Grounded in source provenance</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>Adaptive LangGraph conditional routing</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              <span>Assistive human-in-the-loop decisions</span>
-            </span>
+            {/* Dual CTAs */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start sm:justify-center gap-3 pt-2">
+              <Link href="/dashboard">
+                <Button variant="primary" size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="h-4 w-4" />}>
+                  Launch Adjuster Workspace
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button variant="secondary" size="lg" className="w-full sm:w-auto">
+                  Explore Demo Lab (Cases A – E)
+                </Button>
+              </Link>
+            </div>
+
+            {/* Editorial Technical Badges */}
+            <div className="pt-8 border-t border-surface-200/60 flex flex-wrap items-center justify-start sm:justify-center gap-x-6 gap-y-2.5 text-xs text-surface-500">
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="font-medium text-surface-700">Source Provenance</span>
+                <span className="text-surface-400">— Every fact cited to page &amp; line</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="font-medium text-surface-700">Adaptive LangGraph</span>
+                <span className="text-surface-400">— Conditional node skipping</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="font-medium text-surface-700">Assistive AI</span>
+                <span className="text-surface-400">— NAIC MDL-900 compliance</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -462,9 +498,15 @@ export default function PublicHomePage() {
       {/* 8. Tasteful Minimal Footer */}
       <footer className="py-8 bg-surface-0 text-surface-500 text-xs">
         <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-surface-900 text-white">
-              <Shield className="h-3 w-3" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-6 w-6 items-center justify-center rounded bg-surface-900 text-white p-0.5">
+              <Image
+                src="/brand/claimscope-logo.png"
+                alt="ClaimScope"
+                width={20}
+                height={20}
+                className="w-full h-full object-contain"
+              />
             </div>
             <span className="font-semibold text-surface-800">ClaimScope</span>
             <span>• Auto Accident Claim Investigation Assistant</span>

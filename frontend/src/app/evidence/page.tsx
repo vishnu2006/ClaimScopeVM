@@ -41,11 +41,17 @@ export default function EvidenceAnalysisPage() {
   useEffect(() => {
     let mounted = true;
     if (!cases || cases.length === 0) {
-      if (!casesLoading) setLoadingEvidences(false);
+      if (!casesLoading) {
+        Promise.resolve().then(() => {
+          if (mounted) setLoadingEvidences(false);
+        });
+      }
       return;
     }
 
-    setLoadingEvidences(true);
+    Promise.resolve().then(() => {
+      if (mounted) setLoadingEvidences(true);
+    });
     Promise.allSettled(
       cases.map(async (c) => {
         try {
