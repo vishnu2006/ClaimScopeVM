@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { SystemArchitectureSection } from '@/components/home/SystemArchitectureSection';
 
 export default function PublicHomePage() {
   return (
@@ -54,14 +56,14 @@ export default function PublicHomePage() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-surface-600">
-            <a href="#capabilities" className="hover:text-surface-900 transition-colors">
-              Capabilities
-            </a>
-            <a href="#workflow" className="hover:text-surface-900 transition-colors">
-              Workflow Architecture
+            <a href="#architecture" className="hover:text-surface-900 transition-colors">
+              System Architecture
             </a>
             <a href="#preview" className="hover:text-surface-900 transition-colors">
               Workbench
+            </a>
+            <a href="#capabilities" className="hover:text-surface-900 transition-colors">
+              Capabilities
             </a>
             <a href="#responsible-ai" className="hover:text-surface-900 transition-colors">
               Governance &amp; Safety
@@ -74,7 +76,8 @@ export default function PublicHomePage() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <ThemeToggle />
             <Link href="/dashboard">
               <Button variant="primary" size="sm" rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>
                 Launch Workspace
@@ -84,43 +87,51 @@ export default function PublicHomePage() {
         </div>
       </header>
 
-      {/* 2. Hero Section with Atmospheric Brand Background */}
+      {/* 2. Hero Section with Dual-Theme Atmospheric Brand Background */}
       <section className="relative pt-16 pb-20 md:pt-24 md:pb-28 border-b border-surface-200/80 overflow-hidden bg-surface-0">
-        {/* Subtle Atmospheric Background Image */}
+        {/* Dual-Theme Atmospheric Background Container */}
         <div
-          className="absolute inset-0 pointer-events-none z-0"
+          className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
           aria-hidden="true"
         >
+          {/* Base Background Image - positioned towards bottom and sides to leave headline clear */}
           <Image
             src="/brand/hero-background.jpg"
             alt=""
             fill
-            className="object-cover object-center opacity-[0.5]"
+            className="object-cover object-bottom opacity-10 dark:opacity-20 contrast-110 brightness-105 dark:brightness-95 transition-opacity duration-300"
             priority
           />
-          {/* Subtle multi-layer white/neutral vignette gradient for perfect contrast and editorial elegance */}
-          <div className="absolute inset-0 bg-gradient-to-b from-surface-0/60 via-transparent to-surface-0" />
-          <div className="absolute inset-0 bg-radial-gradient from-transparent via-surface-0/40 to-surface-0/90" />
+
+          {/* Light Mode Layer: Airy white focal vignette and neutral gradient overlays */}
+          <div className="absolute inset-0 block dark:hidden bg-radial-gradient from-white/95 via-white/80 to-transparent" />
+          <div className="absolute inset-0 block dark:hidden bg-gradient-to-b from-white/90 via-transparent to-surface-0" />
+          <div className="absolute inset-0 block dark:hidden bg-gradient-to-r from-surface-0/80 via-transparent to-surface-0/80" />
+
+          {/* Dark Mode Layer: Deep navy atmospheric vignette and blue highlight blending */}
+          <div className="absolute inset-0 hidden dark:block bg-[#080d1a]/85" />
+          <div className="absolute inset-0 hidden dark:block bg-radial-gradient from-transparent via-[#0b1329]/60 to-[#080d1a]/95" />
+          <div className="absolute inset-0 hidden dark:block bg-gradient-to-b from-[#080d1a]/90 via-transparent to-surface-0" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6">
           <div className="max-w-4xl space-y-6 text-left sm:text-center sm:mx-auto">
             {/* Category / Context Eyebrow */}
-            <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-surface-50 border border-surface-200/80 text-surface-700 text-xs font-semibold shadow-2xs backdrop-blur-xs">
+            <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-surface-0/90 dark:bg-surface-100/90 border border-surface-200/80 text-surface-700 text-xs font-semibold shadow-2xs backdrop-blur-md">
               <span className="flex h-2 w-2 rounded-full bg-brand-600" />
-              <span className="font-medium text-surface-900">ClaimScope</span>
+              <span className="font-semibold text-surface-900">ClaimScope</span>
               <span className="text-surface-300">•</span>
-              <span className="text-surface-500 font-normal">Autonomous P&amp;C Auto Investigation Intelligence</span>
+              <span className="text-surface-500 font-normal">Adaptive P&amp;C Auto Investigation Intelligence</span>
             </div>
 
             {/* Core Value Statement */}
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-surface-900 leading-[1.08] sm:max-w-3xl sm:mx-auto">
               Every claim tells a story.{' '}
-              <span className="text-brand-600 block sm:inline">ClaimScope connects the evidence.</span>
+              <span className="text-brand-600 dark:text-brand-400 block sm:inline">ClaimScope connects the evidence.</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base sm:text-lg text-surface-600 max-w-2xl sm:mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-surface-600 dark:text-surface-500 max-w-2xl sm:mx-auto leading-relaxed font-normal">
               An adaptive agentic investigation platform for auto insurance adjusters.
               Ingest incident packages, analyze damage photographs, cross-examine physical facts against police records,
               and generate audit-ready, evidence-backed reports.
@@ -140,22 +151,22 @@ export default function PublicHomePage() {
               </Link>
             </div>
 
-            {/* Editorial Technical Badges */}
+            {/* Editorial Technical Badges - Verified Accurate Claims */}
             <div className="pt-8 border-t border-surface-200/60 flex flex-wrap items-center justify-start sm:justify-center gap-x-6 gap-y-2.5 text-xs text-surface-500">
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span className="font-medium text-surface-700">Source Provenance</span>
-                <span className="text-surface-400">— Every fact cited to page &amp; line</span>
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-500 shrink-0" />
+                <span className="font-medium text-surface-700">Source-Linked Findings</span>
+                <span className="text-surface-400">— Page &amp; line provenance</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-500 shrink-0" />
                 <span className="font-medium text-surface-700">Adaptive LangGraph</span>
-                <span className="text-surface-400">— Conditional node skipping</span>
+                <span className="text-surface-400">— Conditional routing</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span className="font-medium text-surface-700">Assistive AI</span>
-                <span className="text-surface-400">— NAIC MDL-900 compliance</span>
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-500 shrink-0" />
+                <span className="font-medium text-surface-700">Human-in-the-Loop</span>
+                <span className="text-surface-400">— Assistive decision support</span>
               </div>
             </div>
           </div>
@@ -284,79 +295,8 @@ export default function PublicHomePage() {
         </div>
       </section>
 
-      {/* 4. Workflow Architecture Visualization */}
-      <section id="workflow" className="py-16 md:py-20 border-t border-b border-surface-200/80 bg-surface-0">
-        <div className="max-w-7xl mx-auto px-6 space-y-12">
-          <div className="text-center space-y-2 max-w-2xl mx-auto">
-            <div className="text-xs font-semibold text-brand-600 uppercase tracking-wider">
-              Investigation Pipeline
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-surface-900">
-              Deterministic Orchestration with LangGraph
-            </h2>
-            <p className="text-sm text-surface-500">
-              ClaimScope doesn&apos;t run a monolithic prompt. It executes an adaptive StateGraph that conditionally routes each file type to specialized agents.
-            </p>
-          </div>
-
-          {/* Workflow Sequence Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            {[
-              {
-                step: '01',
-                title: 'Incident Ingestion',
-                desc: 'Upload multi-format package: digital PDFs, scanned forms, and scene photos.',
-                icon: FileText,
-              },
-              {
-                step: '02',
-                title: 'Classification & OCR',
-                desc: 'PyMuPDF native extraction + Gemini Vision OCR for handwritten or degraded scans.',
-                icon: Search,
-              },
-              {
-                step: '03',
-                title: 'Adaptive Routing',
-                desc: 'Supervisor dynamically executes or skips agents based strictly on available evidence.',
-                icon: Cpu,
-              },
-              {
-                step: '04',
-                title: 'Cross-Verification',
-                desc: 'Reconciles narratives and verifies facts against public VIN registries and weather data.',
-                icon: GitCompare,
-              },
-              {
-                step: '05',
-                title: 'Audit Report',
-                desc: 'Compiles explainable findings, confidence scores, and adjuster follow-up items.',
-                icon: FileCheck2,
-              },
-            ].map((st) => {
-              const Icon = st.icon;
-              return (
-                <div
-                  key={st.step}
-                  className="rounded-lg border border-surface-200 bg-surface-50 p-4 space-y-3 flex flex-col justify-between hover:border-brand-300 transition-all shadow-subtle"
-                >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
-                        {st.step}
-                      </span>
-                      <div className="p-1.5 rounded bg-surface-100 text-surface-600">
-                        <Icon className="h-4 w-4" />
-                      </div>
-                    </div>
-                    <h4 className="text-sm font-bold text-surface-900">{st.title}</h4>
-                    <p className="text-xs text-surface-600 leading-relaxed">{st.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      {/* 4. Complete Adaptive System Architecture Section */}
+      <SystemArchitectureSection />
 
       {/* 5. Core Implemented Capabilities */}
       <section id="capabilities" className="py-16 md:py-24 max-w-7xl mx-auto px-6 w-full space-y-12">

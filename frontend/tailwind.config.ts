@@ -1,48 +1,49 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        // Primary brand - deep professional blue
+        // Primary brand - deep professional blue (linked to CSS vars)
         brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
-          950: '#172554',
+          50: 'var(--color-brand-50, #eff6ff)',
+          100: 'var(--color-brand-100, #dbeafe)',
+          200: 'var(--color-brand-200, #bfdbfe)',
+          300: 'var(--color-brand-300, #93c5fd)',
+          400: 'var(--color-brand-400, #60a5fa)',
+          500: 'var(--color-brand-500, #3b82f6)',
+          600: 'var(--color-brand-600, #2563eb)',
+          700: 'var(--color-brand-700, #1d4ed8)',
+          800: 'var(--color-brand-800, #1e40af)',
+          900: 'var(--color-brand-900, #1e3a8a)',
+          950: 'var(--color-brand-950, #172554)',
         },
-        // Neutral surfaces
+        // Neutral surfaces (linked to CSS vars)
         surface: {
-          0: '#ffffff',
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617',
+          0: 'var(--color-surface-0, #ffffff)',
+          50: 'var(--color-surface-50, #f8fafc)',
+          100: 'var(--color-surface-100, #f1f5f9)',
+          200: 'var(--color-surface-200, #e2e8f0)',
+          300: 'var(--color-surface-300, #cbd5e1)',
+          400: 'var(--color-surface-400, #94a3b8)',
+          500: 'var(--color-surface-500, #64748b)',
+          600: 'var(--color-surface-600, #475569)',
+          700: 'var(--color-surface-700, #334155)',
+          800: 'var(--color-surface-800, #1e293b)',
+          900: 'var(--color-surface-900, #0f172a)',
+          950: 'var(--color-surface-950, #020617)',
         },
-        // Status colors
+        // Status colors (linked to CSS vars)
         status: {
-          success: '#059669',
-          warning: '#d97706',
-          error: '#dc2626',
-          info: '#2563eb',
-          pending: '#8b5cf6',
+          success: 'var(--color-status-success, #059669)',
+          warning: 'var(--color-status-warning, #d97706)',
+          error: 'var(--color-status-error, #dc2626)',
+          info: 'var(--color-status-info, #2563eb)',
+          pending: 'var(--color-status-pending, #8b5cf6)',
         },
       },
       fontFamily: {
@@ -51,22 +52,22 @@ const config: Config = {
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '0.9375rem' }],
-        'xs': ['0.8125rem', { lineHeight: '1.1875rem' }], // 13px (scaled from 12px)
-        'sm': ['0.875rem', { lineHeight: '1.375rem' }],  // 14px (scaled from 13px)
-        'base': ['0.9375rem', { lineHeight: '1.5rem' }],  // 15px (scaled from 14px)
-        'lg': ['1.0625rem', { lineHeight: '1.625rem' }],  // 17px (scaled from 16px)
-        'xl': ['1.25rem', { lineHeight: '1.75rem' }],     // 20px (scaled from 18px)
-        '2xl': ['1.5rem', { lineHeight: '2rem' }],        // 24px (scaled from 20px)
-        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],   // 30px (scaled from 24px)
-        '4xl': ['2.25rem', { lineHeight: '2.75rem' }],    // 36px
-        '5xl': ['3rem', { lineHeight: '1.15' }],          // 48px
+        'xs': ['0.8125rem', { lineHeight: '1.1875rem' }],
+        'sm': ['0.875rem', { lineHeight: '1.375rem' }],
+        'base': ['0.9375rem', { lineHeight: '1.5rem' }],
+        'lg': ['1.0625rem', { lineHeight: '1.625rem' }],
+        'xl': ['1.25rem', { lineHeight: '1.75rem' }],
+        '2xl': ['1.5rem', { lineHeight: '2rem' }],
+        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
+        '4xl': ['2.25rem', { lineHeight: '2.75rem' }],
+        '5xl': ['3rem', { lineHeight: '1.15' }],
       },
       spacing: {
         '4.5': '1.125rem',
         '13': '3.25rem',
         '15': '3.75rem',
         '18': '4.5rem',
-        'sidebar': '280px', // widened from 260px for comfortable density
+        'sidebar': '280px',
       },
       borderRadius: {
         'sm': '0.25rem',
@@ -76,6 +77,7 @@ const config: Config = {
         '2xl': '1rem',
       },
       boxShadow: {
+        '2xs': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
         'subtle': '0 1px 2px 0 rgb(0 0 0 / 0.03)',
         'card': '0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)',
         'elevated': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',

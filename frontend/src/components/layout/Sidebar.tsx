@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface NavItem {
   name: string;
@@ -210,13 +211,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
             </div>
           </Link>
 
-          <Link
-            href="/"
-            title="Public Homepage"
-            className="p-1 rounded text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors"
-          >
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle className="h-7 w-7 p-1 rounded-md" />
+            <Link
+              href="/"
+              title="Public Homepage"
+              className="p-1.5 rounded-md text-surface-400 hover:text-surface-700 hover:bg-surface-100 transition-colors"
+            >
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
 
         {/* Navigation Groups */}

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronRight, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export interface BreadcrumbItem {
   label: string;
@@ -85,11 +86,10 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {actions && (
-          <div className="flex items-center gap-2.5 self-start md:self-auto pt-2 md:pt-0">
-            {actions}
-          </div>
-        )}
+        <div className="flex items-center gap-2.5 self-start md:self-auto pt-2 md:pt-0">
+          <ThemeToggle />
+          {actions}
+        </div>
       </div>
     </header>
   );

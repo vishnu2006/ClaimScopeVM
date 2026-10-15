@@ -263,29 +263,38 @@ The ClaimScope interface was refined to align with enterprise insurance operatio
 
 2. **Public Enterprise Showcase Homepage (`/`)**:
    - Elegant marketing and product overview at `/` with hero headline: *"Every claim tells a story. ClaimScope connects the evidence."*
+   - Dual-theme atmospheric background integration: refined airy light-mode vignette focal treatment and deep navy night mode with controlled blue network highlights.
+   - Complete Light/Dark Theme toggle with persistent local storage, system preference auto-detection, and zero-FOUC initialization script.
    - Interactive, accurate product preview mirroring the actual investigation workbench (Case CS-2026-000004, 7-stage stepper, side-by-side contradiction diff, NHTSA VIN verification).
-   - 5-step workflow pipeline visualization: `Incident Ingestion → Classification & OCR → Adaptive Routing → Cross-Verification → Audit Report`.
-   - Clear ethical AI governance and regulatory statement enforcing human-in-the-loop compliance with NAIC MDL-900.
+   - Dedicated **System Architecture Section** (*"Intelligence that follows the evidence."*): interactive visualization of the real LangGraph StateGraph pipeline, displaying conditional extractor routing (FNOL, Police, Estimate, Vision), shared `CaseState` provenance, consistency checking, external grounding, and explainable assessment rules.
+   - Clear ethical AI governance and regulatory statement enforcing assistive human-in-the-loop decision intelligence.
    - Minimalist credit footer: *Built by Vishnu Pandrangi*.
 
-3. **Operational Cockpit (`/dashboard`)**:
+3. **Complete Dark Mode Theme Architecture**:
+   - Semantic CSS variable tokens mapped to Tailwind colors (`--color-surface-0` through `950`, `--color-brand-50` through `950`).
+   - Deep navy / charcoal palette (`#080d1a`, `#0d1527`, `#131d36`, `#1e2c4d`) maintaining recognizable blue accents and high text contrast.
+   - Full workspace theming covering Landing, Header, Sidebar, Dashboard, Workbench, Documents, Discrepancies, Evidence, Reports, Dialogs, and Demo Lab.
+   - Print media fallback ensuring institutional PDF reports and paper printouts remain clean black-on-white regardless of UI theme.
+
+4. **Operational Cockpit (`/dashboard`)**:
    - Dedicated operational overview answering: *What is happening across cases? Which need attention? What was recently processed?*
    - 4 live database KPI metrics: Total Ingested, Active Intake, Attention Required, and Synthesized Reports.
    - Priority Review Queue highlighting cases with detected discrepancies, high exposure, or pending adjuster review.
    - Quick action triggers for Intake, Demo Lab, and Agentic Engine.
 
-4. **Multi-View Case Management Workspace (`/cases`)**:
+5. **Multi-View Case Management Workspace (`/cases`)**:
    - Full-width management table with live search across Case ID, Title, Claimant, Policy.
    - Status and priority multi-filter controls with column sorting (Case ID, Date, Priority, Document Count) and pagination.
 
-5. **Agentic Engine Architecture Experience (`/engine`)**:
+6. **Agentic Engine Architecture Experience (`/engine`)**:
    - Visual interactive StateGraph workflow showing all 10 agent nodes and their conditional activation guards.
    - Live Case Telemetry Inspector: selects any database case and renders its actual LangGraph `agent_executions` history, status, and skip reasons.
 
-6. **Dedicated Cross-Case Investigation Registries**:
+7. **Dedicated Cross-Case Investigation Registries**:
    - **Document Intelligence (`/documents`)**: Ingested file repository across cases with OCR status, page counts, and file types.
    - **Evidence & Provenance Analysis (`/evidence`)**: Cross-case fact explorer with confidence scores and conflict toggles.
    - **Discrepancy Review (`/discrepancies`)**: Triage inbox for cross-document contradictions and side-by-side diff comparisons.
    - **Investigation Reports Archive (`/reports`)**: Central repository of generated assessment outcomes with 1-click PDF download triggers.
+
 
 
