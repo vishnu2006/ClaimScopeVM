@@ -11,6 +11,7 @@ import {
   Camera,
   GitCompare,
   Cpu,
+  Globe,
 } from 'lucide-react';
 import { useCase } from '@/hooks/useCase';
 import { useDocuments } from '@/hooks/useDocuments';
@@ -23,6 +24,8 @@ import { ReportPreview } from '@/components/reports/ReportPreview';
 import { InvestigationStepper } from '@/components/cases/InvestigationStepper';
 import { VisionObservations } from '@/components/cases/VisionObservations';
 import { DiscrepancyList } from '@/components/cases/DiscrepancyList';
+import { EvidenceInspection } from '@/components/cases/EvidenceInspection';
+import { ExternalVerificationList } from '@/components/cases/ExternalVerificationList';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -50,7 +53,7 @@ export default function CaseDetailPage() {
     refetch: refetchDocs,
   } = useDocuments(caseId);
 
-  const [activeTab, setActiveTab] = useState<'documents' | 'evidence' | 'vision' | 'discrepancies' | 'report'>('documents');
+  const [activeTab, setActiveTab] = useState<'documents' | 'evidence' | 'vision' | 'discrepancies' | 'verification' | 'report'>('documents');
   const [investigationState, setInvestigationState] = useState<CaseState | null>(null);
   const [isInvestigating, setIsInvestigating] = useState(false);
   const [investigationError, setInvestigationError] = useState<string | null>(null);
@@ -171,6 +174,7 @@ export default function CaseDetailPage() {
   const evidenceList: Evidence[] = caseData.evidences || [];
   const visionEntries = Object.entries(investigationState?.vision_observations || {});
   const discrepancies = investigationState?.inconsistencies || [];
+  const verifications = investigationState?.web_verifications || [];
 
   return (
     <div className="flex-1 flex flex-col">
@@ -272,6 +276,24 @@ export default function CaseDetailPage() {
 
             <button
               type="button"
+              onClick={() => setActiveTab('verification')}
+              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                activeTab === 'verification'
+                  ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
+                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
+              }`}
+            >
+              <Globe className="h-4 w-4" />
+              <span>External Grounding</span>
+              {verifications.length > 0 && (
+                <span className="ml-1 rounded-full bg-surface-200 px-1.5 py-0.2 text-[10px] text-surface-700 font-mono">
+                  {verifications.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('report')}
               className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
                 activeTab === 'report'
@@ -294,10 +316,10 @@ export default function CaseDetailPage() {
               size="sm"
               onClick={handleRunInvestigation}
               loading={isInvestigating}
-              disabled={documents.length === 0}
+              disabled={isInvestigating || documents.length === 0}
               leftIcon={<Cpu className="h-4 w-4" />}
             >
-              {investigationState ? 'Re-run Investigation' : 'Run Adaptive Investigation'}
+              {isInvestigating ? 'Investigating Package...' : investigationState ? 'Re-run Investigation' : 'Run Adaptive Investigation'}
             </Button>
           </div>
         </div>
@@ -366,69 +388,7 @@ export default function CaseDetailPage() {
 
         {/* Tab 2: Extracted Facts */}
         {activeTab === 'evidence' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-surface-900">
-                  Extracted Facts &amp; Provenance
-                </h3>
-                <p className="text-xs text-surface-500">
-                  Traceable claims facts extracted across submitted incident documents
-                </p>
-              </div>
-            </div>
-
-            {evidenceList.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-surface-300 p-8 text-center space-y-3 bg-surface-50">
-                <Search className="h-6 w-6 text-surface-400 mx-auto" />
-                <h4 className="text-sm font-semibold text-surface-800">No Facts Extracted Yet</h4>
-                <p className="text-xs text-surface-500 max-w-md mx-auto">
-                  Click &quot;Run Adaptive Investigation&quot; or process individual documents to extract verifiable facts.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto rounded-lg border border-surface-200 bg-surface-0 shadow-subtle">
-                <table className="min-w-full divide-y divide-surface-200 text-left text-xs">
-                  <thead className="bg-surface-50 text-surface-600 font-medium">
-                    <tr>
-                      <th className="px-4 py-3">Category</th>
-                      <th className="px-4 py-3">Fact Field</th>
-                      <th className="px-4 py-3">Extracted Value</th>
-                      <th className="px-4 py-3">Source Citation</th>
-                      <th className="px-4 py-3">Confidence</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-surface-100">
-                    {evidenceList.map((ev) => (
-                      <tr key={ev.id} className="hover:bg-surface-50/50">
-                        <td className="px-4 py-3 font-semibold text-surface-700 capitalize">
-                          {ev.category.replace('_', ' ')}
-                        </td>
-                        <td className="px-4 py-3 text-surface-900 font-mono text-[11px]">
-                          {ev.field_name}
-                        </td>
-                        <td className="px-4 py-3 text-surface-800 font-medium max-w-xs truncate">
-                          {ev.field_value || 'None'}
-                        </td>
-                        <td className="px-4 py-3 text-surface-500 font-mono text-[11px]">
-                          {ev.source_document || 'N/A'}
-                        </td>
-                        <td className="px-4 py-3">
-                          {ev.confidence !== null && ev.confidence !== undefined ? (
-                            <span className="font-mono text-emerald-700 font-medium">
-                              {(ev.confidence * 100).toFixed(0)}%
-                            </span>
-                          ) : (
-                            <span className="text-surface-400">N/A</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+          <EvidenceInspection evidences={evidenceList} />
         )}
 
         {/* Tab 3: Vision Observations */}
@@ -441,7 +401,12 @@ export default function CaseDetailPage() {
           <DiscrepancyList inconsistencies={discrepancies} />
         )}
 
-        {/* Tab 5: Report Preview */}
+        {/* Tab 5: External Grounding */}
+        {activeTab === 'verification' && (
+          <ExternalVerificationList verifications={verifications} />
+        )}
+
+        {/* Tab 6: Report Preview */}
         {activeTab === 'report' && (
           <div className="space-y-4">
             {caseData.report ? (

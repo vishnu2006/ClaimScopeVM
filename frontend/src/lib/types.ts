@@ -160,6 +160,7 @@ export interface WebVerificationResult {
   applicability_and_limitations: string;
   status: 'verified' | 'inconclusive' | 'source_unavailable' | 'unverified' | string;
   confidence?: number;
+  grounded_cost_range?: string | null;
   raw_response?: Record<string, unknown> | null;
 }
 

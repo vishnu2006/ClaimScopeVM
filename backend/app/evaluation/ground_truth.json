@@ -1,0 +1,270 @@
+{
+  "benchmark_version": "1.0.0",
+  "domain": "US P&C Automobile Physical Damage",
+  "scenarios": {
+    "case_a": {
+      "scenario_id": "case_a",
+      "name": "Case A - FNOL-Only Partial Package",
+      "package_folder": "case_a_fnol_only",
+      "document_inventory": [
+        {
+          "filename": "incident_form.pdf",
+          "expected_type": "fnol"
+        }
+      ],
+      "expected_routing": {
+        "executed_agents": [
+          "intake_classifier",
+          "supervisor_router",
+          "fnol_extractor",
+          "external_verifier",
+          "assessment_engine",
+          "synthesis_agent"
+        ],
+        "skipped_agents": [
+          "police_extractor",
+          "estimate_extractor",
+          "vision_agent",
+          "consistency_agent"
+        ]
+      },
+      "key_ground_truth_fields": {
+        "policy_number": "PA-2026-981245",
+        "claimant_name": "Sarah Jenkins",
+        "vehicle_make": "Toyota",
+        "vehicle_model": "Camry",
+        "vehicle_year": "2021",
+        "incident_location": "Oakridge Mall, San Jose, CA",
+        "damage_description": "Minor bumper scrape while parked"
+      },
+      "expected_discrepancies": [],
+      "expected_assessment": {
+        "outcome": "ADDITIONAL_INFORMATION_REQUIRED",
+        "classification": "flag_for_review",
+        "max_risk_score": 0.50,
+        "critical_rules_triggered": []
+      }
+    },
+    "case_b": {
+      "scenario_id": "case_b",
+      "name": "Case B - FNOL + Photographs Package",
+      "package_folder": "case_b_fnol_photos",
+      "document_inventory": [
+        {
+          "filename": "incident_form.pdf",
+          "expected_type": "fnol"
+        },
+        {
+          "filename": "damage_photo_front.png",
+          "expected_type": "photo"
+        },
+        {
+          "filename": "damage_photo_wheel.png",
+          "expected_type": "photo"
+        }
+      ],
+      "expected_routing": {
+        "executed_agents": [
+          "intake_classifier",
+          "supervisor_router",
+          "fnol_extractor",
+          "vision_agent",
+          "consistency_agent",
+          "external_verifier",
+          "assessment_engine",
+          "synthesis_agent"
+        ],
+        "skipped_agents": [
+          "police_extractor",
+          "estimate_extractor"
+        ]
+      },
+      "key_ground_truth_fields": {
+        "policy_number": "PA-2025-412890",
+        "claimant_name": "Marcus Brody",
+        "vehicle_make": "Honda",
+        "vehicle_model": "Civic",
+        "vehicle_year": "2020",
+        "incident_location": "State Route 17, Los Gatos, CA"
+      },
+      "expected_discrepancies": [],
+      "expected_assessment": {
+        "outcome": "ADDITIONAL_INFORMATION_REQUIRED",
+        "classification": "flag_for_review",
+        "max_risk_score": 0.65,
+        "critical_rules_triggered": ["TRG-DOC-04"]
+      }
+    },
+    "case_c": {
+      "scenario_id": "case_c",
+      "name": "Case C - Complete Consistent Incident Package",
+      "package_folder": "case_c_complete_consistent",
+      "document_inventory": [
+        {
+          "filename": "incident_form.pdf",
+          "expected_type": "fnol"
+        },
+        {
+          "filename": "police_report.pdf",
+          "expected_type": "police_report"
+        },
+        {
+          "filename": "repair_estimate.pdf",
+          "expected_type": "repair_estimate"
+        },
+        {
+          "filename": "rear_damage_photo.png",
+          "expected_type": "photo"
+        }
+      ],
+      "expected_routing": {
+        "executed_agents": [
+          "intake_classifier",
+          "supervisor_router",
+          "fnol_extractor",
+          "police_extractor",
+          "estimate_extractor",
+          "vision_agent",
+          "consistency_agent",
+          "external_verifier",
+          "assessment_engine",
+          "synthesis_agent"
+        ],
+        "skipped_agents": []
+      },
+      "key_ground_truth_fields": {
+        "policy_number": "PA-2024-773120",
+        "claimant_name": "Robert T. Vance",
+        "vehicle_vin": "1FTFW1ED4NFC12098",
+        "vehicle_make": "Ford",
+        "vehicle_model": "F-150",
+        "vehicle_year": "2022",
+        "police_report_number": "SJD-2026-88190",
+        "gross_repair_total": 4850.00
+      },
+      "expected_discrepancies": [],
+      "expected_assessment": {
+        "outcome": "ROUTINE_REVIEW",
+        "classification": "routine",
+        "max_risk_score": 0.30,
+        "critical_rules_triggered": []
+      }
+    },
+    "case_d": {
+      "scenario_id": "case_d",
+      "name": "Case D - Complete Package with Contradictions",
+      "package_folder": "case_d_contradictory",
+      "document_inventory": [
+        {
+          "filename": "incident_form.pdf",
+          "expected_type": "fnol"
+        },
+        {
+          "filename": "police_report.pdf",
+          "expected_type": "police_report"
+        },
+        {
+          "filename": "damage_photo_severe.png",
+          "expected_type": "photo"
+        }
+      ],
+      "expected_routing": {
+        "executed_agents": [
+          "intake_classifier",
+          "supervisor_router",
+          "fnol_extractor",
+          "police_extractor",
+          "vision_agent",
+          "consistency_agent",
+          "external_verifier",
+          "assessment_engine",
+          "synthesis_agent"
+        ],
+        "skipped_agents": [
+          "estimate_extractor"
+        ]
+      },
+      "key_ground_truth_fields": {
+        "claimant_name": "Mark Henderson",
+        "vehicle_make": "BMW",
+        "vehicle_model": "330i",
+        "fnol_vin": "WBA5R1C58LAH88123",
+        "police_vin": "WBA5R1C58LAH99999"
+      },
+      "expected_discrepancies": [
+        {
+          "category": "narrative_fault",
+          "field_name": "accident_description",
+          "severity": "high",
+          "is_contradiction": true
+        },
+        {
+          "category": "vehicle_identity",
+          "field_name": "vin",
+          "severity": "critical",
+          "is_contradiction": true
+        },
+        {
+          "category": "damage_severity",
+          "field_name": "severity_match",
+          "severity": "high",
+          "is_contradiction": true
+        }
+      ],
+      "expected_assessment": {
+        "outcome": "ESCALATE_FOR_HUMAN_REVIEW",
+        "classification": "escalate",
+        "min_risk_score": 0.70,
+        "critical_rules_triggered": [
+          "TRG-MAT-01",
+          "TRG-VIN-02"
+        ]
+      }
+    },
+    "case_e": {
+      "scenario_id": "case_e",
+      "name": "Case E - Incomplete / Handwritten Sparse Package",
+      "package_folder": "case_e_incomplete",
+      "document_inventory": [
+        {
+          "filename": "scanned_handwritten_note.pdf",
+          "expected_type": "fnol"
+        }
+      ],
+      "expected_routing": {
+        "executed_agents": [
+          "intake_classifier",
+          "supervisor_router",
+          "fnol_extractor",
+          "assessment_engine",
+          "synthesis_agent"
+        ],
+        "skipped_agents": [
+          "police_extractor",
+          "estimate_extractor",
+          "vision_agent",
+          "consistency_agent"
+        ]
+      },
+      "key_ground_truth_fields": {
+        "claimant_first_name": "Thomas",
+        "incident_location": "Oak Street"
+      },
+      "expected_missing_fields": [
+        "policy_number",
+        "vin",
+        "vehicle_year",
+        "vehicle_make",
+        "vehicle_model"
+      ],
+      "expected_discrepancies": [],
+      "expected_assessment": {
+        "outcome": "ADDITIONAL_INFORMATION_REQUIRED",
+        "classification": "flag_for_review",
+        "critical_rules_triggered": [
+          "TRG-DOC-04"
+        ]
+      }
+    }
+  }
+}
