@@ -88,18 +88,18 @@ export default function PublicHomePage() {
       </header>
 
       {/* 2. Hero Section with Dual-Theme Atmospheric Brand Background */}
-      <section className="relative pt-16 pb-20 md:pt-24 md:pb-28 border-b border-surface-200/80 overflow-hidden bg-surface-0">
+      <section className="relative pt-12 pb-14 md:pt-16 md:pb-20 border-b border-surface-200 overflow-hidden bg-surface-0">
         {/* Dual-Theme Atmospheric Background Container */}
         <div
           className="absolute inset-0 pointer-events-none z-0 overflow-hidden"
           aria-hidden="true"
         >
-          {/* Base Background Image - positioned towards bottom and sides to leave headline clear */}
+          {/* Base Background Image - noticeable cyan/blue network details around sides and bottom */}
           <Image
             src="/brand/hero-background.jpg"
             alt=""
             fill
-            className="object-cover object-bottom opacity-10 dark:opacity-20 contrast-110 brightness-105 dark:brightness-95 transition-opacity duration-300"
+            className="object-cover object-bottom opacity-15 dark:opacity-35 contrast-110 brightness-105 dark:brightness-105 transition-opacity duration-300"
             priority
           />
 
@@ -108,26 +108,27 @@ export default function PublicHomePage() {
           <div className="absolute inset-0 block dark:hidden bg-gradient-to-b from-white/90 via-transparent to-surface-0" />
           <div className="absolute inset-0 block dark:hidden bg-gradient-to-r from-surface-0/80 via-transparent to-surface-0/80" />
 
-          {/* Dark Mode Layer: Deep navy atmospheric vignette and blue highlight blending */}
-          <div className="absolute inset-0 hidden dark:block bg-[#080d1a]/85" />
-          <div className="absolute inset-0 hidden dark:block bg-radial-gradient from-transparent via-[#0b1329]/60 to-[#080d1a]/95" />
-          <div className="absolute inset-0 hidden dark:block bg-gradient-to-b from-[#080d1a]/90 via-transparent to-surface-0" />
+          {/* Dark Mode Layer: Neutral Charcoal Overlay (#101114) preserving cyan network nodes at sides and bottom */}
+          <div className="absolute inset-0 hidden dark:block bg-[#101114]/65" />
+          <div className="absolute inset-0 hidden dark:block bg-radial-gradient from-[#1b1e24]/90 via-[#101114]/75 to-transparent" />
+          <div className="absolute inset-0 hidden dark:block bg-gradient-to-b from-surface-0/90 via-transparent to-surface-0" />
+          <div className="absolute inset-0 hidden dark:block bg-gradient-to-r from-surface-0/80 via-transparent to-surface-0/80" />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6">
-          <div className="max-w-4xl space-y-6 text-left sm:text-center sm:mx-auto">
+          <div className="max-w-4xl space-y-5 text-left sm:text-center sm:mx-auto">
             {/* Category / Context Eyebrow */}
-            <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-surface-0/90 dark:bg-surface-100/90 border border-surface-200/80 text-surface-700 text-xs font-semibold shadow-2xs backdrop-blur-md">
+            <div className="inline-flex items-center gap-2.5 px-3 py-1 rounded-full bg-surface-0/90 dark:bg-surface-100/90 border border-surface-200 text-surface-700 text-xs font-semibold shadow-2xs backdrop-blur-md">
               <span className="flex h-2 w-2 rounded-full bg-brand-600" />
               <span className="font-semibold text-surface-900">ClaimScope</span>
               <span className="text-surface-300">•</span>
               <span className="text-surface-500 font-normal">Adaptive P&amp;C Auto Investigation Intelligence</span>
             </div>
 
-            {/* Core Value Statement */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-surface-900 leading-[1.08] sm:max-w-3xl sm:mx-auto">
+            {/* Core Value Statement - Controlled Typography */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-surface-900 leading-[1.12] sm:max-w-3xl sm:mx-auto">
               Every claim tells a story.{' '}
-              <span className="text-brand-600 dark:text-brand-400 block sm:inline">ClaimScope connects the evidence.</span>
+              <span className="text-brand-600 dark:text-brand-400 block sm:inline font-bold">ClaimScope connects the evidence.</span>
             </h1>
 
             {/* Subtitle */}
@@ -138,7 +139,7 @@ export default function PublicHomePage() {
             </p>
 
             {/* Dual CTAs */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start sm:justify-center gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start sm:justify-center gap-3 pt-1">
               <Link href="/dashboard">
                 <Button variant="primary" size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="h-4 w-4" />}>
                   Launch Adjuster Workspace
@@ -152,7 +153,7 @@ export default function PublicHomePage() {
             </div>
 
             {/* Editorial Technical Badges - Verified Accurate Claims */}
-            <div className="pt-8 border-t border-surface-200/60 flex flex-wrap items-center justify-start sm:justify-center gap-x-6 gap-y-2.5 text-xs text-surface-500">
+            <div className="pt-6 border-t border-surface-200/80 flex flex-wrap items-center justify-start sm:justify-center gap-x-6 gap-y-2 text-xs text-surface-500">
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-500 shrink-0" />
                 <span className="font-medium text-surface-700">Source-Linked Findings</span>
@@ -174,7 +175,7 @@ export default function PublicHomePage() {
       </section>
 
       {/* 3. Product Preview Showcase (Accurate representation of real workbench) */}
-      <section id="preview" className="py-16 md:py-20 max-w-7xl mx-auto px-6 w-full">
+      <section id="preview" className="py-12 md:py-16 max-w-7xl mx-auto px-6 w-full">
         <div className="text-center space-y-2 mb-10">
           <div className="text-xs font-semibold text-brand-600 uppercase tracking-wider">
             Operational Workbench
@@ -299,7 +300,7 @@ export default function PublicHomePage() {
       <SystemArchitectureSection />
 
       {/* 5. Core Implemented Capabilities */}
-      <section id="capabilities" className="py-16 md:py-24 max-w-7xl mx-auto px-6 w-full space-y-12">
+      <section id="capabilities" className="py-12 md:py-16 max-w-7xl mx-auto px-6 w-full space-y-10">
         <div className="text-center space-y-2 max-w-2xl mx-auto">
           <div className="text-xs font-semibold text-brand-600 uppercase tracking-wider">
             Production Engineering
@@ -312,10 +313,10 @@ export default function PublicHomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {/* Capability 1 */}
-          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
-            <div className="p-2 w-fit rounded-lg bg-blue-50 text-brand-600">
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 space-y-2.5 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-blue-50 dark:bg-blue-950/40 text-brand-600 dark:text-brand-400">
               <FileText className="h-5 w-5" />
             </div>
             <h3 className="text-base font-bold text-surface-900">
@@ -327,8 +328,8 @@ export default function PublicHomePage() {
           </div>
 
           {/* Capability 2 */}
-          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
-            <div className="p-2 w-fit rounded-lg bg-purple-50 text-purple-600">
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 space-y-2.5 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400">
               <Camera className="h-5 w-5" />
             </div>
             <h3 className="text-base font-bold text-surface-900">
@@ -340,8 +341,8 @@ export default function PublicHomePage() {
           </div>
 
           {/* Capability 3 */}
-          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
-            <div className="p-2 w-fit rounded-lg bg-rose-50 text-rose-600">
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 space-y-2.5 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400">
               <GitCompare className="h-5 w-5" />
             </div>
             <h3 className="text-base font-bold text-surface-900">
@@ -353,8 +354,8 @@ export default function PublicHomePage() {
           </div>
 
           {/* Capability 4 */}
-          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
-            <div className="p-2 w-fit rounded-lg bg-emerald-50 text-emerald-600">
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 space-y-2.5 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400">
               <Globe className="h-5 w-5" />
             </div>
             <h3 className="text-base font-bold text-surface-900">
@@ -366,8 +367,8 @@ export default function PublicHomePage() {
           </div>
 
           {/* Capability 5 */}
-          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
-            <div className="p-2 w-fit rounded-lg bg-amber-50 text-amber-600">
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 space-y-2.5 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400">
               <ShieldAlert className="h-5 w-5" />
             </div>
             <h3 className="text-base font-bold text-surface-900">
@@ -379,7 +380,7 @@ export default function PublicHomePage() {
           </div>
 
           {/* Capability 6 */}
-          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 space-y-2.5 shadow-card hover:border-surface-300 transition-all">
             <div className="p-2 w-fit rounded-lg bg-surface-100 text-surface-700">
               <FileCheck2 className="h-5 w-5" />
             </div>
@@ -394,8 +395,8 @@ export default function PublicHomePage() {
       </section>
 
       {/* 6. Responsible AI & Governance Statement */}
-      <section id="responsible-ai" className="py-16 bg-surface-100/60 border-t border-b border-surface-200">
-        <div className="max-w-4xl mx-auto px-6 text-center space-y-4">
+      <section id="responsible-ai" className="py-12 md:py-14 bg-surface-100/60 border-t border-b border-surface-200">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-surface-200/80 text-surface-700 text-xs font-bold uppercase tracking-wider">
             <Lock className="h-3.5 w-3.5" />
             <span>Ethical AI &amp; Regulatory Standard</span>
@@ -412,8 +413,8 @@ export default function PublicHomePage() {
       </section>
 
       {/* 7. Call To Action Footer Banner */}
-      <section className="py-16 md:py-20 bg-surface-0 border-b border-surface-200">
-        <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
+      <section className="py-12 md:py-16 bg-surface-0 border-b border-surface-200">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-5">
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-surface-900">
             Experience the Investigation Workbench
           </h2>

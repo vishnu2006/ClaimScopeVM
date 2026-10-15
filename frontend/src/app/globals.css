@@ -3,7 +3,7 @@
 
 /* 
  * Semantic design tokens using CSS variables 
- * Light theme is default; .dark selector overrides surface tokens to sophisticated deep navy/charcoal
+ * Light theme is default; .dark selector overrides surface tokens to a premium neutral charcoal/slate palette.
  */
 :root {
   --color-brand-50: #eff6ff;
@@ -32,7 +32,7 @@
   --color-surface-900: #0f172a;
   --color-surface-950: #020617;
 
-  /* Status tokens */
+  /* Status tokens (Light Mode) */
   --color-status-success: #059669;
   --color-status-warning: #d97706;
   --color-status-error: #dc2626;
@@ -44,14 +44,23 @@
 
 /* 
  * Dark theme token overrides
- * Sophisticated deep navy/charcoal palette (#0b1120, #0f172a, #1e293b)
- * Preserves high contrast and recognizable blue accent
+ * Premium neutral charcoal/slate palette inspired by modern developer/enterprise tools.
+ * Eliminates oversaturated navy; blue is reserved for deliberate interactive accents.
+ * 
+ * Main Canvas: #101114
+ * Sidebar/Nav: #15171B
+ * Elevated Card / Base Surface: #1B1E24
+ * Secondary / Inset Surface: #22262D
+ * Borders: #30343D
+ * Primary Text: #F2F3F5
+ * Secondary Text: #A5ACB8
  */
 .dark {
-  --color-brand-50: #0f1d3a;
-  --color-brand-100: #172a54;
-  --color-brand-200: #1d3e78;
-  --color-brand-300: #2554a3;
+  /* Brand accents tuned for contrast on dark charcoal */
+  --color-brand-50: #152238;
+  --color-brand-100: #1c3358;
+  --color-brand-200: #24477c;
+  --color-brand-300: #2d5ea5;
   --color-brand-400: #3b82f6;
   --color-brand-500: #60a5fa;
   --color-brand-600: #3b82f6;
@@ -60,21 +69,21 @@
   --color-brand-900: #bfdbfe;
   --color-brand-950: #eff6ff;
 
-  /* Surfaces inverted for dark mode */
-  --color-surface-0: #0d1527;    /* Card & panel backgrounds */
-  --color-surface-50: #080d1a;   /* Main page canvas */
-  --color-surface-100: #131d36;  /* Secondary / hovered surfaces */
-  --color-surface-200: #1e2c4d;  /* Borders and dividers */
-  --color-surface-300: #2c3e66;  /* Stronger borders / muted controls */
-  --color-surface-400: #64748b;  /* Subtle icons / muted labels */
-  --color-surface-500: #94a3b8;  /* Secondary text */
-  --color-surface-600: #cbd5e1;  /* Body secondary text */
-  --color-surface-700: #e2e8f0;  /* Body primary text */
-  --color-surface-800: #f1f5f9;  /* Headings / strong text */
+  /* Premium Charcoal / Slate Surfaces */
+  --color-surface-0: #1b1e24;    /* Elevated cards, headers, modal panels */
+  --color-surface-50: #101114;   /* Main page background canvas */
+  --color-surface-100: #22262d;  /* Secondary inset surfaces, hovered rows, subtle tags */
+  --color-surface-200: #30343d;  /* Primary 1px structural dividers and borders */
+  --color-surface-300: #3f4552;  /* Interactive borders, hovered buttons, inputs */
+  --color-surface-400: #6c7584;  /* Muted icons, subtle metadata */
+  --color-surface-500: #a5acb8;  /* Secondary descriptive body text */
+  --color-surface-600: #c9ced8;  /* Stronger body text */
+  --color-surface-700: #dfe3ea;  /* High readability copy */
+  --color-surface-800: #f2f3f5;  /* Headings & key metrics */
   --color-surface-900: #ffffff;  /* High-emphasis text */
   --color-surface-950: #f8fafc;
 
-  /* Status tokens adapted for dark background contrast */
+  /* Balanced status colors on charcoal */
   --color-status-success: #10b981;
   --color-status-warning: #f59e0b;
   --color-status-error: #ef4444;

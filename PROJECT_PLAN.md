@@ -272,8 +272,9 @@ The ClaimScope interface was refined to align with enterprise insurance operatio
 
 3. **Complete Dark Mode Theme Architecture**:
    - Semantic CSS variable tokens mapped to Tailwind colors (`--color-surface-0` through `950`, `--color-brand-50` through `950`).
-   - Deep navy / charcoal palette (`#080d1a`, `#0d1527`, `#131d36`, `#1e2c4d`) maintaining recognizable blue accents and high text contrast.
-   - Full workspace theming covering Landing, Header, Sidebar, Dashboard, Workbench, Documents, Discrepancies, Evidence, Reports, Dialogs, and Demo Lab.
+   - Refined neutral charcoal/slate developer-grade palette (`#101114` main canvas, `#15171B` sidebar, `#1B1E24` elevated surfaces, `#22262D` secondary surfaces, `#30343D` 1px borders, `#F2F3F5` primary text, `#A5ACB8` secondary text) avoiding oversaturated navy blue dominance.
+   - Dual-theme atmospheric background integration: refined airy light-mode vignette and controlled charcoal dark-mode vignette with cyan/blue network highlights at sides and bottom.
+   - Streamlined Agentic Engine architecture page (`/engine`) with concise introductory summary, interactive live database case telemetry, and progressive disclosure for the 10 graph node specifications.
    - Print media fallback ensuring institutional PDF reports and paper printouts remain clean black-on-white regardless of UI theme.
 
 4. **Operational Cockpit (`/dashboard`)**:

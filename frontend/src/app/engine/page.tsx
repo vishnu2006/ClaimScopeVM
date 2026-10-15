@@ -5,30 +5,25 @@ import Link from 'next/link';
 import {
   Cpu,
   FileText,
-  Search,
   Camera,
   GitCompare,
   Globe,
   ShieldCheck,
   FileCheck2,
   ShieldAlert,
-  ArrowRight,
-  CheckCircle2,
-  MinusCircle,
-  AlertCircle,
-  Clock,
   Layers,
   Database,
-  Code,
   Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { useCases } from '@/hooks/useCases';
 import { api } from '@/lib/api';
 import { CaseState } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 interface GraphNode {
   id: string;
@@ -160,6 +155,7 @@ export default function AgenticEnginePage() {
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
   const [liveState, setLiveState] = useState<CaseState | null>(null);
   const [loadingTelemetry, setLoadingTelemetry] = useState(false);
+  const [expandedNodeId, setExpandedNodeId] = useState<string | null>(null);
 
   // Set initial case selection
   useEffect(() => {
@@ -200,62 +196,57 @@ export default function AgenticEnginePage() {
     <div className="flex-1 flex flex-col">
       <Header
         title="Agentic Engine Architecture"
-        subtitle="LangGraph StateGraph orchestration, conditional routing, and real-case execution telemetry"
+        subtitle="Conditional LangGraph orchestration with single-source-of-truth CaseState telemetry"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Agentic Engine' },
         ]}
       />
 
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-8">
-        {/* Architecture Overview Banner */}
-        <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 shadow-subtle space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-100 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-lg bg-brand-50 text-brand-600">
-                <Cpu className="h-6 w-6" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-surface-900">
-                  LangGraph Adaptive State Machine
-                </h2>
-                <p className="text-xs text-surface-500 font-mono">
-                  Framework: LangGraph 0.2 • Engine: Google Gemini 2.5 Flash SDK • Storage: Async SQLAlchemy
-                </p>
-              </div>
-            </div>
-
+      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+        {/* Concise Architecture Overview */}
+        <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <Badge variant="brand" size="sm" mono>
-                10 Graph Nodes
-              </Badge>
-              <Badge variant="success" size="sm" mono>
-                Bounded Loops
-              </Badge>
+              <span className="p-1.5 rounded-md bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400">
+                <Cpu className="h-4 w-4" />
+              </span>
+              <h2 className="text-base font-bold text-surface-900">
+                LangGraph Adaptive State Machine
+              </h2>
             </div>
+            <p className="text-xs text-surface-600 max-w-2xl">
+              An intelligent supervisor inspects uploaded evidence and conditionally branches execution—running only the extractors needed, skipping absent documents gracefully, and updating shared CaseState.
+            </p>
           </div>
 
-          <p className="text-xs sm:text-sm text-surface-600 leading-relaxed max-w-4xl">
-            ClaimScope utilizes an adaptive, conditional LangGraph StateGraph. Rather than running an expensive, hallucination-prone single-prompt pipeline,
-            each incident package passes through an intelligent supervisor that evaluates available evidence and dynamically activates specialized sub-agents.
-            Missing document types (such as absent photos or estimates) cause their respective nodes to be gracefully skipped without failing or fabricating fields.
-          </p>
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge variant="brand" size="xs" mono>
+              10 Nodes
+            </Badge>
+            <Badge variant="neutral" size="xs" mono>
+              Gemini 2.5 Flash
+            </Badge>
+            <Badge variant="success" size="xs" mono>
+              Acyclic Loops
+            </Badge>
+          </div>
         </div>
 
-        {/* Interactive Live Case Telemetry Inspector */}
-        <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 shadow-subtle space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-100 pb-3">
+        {/* Live Case Execution Telemetry (Interactive DB Data) */}
+        <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 shadow-subtle space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-200 pb-3">
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-surface-900">
-                  Live Case Execution Telemetry
+                  Case Execution Telemetry
                 </h3>
-                <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
-                  Actual DB Telemetry
+                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-semibold">
+                  Live Database
                 </span>
               </div>
               <p className="text-xs text-surface-500">
-                Select an ingested case to inspect its real LangGraph node execution history and skip reasons
+                Inspect node execution status, runtimes, and skip rationale for any case
               </p>
             </div>
 
@@ -266,7 +257,7 @@ export default function AgenticEnginePage() {
                 <select
                   value={selectedCaseId}
                   onChange={(e) => setSelectedCaseId(e.target.value)}
-                  className="rounded-md border border-surface-300 bg-surface-50 px-3 py-1.5 text-xs text-surface-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
+                  className="rounded-md border border-surface-200 bg-surface-50 px-3 py-1.5 text-xs text-surface-800 font-mono focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer"
                 >
                   {cases.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -279,11 +270,11 @@ export default function AgenticEnginePage() {
           </div>
 
           {loadingTelemetry ? (
-            <div className="p-8 text-center text-xs text-surface-500">
-              Loading real execution telemetry...
+            <div className="p-6 text-center text-xs text-surface-500">
+              Loading execution telemetry...
             </div>
           ) : !liveState || !liveState.agent_executions || liveState.agent_executions.length === 0 ? (
-            <div className="p-8 text-center text-xs text-surface-500 bg-surface-50 rounded-lg border border-dashed border-surface-300">
+            <div className="p-6 text-center text-xs text-surface-500 bg-surface-50 rounded-lg border border-dashed border-surface-200">
               <p className="font-medium text-surface-700">No LangGraph execution recorded for this case yet.</p>
               <p className="mt-1 text-surface-500">Open the case workbench and click &quot;Run Adaptive Investigation&quot; to execute the pipeline.</p>
               {selectedCaseId && (
@@ -296,9 +287,9 @@ export default function AgenticEnginePage() {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs text-surface-500 pb-1">
+              <div className="flex items-center justify-between text-xs text-surface-500">
                 <span>
-                  Case: <strong className="font-mono text-surface-900">{liveState.case_number}</strong> • Status:{' '}
+                  Case: <strong className="font-mono text-surface-900">{liveState.case_number}</strong> • Stage:{' '}
                   <Badge variant="brand" size="xs">
                     {liveState.current_stage || 'Complete'}
                   </Badge>
@@ -309,24 +300,24 @@ export default function AgenticEnginePage() {
                 </span>
               </div>
 
-              {/* Execution Records Table */}
+              {/* Compact Execution Records Table */}
               <div className="overflow-x-auto rounded-lg border border-surface-200">
                 <table className="min-w-full divide-y divide-surface-200 text-left text-xs">
                   <thead className="bg-surface-50 text-surface-600 font-semibold uppercase tracking-wider text-[10px]">
                     <tr>
-                      <th className="px-4 py-2.5">Agent Node</th>
-                      <th className="px-4 py-2.5">Execution Status</th>
-                      <th className="px-4 py-2.5">Skip Rationale / Error Details</th>
-                      <th className="px-4 py-2.5">Extracted Outputs</th>
+                      <th className="px-4 py-2">Agent Node</th>
+                      <th className="px-4 py-2">Status</th>
+                      <th className="px-4 py-2">Skip Rationale / Details</th>
+                      <th className="px-4 py-2">Extracted Outputs</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-surface-100 font-normal">
                     {liveState.agent_executions.map((rec) => (
                       <tr key={rec.agent_id} className="hover:bg-surface-50/60 transition-colors">
-                        <td className="px-4 py-3 font-semibold text-surface-900 whitespace-nowrap">
+                        <td className="px-4 py-2 font-semibold text-surface-900 whitespace-nowrap">
                           {rec.display_name || rec.agent_id}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-4 py-2 whitespace-nowrap">
                           {rec.status === 'completed' && (
                             <Badge variant="success" size="xs" dot>
                               Completed
@@ -348,14 +339,14 @@ export default function AgenticEnginePage() {
                             </Badge>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-surface-600 text-[11px] max-w-xs">
+                        <td className="px-4 py-2 text-surface-600 text-[11px] max-w-xs">
                           {rec.skip_reason && <span className="italic text-surface-500">{rec.skip_reason}</span>}
                           {rec.error_message && <span className="text-status-error font-mono">{rec.error_message}</span>}
                           {!rec.skip_reason && !rec.error_message && (
                             <span className="text-surface-400 font-mono text-[10px]">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-[10px] font-mono text-surface-600">
+                        <td className="px-4 py-2 text-[10px] font-mono text-surface-600">
                           {rec.details && Object.keys(rec.details).length > 0 ? (
                             <div className="flex flex-wrap gap-1">
                               {Object.entries(rec.details).map(([k, v]) => (
@@ -377,106 +368,122 @@ export default function AgenticEnginePage() {
           )}
         </div>
 
-        {/* 10-Node Architecture Specifications */}
-        <div className="space-y-4">
+        {/* Visual Progressive Disclosure: 10 Architecture Nodes */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-surface-900">
-                Detailed Graph Node Specifications
+                Graph Node Contracts &amp; Conditional Triggers
               </h3>
               <p className="text-xs text-surface-500">
-                Functional contract, input/output structures, and conditional guards for each StateGraph agent
+                Click any node to inspect model input/output contracts and conditional routing guards
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {GRAPH_NODES.map((node) => {
               const Icon = node.icon;
+              const isExpanded = expandedNodeId === node.id;
               return (
-                <Card key={node.id} className="border-surface-200 hover:border-surface-300 transition-all">
-                  <CardHeader className="pb-2 border-b border-surface-100">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 rounded bg-surface-100 text-surface-700">
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-xs font-bold text-surface-900">
-                            {node.name}
-                          </CardTitle>
-                          <span className="text-[10px] font-mono text-brand-700 font-semibold uppercase">
+                <div
+                  key={node.id}
+                  className={cn(
+                    'rounded-lg border border-surface-200 bg-surface-0 transition-all overflow-hidden shadow-2xs',
+                    isExpanded ? 'border-brand-400/80 ring-1 ring-brand-400/20' : 'hover:border-surface-300'
+                  )}
+                >
+                  {/* Collapsed Header / Clickable Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setExpandedNodeId(isExpanded ? null : node.id)}
+                    className="w-full p-3.5 flex items-center justify-between text-left cursor-pointer hover:bg-surface-50/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-md bg-surface-100 text-surface-700">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-surface-900">{node.name}</span>
+                          <span className="text-[10px] font-mono text-brand-600 dark:text-brand-400 font-semibold uppercase">
                             {node.stage}
                           </span>
                         </div>
+                        <p className="text-[11px] text-surface-500 line-clamp-1 mt-0.5">{node.role}</p>
                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
                       <Badge variant="neutral" size="xs" mono>
                         {node.id}
                       </Badge>
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4 text-surface-400" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-surface-400" />
+                      )}
                     </div>
-                  </CardHeader>
+                  </button>
 
-                  <CardContent className="pt-3 space-y-2 text-xs">
-                    <p className="text-surface-700 leading-relaxed">
-                      {node.role}
-                    </p>
-
-                    <div className="space-y-1 pt-1 border-t border-surface-100 text-[11px]">
-                      <div>
-                        <strong className="text-surface-600">Model:</strong>{' '}
-                        <span className="font-mono text-surface-800">{node.model}</span>
+                  {/* Expanded Technical Details */}
+                  {isExpanded && (
+                    <div className="px-4 pb-3.5 pt-1 border-t border-surface-100 dark:border-surface-200 bg-surface-50/40 text-xs space-y-2 animate-fade-in">
+                      <p className="text-surface-700 text-xs leading-relaxed">{node.role}</p>
+                      <div className="grid grid-cols-1 gap-1 text-[11px]">
+                        <div>
+                          <strong className="text-surface-600">Model:</strong>{' '}
+                          <span className="font-mono text-surface-800">{node.model}</span>
+                        </div>
+                        <div>
+                          <strong className="text-surface-600">Input:</strong>{' '}
+                          <span className="text-surface-700">{node.input}</span>
+                        </div>
+                        <div>
+                          <strong className="text-surface-600">Output:</strong>{' '}
+                          <span className="text-surface-700">{node.output}</span>
+                        </div>
                       </div>
-                      <div>
-                        <strong className="text-surface-600">Input:</strong>{' '}
-                        <span className="text-surface-700">{node.input}</span>
-                      </div>
-                      <div>
-                        <strong className="text-surface-600">Output:</strong>{' '}
-                        <span className="text-surface-700">{node.output}</span>
-                      </div>
-                      <div className="text-brand-700 font-medium bg-brand-50/60 p-1.5 rounded border border-brand-100 mt-1">
-                        <strong>Rule:</strong> {node.conditions}
+                      <div className="text-brand-700 dark:text-brand-300 font-medium bg-brand-50/70 dark:bg-brand-950/40 p-2 rounded border border-brand-200 dark:border-brand-900/60 text-[11px]">
+                        <strong>Conditional Rule:</strong> {node.conditions}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  )}
+                </div>
               );
             })}
           </div>
         </div>
 
-        {/* Technical Design Guardrails */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="rounded-lg border border-surface-200 bg-surface-0 p-5 space-y-2">
-            <div className="flex items-center gap-2 text-brand-700 font-bold text-xs uppercase tracking-wider">
-              <Database className="h-4 w-4" />
+        {/* 3 Core Architecture Pillars (Concise) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="rounded-lg border border-surface-200 bg-surface-0 p-4 space-y-1.5 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-brand-600 dark:text-brand-400 font-bold text-xs">
+              <Database className="h-3.5 w-3.5" />
               <span>Shared CaseState</span>
             </div>
-            <p className="text-xs text-surface-600 leading-relaxed">
-              Every agent reads from and mutates a central Pydantic <code>CaseState</code> model.
-              Mutations are immutably tracked with timestamps, ensuring deterministic trace replayability across nodes.
+            <p className="text-[11px] text-surface-600 leading-relaxed">
+              Central Pydantic model with immutable timestamps ensures deterministic trace replayability across agent nodes.
             </p>
           </div>
 
-          <div className="rounded-lg border border-surface-200 bg-surface-0 p-5 space-y-2">
-            <div className="flex items-center gap-2 text-emerald-700 font-bold text-xs uppercase tracking-wider">
-              <Sparkles className="h-4 w-4" />
-              <span>Provenance Guarantee</span>
+          <div className="rounded-lg border border-surface-200 bg-surface-0 p-4 space-y-1.5 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Evidence Provenance</span>
             </div>
-            <p className="text-xs text-surface-600 leading-relaxed">
-              Extractors wrap fields in <code>FieldWithProvenance[T]</code> containing original document citations, page numbers,
-              and confidence scores. Unmentioned fields remain strictly <code>null</code> to prevent hallucination.
+            <p className="text-[11px] text-surface-600 leading-relaxed">
+              Every fact is wrapped in <code>FieldWithProvenance[T]</code> citing document name, page, and exact quotes.
             </p>
           </div>
 
-          <div className="rounded-lg border border-surface-200 bg-surface-0 p-5 space-y-2">
-            <div className="flex items-center gap-2 text-purple-700 font-bold text-xs uppercase tracking-wider">
-              <ShieldCheck className="h-4 w-4" />
-              <span>Bounded Execution</span>
+          <div className="rounded-lg border border-surface-200 bg-surface-0 p-4 space-y-1.5 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 font-bold text-xs">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              <span>Bounded Graph Execution</span>
             </div>
-            <p className="text-xs text-surface-600 leading-relaxed">
-              LangGraph StateGraph edges are strictly acyclic for each processing pass, preventing runaway agent recursion,
-              excessive token usage, and uncontrolled API cost overruns.
+            <p className="text-[11px] text-surface-600 leading-relaxed">
+              LangGraph StateGraph edges are strictly acyclic per processing pass to prevent runaway token costs and infinite loops.
             </p>
           </div>
         </div>

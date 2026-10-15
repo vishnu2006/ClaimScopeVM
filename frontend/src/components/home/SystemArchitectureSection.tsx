@@ -77,27 +77,27 @@ export const SystemArchitectureSection: React.FC = () => {
   const [activeNode, setActiveNode] = useState<string | null>(null);
 
   return (
-    <section id="architecture" className="py-20 md:py-28 border-t border-b border-surface-200/80 bg-surface-50/40 relative overflow-hidden">
+    <section id="architecture" className="py-14 md:py-18 border-t border-b border-surface-200/80 bg-surface-50/40 relative overflow-hidden">
       {/* Background radial accent glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-brand-500/5 dark:bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-16">
+      <div className="max-w-7xl mx-auto px-6 relative z-10 space-y-10">
         {/* Section Header with Exact Required Title & Subtitle */}
-        <div className="text-center space-y-3 max-w-3xl mx-auto">
+        <div className="text-center space-y-2 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-0 border border-surface-200 text-brand-600 dark:text-brand-400 text-xs font-semibold shadow-2xs">
             <Cpu className="h-3.5 w-3.5" />
             <span>Deterministic LangGraph Orchestration</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-surface-900">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-surface-900">
             Intelligence that follows the evidence.
           </h2>
-          <p className="text-base sm:text-lg text-surface-600 leading-relaxed">
+          <p className="text-sm sm:text-base text-surface-600 leading-relaxed max-w-2xl mx-auto">
             A conditional investigation architecture that activates the right capabilities for every incident package.
           </p>
         </div>
 
         {/* The Architectural Visualization Canvas */}
-        <div className="max-w-4xl mx-auto bg-surface-0 border border-surface-200/90 rounded-2xl p-6 sm:p-10 shadow-card space-y-8">
+        <div className="max-w-4xl mx-auto bg-surface-0 border border-surface-200 rounded-2xl p-5 sm:p-8 shadow-card space-y-6">
           {/* Legend / Status Note */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-surface-200 pb-5 text-xs text-surface-500">
             <div className="flex items-center gap-2 font-mono font-medium text-surface-700">
