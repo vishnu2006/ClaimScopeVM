@@ -1,33 +1,38 @@
-from typing import Optional
+from typing import List, Optional
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     # Application
     APP_NAME: str = "ClaimScope API"
-    APP_VERSION: str = "0.1.0"
+    APP_VERSION: str = "0.2.0"
     DEBUG: bool = False
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/claimscope"
+    DATABASE_URL: str = "sqlite+aiosqlite:///./claimscope.db"
 
     # File Upload
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE_MB: int = 50
     ALLOWED_EXTENSIONS: str = ".pdf,.jpg,.jpeg,.png,.tiff,.tif,.doc,.docx"
 
-    # LLM Configuration
-    LLM_PROVIDER: str = "openai"  # openai, anthropic, google
-    LLM_MODEL: str = "gpt-4o"
-    LLM_API_KEY: Optional[str] = None
-    LLM_TEMPERATURE: float = 0.1
-    LLM_MAX_TOKENS: int = 4096
+    # Gemini-only AI Configuration
+    GEMINI_API_KEY: Optional[str] = None
+    LLM_API_KEY: Optional[str] = None  # Fallback alias for backward compatibility
+    GEMINI_MODEL: str = "gemini-2.5-flash"  # Highly capable, multimodal, free-tier eligible
+    GEMINI_TEMPERATURE: float = 0.1
+    GEMINI_MAX_TOKENS: int = 8192
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000"
 
     @property
-    def allowed_extensions_list(self) -> list[str]:
+    def effective_gemini_api_key(self) -> Optional[str]:
+        """Return the configured Gemini API key from GEMINI_API_KEY or LLM_API_KEY."""
+        return self.GEMINI_API_KEY or self.LLM_API_KEY
+
+    @property
+    def allowed_extensions_list(self) -> List[str]:
         return [e.strip().lower() for e in self.ALLOWED_EXTENSIONS.split(",") if e.strip()]
 
     @property
@@ -35,7 +40,7 @@ class Settings(BaseSettings):
         return self.MAX_FILE_SIZE_MB * 1024 * 1024
 
     @property
-    def cors_origins_list(self) -> list[str]:
+    def cors_origins_list(self) -> List[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}

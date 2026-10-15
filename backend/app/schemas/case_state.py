@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
+from app.schemas.evidence import InconsistencyFinding, PhotoDamageAnalysis
+
 
 def get_utc_now() -> datetime:
     return datetime.now(timezone.utc)
@@ -16,6 +18,7 @@ class DocumentInventoryItem(BaseModel):
     page_count: Optional[int] = None
     has_native_text: bool = True
     status: str = "pending"
+    classification_confidence: float = 1.0
 
 
 class CrossReferenceResult(BaseModel):
@@ -28,6 +31,18 @@ class CrossReferenceResult(BaseModel):
     value_b: Any
     discrepancy_description: Optional[str] = None
     severity: str = "info"  # info, warning, critical
+
+
+class AgentExecutionRecord(BaseModel):
+    """Tracks invocation, skip reason, and result of each specialized agent."""
+    agent_id: str
+    display_name: str
+    status: str  # pending, completed, skipped, failed, unavailable
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    skip_reason: Optional[str] = None
+    error_message: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None
 
 
 class WebVerificationResult(BaseModel):
@@ -64,27 +79,42 @@ class ProcessingError(BaseModel):
 
 
 class CaseState(BaseModel):
-    """Shared state that flows through the LangGraph investigation pipeline.
+    """Central shared state that flows through the LangGraph investigation workflow.
     Every agent node reads from and writes to this structure."""
     case_id: str
     case_number: str
 
-    # Document inventory
+    # Document inventory & classifications
     documents: List[DocumentInventoryItem] = Field(default_factory=list)
 
-    # Extracted data per document
-    extractions: Dict[str, Any] = Field(default_factory=dict)  # document_id -> extraction result
+    # Structured extractions per document: doc_id -> structured extraction dict
+    extractions: Dict[str, Any] = Field(default_factory=dict)
 
-    # Cross-reference findings
+    # Vision observations for accident photos: doc_id -> PhotoDamageAnalysis
+    vision_observations: Dict[str, PhotoDamageAnalysis] = Field(default_factory=dict)
+
+    # Discrepancies and inconsistencies across multiple documents
+    inconsistencies: List[InconsistencyFinding] = Field(default_factory=list)
     cross_references: List[CrossReferenceResult] = Field(default_factory=list)
 
-    # Web verification results
+    # Consolidated & normalized incident facts
+    normalized_facts: Dict[str, Any] = Field(default_factory=dict)
+
+    # Adaptive agent execution tracking
+    agent_executions: List[AgentExecutionRecord] = Field(default_factory=list)
+
+    # Package completeness & audit limitations
+    missing_documents: List[str] = Field(default_factory=list)
+    investigation_limitations: List[str] = Field(default_factory=list)
+
+    # Web verification results (Stage 3 hook)
     web_verifications: List[WebVerificationResult] = Field(default_factory=list)
 
-    # Assessment
+    # Assessment & preliminary report synthesis
     assessment: Optional[AssessmentResult] = None
+    generated_report: Optional[Dict[str, Any]] = None
 
-    # Processing metadata
+    # Processing metadata & audit trail
     processing_log: List[ProcessingLogEntry] = Field(default_factory=list)
     current_stage: str = "intake"
     stages_completed: List[str] = Field(default_factory=list)

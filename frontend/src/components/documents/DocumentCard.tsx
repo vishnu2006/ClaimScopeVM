@@ -35,8 +35,8 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
   const [viewModalOpen, setViewModalOpen] = useState(false);
 
   const getFileIcon = () => {
-    const filename = document.original_filename.toLowerCase();
-    const type = document.file_type.toLowerCase();
+    const filename = (document.original_filename || document.filename || '').toLowerCase();
+    const type = (document.file_type || document.mime_type || '').toLowerCase();
 
     if (type.includes('pdf') || filename.endsWith('.pdf')) {
       return <FileText className="h-6 w-6 text-red-500" />;
@@ -102,7 +102,7 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
                   </Badge>
                   <span className="text-[11px] text-surface-400 flex items-center gap-1 font-mono">
                     <HardDrive className="h-3 w-3" />
-                    {formatFileSize(document.file_size)}
+                    {formatFileSize(document.file_size_bytes ?? document.file_size ?? 0)}
                   </span>
                 </div>
               </div>

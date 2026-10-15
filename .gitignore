@@ -1,12 +1,43 @@
+# Dependencies
 node_modules/
-__pycache__/
-*.pyc
-.env
-.next/
 venv/
+env/
+.venv/
 *.egg-info/
 dist/
 build/
+
+# Python cache & testing
+__pycache__/
+*.py[cod]
+*$py.class
 .pytest_cache/
-uploads/
+.coverage
+htmlcov/
+
+# Environment files & Secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Next.js
+.next/
+out/
+
+# Database files
 *.db
+*.sqlite
+*.sqlite3
+claimscope.db
+
+# Uploaded incident files
+uploads/
+backend/uploads/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

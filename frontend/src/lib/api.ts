@@ -1,5 +1,6 @@
 import {
   CaseDetail,
+  CaseState,
   CaseSummary,
   CreateCaseData,
   Document,
@@ -9,66 +10,79 @@ import {
   Report,
 } from './types';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+
 export class ApiError extends Error {
-  status: number;
-  constructor(status: number, message: string) {
+  constructor(
+    public status: number,
+    message: string,
+    public details?: unknown
+  ) {
     super(message);
     this.name = 'ApiError';
-    this.status = status;
   }
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-
-export class ApiClient {
+class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl.replace(/\/+$/, '');
+    this.baseUrl = baseUrl.replace(/\/$/, '');
   }
 
   private async request<T>(path: string, options?: RequestInit): Promise<T> {
-    const isFormData = options?.body instanceof FormData;
-    const headers: Record<string, string> = {};
+    const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+    const headers: Record<string, string> = {
+      ...(options?.headers as Record<string, string>),
+    };
 
-    if (!isFormData) {
+    // Don't set Content-Type for FormData
+    if (!(options?.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
     }
 
-    if (options?.headers) {
-      Object.assign(headers, options.headers);
-    }
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-    const response = await fetch(`${this.baseUrl}${path}`, {
-      ...options,
-      headers,
-    });
+      if (!response.ok) {
+        let errorMessage = `Request failed with status ${response.status}`;
+        let details: unknown = null;
 
-    if (!response.ok) {
-      let detail = `Request failed with status ${response.status}`;
-      try {
-        const errorData = await response.json();
-        detail = errorData.detail || errorData.message || detail;
-      } catch {
-        // Fallback to response status text
-        if (response.statusText) {
-          detail = response.statusText;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+          details = errorData;
+        } catch {
+          // Response is not JSON
         }
+
+        throw new ApiError(response.status, errorMessage, details);
       }
-      throw new ApiError(response.status, detail);
-    }
 
-    // Handle 204 No Content
-    if (response.status === 204) {
-      return {} as T;
-    }
+      // Handle 204 No Content
+      if (response.status === 204) {
+        return {} as T;
+      }
 
-    return response.json();
+      return await response.json();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(
+        0,
+        error instanceof Error ? error.message : 'Network error or backend unreachable'
+      );
+    }
   }
 
   // Cases
-  async getCases(): Promise<CaseSummary[]> {
-    return this.request<CaseSummary[]>('/cases');
+  async getCases(status?: string): Promise<CaseSummary[]> {
+    const query = status ? `?status=${encodeURIComponent(status)}` : '';
+    return this.request<CaseSummary[]>(`/cases${query}`);
   }
 
   async getCase(id: string): Promise<CaseDetail> {
@@ -129,15 +143,30 @@ export class ApiClient {
     return this.request<Evidence[]>(`/cases/${caseId}/evidence`);
   }
 
+  // Adaptive LangGraph Investigation
+  async runInvestigation(caseId: string): Promise<CaseState> {
+    return this.request<CaseState>(`/cases/${caseId}/investigate`, {
+      method: 'POST',
+    });
+  }
+
+  async getInvestigation(caseId: string): Promise<CaseState | null> {
+    try {
+      return await this.request<CaseState>(`/cases/${caseId}/investigation`);
+    } catch {
+      return null;
+    }
+  }
+
   // Reports
   async generateReport(caseId: string): Promise<Report> {
-    return this.request<Report>(`/cases/${caseId}/report`, {
+    return this.request<Report>(`/cases/${caseId}/reports`, {
       method: 'POST',
     });
   }
 
   async getReport(caseId: string): Promise<Report> {
-    return this.request<Report>(`/cases/${caseId}/report`);
+    return this.request<Report>(`/cases/${caseId}/reports`);
   }
 }
 

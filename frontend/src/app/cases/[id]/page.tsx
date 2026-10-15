@@ -1,31 +1,35 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   FileText,
   Search,
   FileCheck2,
-  Sparkles,
   AlertCircle,
   RefreshCw,
-  AlertTriangle,
+  Camera,
+  GitCompare,
+  Cpu,
 } from 'lucide-react';
 import { useCase } from '@/hooks/useCase';
 import { useDocuments } from '@/hooks/useDocuments';
+import { api } from '@/lib/api';
 import { CaseHeader } from '@/components/cases/CaseHeader';
 import { CaseTimeline } from '@/components/cases/CaseTimeline';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { DocumentList } from '@/components/documents/DocumentList';
 import { ReportPreview } from '@/components/reports/ReportPreview';
+import { InvestigationStepper } from '@/components/cases/InvestigationStepper';
+import { VisionObservations } from '@/components/cases/VisionObservations';
+import { DiscrepancyList } from '@/components/cases/DiscrepancyList';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Evidence } from '@/lib/types';
+import { CaseState, Evidence } from '@/lib/types';
 
-function CaseDetailContent() {
+export default function CaseDetailPage() {
   const router = useRouter();
   const params = useParams();
   const caseId = (params?.id as string) || '';
@@ -35,7 +39,6 @@ function CaseDetailContent() {
     loading: caseLoading,
     error: caseError,
     refetch: refetchCase,
-    generateReport,
   } = useCase(caseId);
 
   const {
@@ -47,29 +50,73 @@ function CaseDetailContent() {
     refetch: refetchDocs,
   } = useDocuments(caseId);
 
-  const [activeTab, setActiveTab] = useState<'documents' | 'evidence' | 'report'>('documents');
-  const [generatingReport, setGeneratingReport] = useState(false);
-  const [reportError, setReportError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'documents' | 'evidence' | 'vision' | 'discrepancies' | 'report'>('documents');
+  const [investigationState, setInvestigationState] = useState<CaseState | null>(null);
+  const [isInvestigating, setIsInvestigating] = useState(false);
+  const [investigationError, setInvestigationError] = useState<string | null>(null);
 
-  const handleGenerateReport = async () => {
-    setGeneratingReport(true);
-    setReportError(null);
+  const loadInvestigation = async () => {
+    if (!caseId) return;
     try {
-      await generateReport();
-      setActiveTab('report');
+      const state = await api.getInvestigation(caseId);
+      if (state) {
+        setInvestigationState(state);
+      }
+    } catch {
+      // No stored state yet
+    }
+  };
+
+  // Load existing investigation state if previously executed
+  useEffect(() => {
+    let isMounted = true;
+    if (!caseId) return;
+
+    api.getInvestigation(caseId)
+      .then((state) => {
+        if (isMounted && state) {
+          setInvestigationState(state);
+        }
+      })
+      .catch(() => {
+        // No stored state yet
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [caseId]);
+
+  // Run LangGraph Adaptive Investigation
+  const handleRunInvestigation = async () => {
+    setIsInvestigating(true);
+    setInvestigationError(null);
+    try {
+      const result = await api.runInvestigation(caseId);
+      setInvestigationState(result);
       await refetchCase();
+      await refetchDocs();
+
+      // Automatically focus on discrepancies if found, or evidence
+      if (result.inconsistencies && result.inconsistencies.length > 0) {
+        setActiveTab('discrepancies');
+      } else if (Object.keys(result.vision_observations || {}).length > 0) {
+        setActiveTab('vision');
+      } else {
+        setActiveTab('evidence');
+      }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to generate investigation report.';
-      setReportError(msg);
+      const msg = err instanceof Error ? err.message : 'Failed to execute adaptive investigation pipeline.';
+      setInvestigationError(msg);
     } finally {
-      setGeneratingReport(false);
+      setIsInvestigating(false);
     }
   };
 
   if (caseLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-12">
-        <LoadingState message="Retrieving case investigation package..." />
+        <LoadingState message="Retrieving case investigation records..." />
       </div>
     );
   }
@@ -86,8 +133,9 @@ function CaseDetailContent() {
     );
   }
 
-  const evidenceList: Evidence[] = caseData.evidence || [];
-  const processedDocsCount = documents.filter((d) => d.processing_status === 'completed').length;
+  const evidenceList: Evidence[] = caseData.evidences || [];
+  const visionEntries = Object.entries(investigationState?.vision_observations || {});
+  const discrepancies = investigationState?.inconsistencies || [];
 
   return (
     <div className="flex-1 flex flex-col">
@@ -104,13 +152,19 @@ function CaseDetailContent() {
           report={caseData.report}
         />
 
-        {/* Tab Navigation & Action Bar */}
+        {/* Adaptive LangGraph Stepper */}
+        <InvestigationStepper
+          executions={investigationState?.agent_executions}
+          isInvestigating={isInvestigating}
+        />
+
+        {/* Action & Tab Navigation Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-surface-200 pb-2">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => setActiveTab('documents')}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
                 activeTab === 'documents'
                   ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
                   : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
@@ -126,14 +180,14 @@ function CaseDetailContent() {
             <button
               type="button"
               onClick={() => setActiveTab('evidence')}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
                 activeTab === 'evidence'
                   ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
                   : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
               }`}
             >
               <Search className="h-4 w-4" />
-              <span>Extracted Evidence</span>
+              <span>Extracted Facts</span>
               <span className="ml-1 rounded-full bg-surface-200 px-1.5 py-0.2 text-[10px] text-surface-700 font-mono">
                 {evidenceList.length}
               </span>
@@ -141,8 +195,48 @@ function CaseDetailContent() {
 
             <button
               type="button"
+              onClick={() => setActiveTab('vision')}
+              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                activeTab === 'vision'
+                  ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
+                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
+              }`}
+            >
+              <Camera className="h-4 w-4" />
+              <span>Vision Analysis</span>
+              {visionEntries.length > 0 && (
+                <span className="ml-1 rounded-full bg-surface-200 px-1.5 py-0.2 text-[10px] text-surface-700 font-mono">
+                  {visionEntries.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('discrepancies')}
+              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                activeTab === 'discrepancies'
+                  ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
+                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
+              }`}
+            >
+              <GitCompare className="h-4 w-4" />
+              <span>Discrepancies</span>
+              {discrepancies.length > 0 ? (
+                <span className="ml-1 rounded-full bg-rose-100 text-rose-700 font-bold px-1.5 py-0.2 text-[10px]">
+                  {discrepancies.length}
+                </span>
+              ) : (
+                <span className="ml-1 rounded-full bg-surface-200 px-1.5 py-0.2 text-[10px] text-surface-700 font-mono">
+                  0
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('report')}
-              className={`flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+              className={`flex items-center gap-2 px-3 py-2 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
                 activeTab === 'report'
                   ? 'bg-surface-0 text-brand-700 shadow-subtle border border-surface-200'
                   : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
@@ -156,25 +250,25 @@ function CaseDetailContent() {
             </button>
           </div>
 
-          {/* Action button to generate report */}
+          {/* Adaptive Investigation Action Trigger */}
           <div className="flex items-center gap-2">
             <Button
               variant="primary"
               size="sm"
-              onClick={handleGenerateReport}
-              loading={generatingReport}
+              onClick={handleRunInvestigation}
+              loading={isInvestigating}
               disabled={documents.length === 0}
-              leftIcon={<Sparkles className="h-4 w-4" />}
+              leftIcon={<Cpu className="h-4 w-4" />}
             >
-              {caseData.report ? 'Regenerate Investigation Report' : 'Generate Investigation Report'}
+              {investigationState ? 'Re-run Investigation' : 'Run Adaptive Investigation'}
             </Button>
           </div>
         </div>
 
-        {reportError && (
+        {investigationError && (
           <div className="flex items-start gap-2.5 rounded-md bg-rose-50 border border-rose-200 p-3 text-xs text-status-error font-medium">
             <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span>{reportError}</span>
+            <span>{investigationError}</span>
           </div>
         )}
 
@@ -182,7 +276,6 @@ function CaseDetailContent() {
         {activeTab === 'documents' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Upload Dropzone */}
               <div className="lg:col-span-1">
                 <div className="sticky top-24">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700 mb-2">
@@ -198,7 +291,6 @@ function CaseDetailContent() {
                 </div>
               </div>
 
-              {/* Uploaded Documents List */}
               <div className="lg:col-span-2 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700">
@@ -222,10 +314,12 @@ function CaseDetailContent() {
                   onProcess={async (docId) => {
                     await processDocument(docId);
                     await refetchCase();
+                    await loadInvestigation();
                   }}
                   onDelete={async (docId) => {
                     await deleteDocument(docId);
                     await refetchCase();
+                    await loadInvestigation();
                   }}
                 />
               </div>
@@ -233,7 +327,7 @@ function CaseDetailContent() {
           </div>
         )}
 
-        {/* Tab 2: Extracted Evidence */}
+        {/* Tab 2: Extracted Facts */}
         {activeTab === 'evidence' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -242,110 +336,88 @@ function CaseDetailContent() {
                   Extracted Facts &amp; Provenance
                 </h3>
                 <p className="text-xs text-surface-500">
-                  Structured claims evidence identified across submitted documents with cross-referencing
+                  Traceable claims facts extracted across submitted incident documents
                 </p>
               </div>
             </div>
 
             {evidenceList.length === 0 ? (
-              <EmptyState
-                icon={Search}
-                title="No evidence extracted yet"
-                description={
-                  documents.length === 0
-                    ? 'Upload accident documents first to begin automated multi-document extraction.'
-                    : processedDocsCount === 0
-                    ? 'Process the uploaded documents to extract structured facts and scene findings.'
-                    : 'No structured facts were returned by the Document AI extractors for this package.'
-                }
-                actionLabel={documents.length === 0 ? 'Go to Documents' : undefined}
-                onAction={() => setActiveTab('documents')}
-              />
+              <div className="rounded-lg border border-dashed border-surface-300 p-8 text-center space-y-3 bg-surface-50">
+                <Search className="h-6 w-6 text-surface-400 mx-auto" />
+                <h4 className="text-sm font-semibold text-surface-800">No Facts Extracted Yet</h4>
+                <p className="text-xs text-surface-500 max-w-md mx-auto">
+                  Click &quot;Run Adaptive Investigation&quot; or process individual documents to extract verifiable facts.
+                </p>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {evidenceList.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`rounded-lg border p-4 bg-surface-0 shadow-card transition-all ${
-                      item.is_inconsistency
-                        ? 'border-amber-300 bg-amber-50/20'
-                        : 'border-surface-200 hover:border-surface-300'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-500">
-                        {item.category.replace(/_/g, ' ')}
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {item.is_inconsistency && (
-                          <Badge variant="warning" size="sm">
-                            Inconsistency Flag
-                          </Badge>
-                        )}
-                        <span className="text-[11px] font-mono text-surface-500">
-                          {Math.round(item.confidence <= 1 ? item.confidence * 100 : item.confidence)}% conf
-                        </span>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-surface-900 font-medium leading-relaxed mb-3">
-                      {item.fact}
-                    </p>
-
-                    {item.inconsistency_details && (
-                      <div className="rounded bg-amber-50 border border-amber-200 p-2.5 text-[11px] text-amber-900 mb-3 flex items-start gap-1.5">
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
-                        <span>{item.inconsistency_details}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-[11px] text-surface-400 border-t border-surface-100 pt-2 font-mono">
-                      <span>Source: {item.source}</span>
-                      <span className="uppercase text-[10px] bg-surface-100 px-1.5 py-0.5 rounded text-surface-600">
-                        {item.source_type}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto rounded-lg border border-surface-200 bg-surface-0 shadow-subtle">
+                <table className="min-w-full divide-y divide-surface-200 text-left text-xs">
+                  <thead className="bg-surface-50 text-surface-600 font-medium">
+                    <tr>
+                      <th className="px-4 py-3">Category</th>
+                      <th className="px-4 py-3">Fact Field</th>
+                      <th className="px-4 py-3">Extracted Value</th>
+                      <th className="px-4 py-3">Source Citation</th>
+                      <th className="px-4 py-3">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-100">
+                    {evidenceList.map((ev) => (
+                      <tr key={ev.id} className="hover:bg-surface-50/50">
+                        <td className="px-4 py-3 font-semibold text-surface-700 capitalize">
+                          {ev.category.replace('_', ' ')}
+                        </td>
+                        <td className="px-4 py-3 text-surface-900 font-mono text-[11px]">
+                          {ev.field_name}
+                        </td>
+                        <td className="px-4 py-3 text-surface-800 font-medium max-w-xs truncate">
+                          {ev.field_value || 'None'}
+                        </td>
+                        <td className="px-4 py-3 text-surface-500 font-mono text-[11px]">
+                          {ev.source_document || 'N/A'}
+                        </td>
+                        <td className="px-4 py-3">
+                          {ev.confidence !== null && ev.confidence !== undefined ? (
+                            <span className="font-mono text-emerald-700 font-medium">
+                              {(ev.confidence * 100).toFixed(0)}%
+                            </span>
+                          ) : (
+                            <span className="text-surface-400">N/A</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         )}
 
-        {/* Tab 3: Investigation Report */}
+        {/* Tab 3: Vision Observations */}
+        {activeTab === 'vision' && (
+          <VisionObservations observations={investigationState?.vision_observations || {}} />
+        )}
+
+        {/* Tab 4: Cross-Document Discrepancies */}
+        {activeTab === 'discrepancies' && (
+          <DiscrepancyList inconsistencies={discrepancies} />
+        )}
+
+        {/* Tab 5: Report Preview */}
         {activeTab === 'report' && (
           <div className="space-y-4">
             {caseData.report ? (
-              <ReportPreview
-                report={caseData.report}
-                caseNumber={caseData.case_number}
-              />
+              <ReportPreview report={caseData.report} caseNumber={caseData.case_number} />
             ) : (
               <EmptyState
-                icon={FileCheck2}
-                title="Investigation report not generated yet"
-                description="Synthesize document AI extractions, verify facts with real-time web search, and produce an adjustor assessment report."
-                actionLabel="Generate Report Now"
-                onAction={handleGenerateReport}
+                title="No report generated yet"
+                description="Run the investigation or click Generate Report to create a comprehensive findings report."
               />
             )}
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-export default function CaseDetailPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex-1 flex items-center justify-center p-12">
-          <LoadingState message="Retrieving case investigation package..." />
-        </div>
-      }
-    >
-      <CaseDetailContent />
-    </Suspense>
   );
 }

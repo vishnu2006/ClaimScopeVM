@@ -42,7 +42,7 @@ export const CaseTimeline: React.FC<CaseTimelineProps> = ({
     {
       title: 'Cross-Referencing & Verification',
       desc: hasReport
-        ? `${report.inconsistencies?.length || 0} inconsistencies checked`
+        ? `${report?.inconsistencies?.length || 0} inconsistencies checked`
         : hasProcessedDocs
         ? 'Ready for analysis'
         : 'Pending extraction',
@@ -53,7 +53,7 @@ export const CaseTimeline: React.FC<CaseTimelineProps> = ({
     {
       title: 'Adjustor Assessment',
       desc: hasReport
-        ? report.recommendation === 'routine'
+        ? report?.recommendation === 'routine'
           ? 'Assessment: Routine'
           : 'Assessment: Flagged for Review'
         : 'Pending report generation',

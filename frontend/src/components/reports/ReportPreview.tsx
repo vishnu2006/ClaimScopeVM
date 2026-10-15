@@ -39,7 +39,7 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
   };
 
   const getRecommendationConfig = () => {
-    switch (report.recommendation) {
+    switch (report?.recommendation) {
       case 'routine':
         return {
           title: 'Routine Processing Recommended',
@@ -127,7 +127,7 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
               <div className="flex items-center gap-1.5">
                 <span>Status:</span>
                 <Badge variant={report.status === 'final' ? 'success' : 'pending'} size="sm">
-                  {report.status.toUpperCase()}
+                  {(report.status || 'preliminary').toUpperCase()}
                 </Badge>
               </div>
             </div>
@@ -141,7 +141,7 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-bold tracking-tight">{recConfig.title}</h3>
               <Badge variant={recConfig.badgeVariant} size="sm">
-                {report.recommendation.replace(/_/g, ' ').toUpperCase()}
+                {(report.recommendation || 'preliminary').replace(/_/g, ' ').toUpperCase()}
               </Badge>
             </div>
             <p className="text-xs leading-relaxed opacity-90">

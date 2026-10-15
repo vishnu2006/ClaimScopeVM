@@ -57,6 +57,11 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
       textClass: 'text-surface-600 bg-surface-100 border-surface-200',
       icon: <MinusCircle className={cn(iconSizes[size], 'text-surface-500 shrink-0')} />,
     },
+    unavailable: {
+      label: 'Unavailable',
+      textClass: 'text-surface-500 bg-surface-100 border-surface-200',
+      icon: <MinusCircle className={cn(iconSizes[size], 'text-surface-400 shrink-0')} />,
+    },
   };
 
   const current = config[status] || config.pending;

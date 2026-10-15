@@ -14,10 +14,14 @@ from app.models.document import Document
 from app.models.evidence import Evidence
 from app.schemas.common import DocumentType, EvidenceType, ProcessingStatus
 from app.schemas.document import DocumentProcessResponse, DocumentResponse, DocumentUploadResponse
+from app.services.document_classifier import DocumentClassifier
 from app.services.document_processor import DocumentProcessor
 from app.services.fnol_extractor import FNOLExtractor
-from app.services.llm_provider import ConfigurationError
-from app.utils.file_validation import infer_document_type, validate_upload
+from app.services.llm_provider import ConfigurationError, get_llm_provider
+from app.services.police_report_extractor import PoliceReportExtractor
+from app.services.repair_estimate_extractor import RepairEstimateExtractor
+from app.services.vision_extractor import VehicleDamageVisionAgent
+from app.utils.file_validation import validate_upload
 from app.utils.security import sanitize_filename
 
 router = APIRouter(prefix="/cases/{case_id}/documents", tags=["documents"])
@@ -29,7 +33,7 @@ async def upload_documents(
     files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """Upload one or multiple documents for a specific case."""
+    """Upload one or multiple documents for a specific case with automated content classification."""
     # Verify case exists
     case_query = select(Case).where(Case.id == case_id)
     case_res = await db.execute(case_query)
@@ -50,6 +54,7 @@ async def upload_documents(
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
     uploaded_docs: List[DocumentUploadResponse] = []
+    classifier = DocumentClassifier()
 
     for file in files:
         # Validate file
@@ -71,7 +76,6 @@ async def upload_documents(
                 while content := await file.read(1024 * 64):  # 64KB chunks
                     file_size += len(content)
                     if file_size > settings.max_file_size_bytes:
-                        # Clean up partial file
                         await out_file.close()
                         if os.path.exists(destination_path):
                             os.remove(destination_path)
@@ -93,7 +97,10 @@ async def upload_documents(
         # Detect extension and mime
         _, ext = os.path.splitext(file.filename or "")
         mime = file.content_type or "application/octet-stream"
-        doc_type = infer_document_type(file.filename or "", mime)
+
+        # Content-based document classification
+        classification = classifier.classify_by_content(destination_path, mime_type=mime)
+        doc_type = classification.document_type
 
         # Save record in database
         doc = Document(
@@ -118,7 +125,7 @@ async def upload_documents(
                 processing_status=doc.processing_status,
                 document_type=doc.document_type,
                 file_size_bytes=doc.file_size_bytes,
-                message="Uploaded successfully",
+                message=f"Uploaded and classified as {doc.document_type.value}",
             )
         )
 
@@ -179,7 +186,6 @@ async def delete_document(
             detail=f"Document with ID {doc_id} not found for case {case_id}",
         )
 
-    # Delete physical file if present
     if doc.file_path and os.path.exists(doc.file_path):
         try:
             os.remove(doc.file_path)
@@ -198,7 +204,7 @@ async def process_document(
     processor: DocumentProcessor = Depends(get_document_processor),
     fnol_extractor: FNOLExtractor = Depends(get_fnol_extractor),
 ):
-    """Trigger text extraction via PyMuPDF and structured FNOL extraction via LLM."""
+    """Trigger text extraction via PyMuPDF/Gemini and structured extraction based on document type."""
     query = select(Document).where(Document.id == doc_id, Document.case_id == case_id)
     result = await db.execute(query)
     doc = result.scalar_one_or_none()
@@ -225,8 +231,19 @@ async def process_document(
 
         structured_extraction = None
 
-        # Step 2: If document is FNOL, run structured LLM extraction
+        # Re-check classification if unknown
+        if doc.document_type in [DocumentType.UNKNOWN, DocumentType.OTHER]:
+            classifier = DocumentClassifier(processor)
+            class_res = classifier.classify_by_content(doc.file_path, extracted_text=extracted_text)
+            doc.document_type = class_res.document_type
+
+        # Step 2: Handle extraction based on document type
         if doc.document_type == DocumentType.FNOL:
+            if not extracted_text and doc.file_extension == ".pdf":
+                provider = get_llm_provider()
+                extracted_text = await processor.transcribe_scanned_document(doc.file_path, provider)
+                doc.extracted_text = extracted_text
+
             if not extracted_text:
                 raise ValueError("No extractable text found in FNOL document.")
 
@@ -236,7 +253,6 @@ async def process_document(
             )
             structured_extraction = fnol_data.model_dump()
 
-            # Record extracted fields into Evidence table
             def add_evidence(cat: str, name: str, prov_dict: Optional[dict]):
                 if not prov_dict or prov_dict.get("value") is None:
                     return
@@ -247,7 +263,7 @@ async def process_document(
                     category=cat,
                     field_name=name,
                     field_value=str(prov_dict.get("value")),
-                    confidence=prov_dict.get("confidence"),
+                    confidence=prov_dict.get("confidence") or 0.9,
                     source_document=prov_dict.get("source_document") or doc.original_filename,
                     source_page=prov_dict.get("source_page"),
                     source_location=prov_dict.get("source_text"),
@@ -255,7 +271,6 @@ async def process_document(
                 )
                 db.add(ev)
 
-            # Persist individual fields with provenance
             add_evidence("policy_info", "policy_number", structured_extraction.get("policy_number"))
             add_evidence("claim_info", "claim_number", structured_extraction.get("claim_number"))
             add_evidence("incident_details", "incident_date", structured_extraction.get("incident_date"))
@@ -264,6 +279,64 @@ async def process_document(
             add_evidence("incident_details", "weather", structured_extraction.get("weather_conditions"))
             add_evidence("incident_details", "road_conditions", structured_extraction.get("road_conditions"))
             add_evidence("damage_info", "estimated_damage", structured_extraction.get("estimated_damage_amount"))
+
+        elif doc.document_type == DocumentType.POLICE_REPORT:
+            provider = get_llm_provider()
+            if not extracted_text and doc.file_extension == ".pdf":
+                extracted_text = await processor.transcribe_scanned_document(doc.file_path, provider)
+                doc.extracted_text = extracted_text
+
+            police_extractor = PoliceReportExtractor(provider)
+            police_data = await police_extractor.extract(extracted_text, doc.original_filename)
+            structured_extraction = police_data.model_dump()
+
+            # Record police evidence
+            if police_data.narrative and police_data.narrative.value:
+                db.add(
+                    Evidence(
+                        case_id=case_id,
+                        document_id=doc.id,
+                        evidence_type=EvidenceType.EXTRACTED_FIELD,
+                        category="police_narrative",
+                        field_name="officer_narrative",
+                        field_value=police_data.narrative.value,
+                        confidence=police_data.narrative.confidence or 0.95,
+                        source_document=doc.original_filename,
+                    )
+                )
+
+        elif doc.document_type == DocumentType.REPAIR_ESTIMATE:
+            provider = get_llm_provider()
+            if not extracted_text and doc.file_extension == ".pdf":
+                extracted_text = await processor.transcribe_scanned_document(doc.file_path, provider)
+                doc.extracted_text = extracted_text
+
+            estimate_extractor = RepairEstimateExtractor(provider)
+            est_data = await estimate_extractor.extract(extracted_text, doc.original_filename)
+            structured_extraction = est_data.model_dump()
+
+        elif doc.document_type == DocumentType.PHOTO:
+            provider = get_llm_provider()
+            vision_agent = VehicleDamageVisionAgent(provider)
+            photo_analysis = await vision_agent.analyze_photo(doc.file_path, doc.original_filename)
+            structured_extraction = photo_analysis.model_dump()
+
+            db.add(
+                Evidence(
+                    case_id=case_id,
+                    document_id=doc.id,
+                    evidence_type=EvidenceType.VISUAL_OBSERVATION,
+                    category="visual_damage",
+                    field_name=photo_analysis.visible_vehicle_region,
+                    field_value=f"Severity: {photo_analysis.severity_category.upper()}. {photo_analysis.severity_explanation}",
+                    confidence=photo_analysis.confidence_score,
+                    source_document=doc.original_filename,
+                    conflicting_values={
+                        "observable_damage": photo_analysis.observable_damage,
+                        "affected_components": photo_analysis.affected_components,
+                    },
+                )
+            )
 
         doc.processing_status = ProcessingStatus.COMPLETED
         doc.processed_at = datetime.now(timezone.utc)
