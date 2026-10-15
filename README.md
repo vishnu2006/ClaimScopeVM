@@ -34,6 +34,11 @@ ClaimScope transforms this workflow. Rather than acting as a generic chatbot or 
 
 ## Key Capabilities & Features
 
+- **Public Showcase & Enterprise Homepage (`/`)**: Dedicated public homepage highlighting real multimodal capabilities, workflow architecture, interactive workbench preview, and responsible AI governance.
+- **Operational Cockpit (`/dashboard`)**: Dedicated operational overview featuring live KPI metric cards, priority attention queue, priority distribution breakdown, and quick actions.
+- **Full Case Management Registry (`/cases`)**: Multi-faceted search, status and priority filters, multi-column sorting, and pagination.
+- **Agentic Engine Deep Dive (`/engine`)**: Detailed visual workflow of the 10-node LangGraph StateGraph, shared `CaseState` schema, and live case execution telemetry inspector.
+- **Dedicated Investigation Registries**: Cross-case registries for **Document Intelligence** (`/documents`), **Evidence & Provenance Analysis** (`/evidence`), **Discrepancy Review** (`/discrepancies`), and **Investigation Reports Archive** (`/reports`).
 - **Adaptive Multi-Agent Orchestration**: Dynamic LangGraph `StateGraph(CaseState)` workflow with supervisor routing that inspects package contents and conditionally executes only applicable extractors while gracefully logging skipped files.
 - **Multimodal Document AI**: Native vector PDF parsing via PyMuPDF, paired with Google Gemini multimodal vision for scanned, handwritten, and photographic evidence.
 - **Photographic Vehicle Damage Analysis**: Structured visual inspection extracting visible regions, affected components, severity ratings (`minor`, `moderate`, `severe`, `catastrophic_total_loss`), and explicit image quality limitations.

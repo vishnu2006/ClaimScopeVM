@@ -14,7 +14,7 @@ export default function NewCasePage() {
         title="Create Investigation Case"
         subtitle="Initiate a new auto insurance accident case file for multi-document intake"
         breadcrumbs={[
-          { label: 'Dashboard', href: '/' },
+          { label: 'Dashboard', href: '/dashboard' },
           { label: 'Cases', href: '/cases' },
           { label: 'New Case' },
         ]}

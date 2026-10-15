@@ -4,12 +4,13 @@
 @layer base {
   :root {
     --color-brand-600: #2563eb;
-    --sidebar-width: 260px;
+    --sidebar-width: 280px;
   }
   
   body {
     @apply bg-surface-50 text-surface-800 antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    text-rendering: optimizeLegibility;
   }
   
   /* Scrollbar styling */

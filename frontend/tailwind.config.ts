@@ -34,6 +34,7 @@ const config: Config = {
           700: '#334155',
           800: '#1e293b',
           900: '#0f172a',
+          950: '#020617',
         },
         // Status colors
         status: {
@@ -49,26 +50,30 @@ const config: Config = {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {
-        'xs': ['0.75rem', { lineHeight: '1rem' }],
-        'sm': ['0.8125rem', { lineHeight: '1.25rem' }],
-        'base': ['0.875rem', { lineHeight: '1.5rem' }],
-        'lg': ['1rem', { lineHeight: '1.5rem' }],
-        'xl': ['1.125rem', { lineHeight: '1.75rem' }],
-        '2xl': ['1.25rem', { lineHeight: '1.75rem' }],
-        '3xl': ['1.5rem', { lineHeight: '2rem' }],
+        '2xs': ['0.6875rem', { lineHeight: '0.9375rem' }],
+        'xs': ['0.8125rem', { lineHeight: '1.1875rem' }], // 13px (scaled from 12px)
+        'sm': ['0.875rem', { lineHeight: '1.375rem' }],  // 14px (scaled from 13px)
+        'base': ['0.9375rem', { lineHeight: '1.5rem' }],  // 15px (scaled from 14px)
+        'lg': ['1.0625rem', { lineHeight: '1.625rem' }],  // 17px (scaled from 16px)
+        'xl': ['1.25rem', { lineHeight: '1.75rem' }],     // 20px (scaled from 18px)
+        '2xl': ['1.5rem', { lineHeight: '2rem' }],        // 24px (scaled from 20px)
+        '3xl': ['1.875rem', { lineHeight: '2.25rem' }],   // 30px (scaled from 24px)
+        '4xl': ['2.25rem', { lineHeight: '2.75rem' }],    // 36px
+        '5xl': ['3rem', { lineHeight: '1.15' }],          // 48px
       },
       spacing: {
         '4.5': '1.125rem',
         '13': '3.25rem',
         '15': '3.75rem',
         '18': '4.5rem',
-        'sidebar': '260px',
+        'sidebar': '280px', // widened from 260px for comfortable density
       },
       borderRadius: {
         'sm': '0.25rem',
         'md': '0.375rem',
         'lg': '0.5rem',
         'xl': '0.75rem',
+        '2xl': '1rem',
       },
       boxShadow: {
         'subtle': '0 1px 2px 0 rgb(0 0 0 / 0.03)',

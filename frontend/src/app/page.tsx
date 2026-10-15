@@ -2,254 +2,479 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
-  PlusCircle,
-  FolderOpen,
+  Shield,
   ArrowRight,
-  AlertTriangle,
+  FileText,
+  Camera,
+  GitCompare,
+  Globe,
+  Cpu,
+  FileCheck2,
   CheckCircle2,
-  Clock,
-  FlaskConical,
-  Activity,
+  AlertTriangle,
+  Building2,
+  Lock,
+  ChevronRight,
   Layers,
+  Sparkles,
+  Search,
+  Eye,
+  ShieldAlert,
 } from 'lucide-react';
-import { useCases } from '@/hooks/useCases';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { LoadingState } from '@/components/ui/LoadingState';
-import { ErrorState } from '@/components/ui/ErrorState';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { RecentCasesTable } from '@/components/cases/RecentCasesTable';
-import { CaseStatus } from '@/lib/types';
+import { Badge } from '@/components/ui/Badge';
 
-export default function DashboardPage() {
-  const router = useRouter();
-  const { cases, loading, error, refetch } = useCases();
-
-  // Aggregate stats from persisted case records
-  const totalCases = cases ? cases.length : 0;
-
-  const stats = React.useMemo(() => {
-    if (!cases) {
-      return { active: 0, flagged: 0, completed: 0, highPriority: 0 };
-    }
-    let active = 0;
-    let flagged = 0;
-    let completed = 0;
-    let highPriority = 0;
-
-    cases.forEach((c) => {
-      if (['open', 'new', 'processing', 'in_progress'].includes(c.status)) {
-        active++;
-      }
-      if (['flagged', 'in_review'].includes(c.status)) {
-        flagged++;
-      }
-      if (['completed', 'investigation_complete', 'report_generated', 'closed'].includes(c.status)) {
-        completed++;
-      }
-      if (['high', 'critical'].includes(c.priority)) {
-        highPriority++;
-      }
-    });
-
-    return { active, flagged, completed, highPriority };
-  }, [cases]);
-
-  // Sort recent cases by created_at descending
-  const recentCases = React.useMemo(() => {
-    if (!cases) return [];
-    return [...cases]
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 10);
-  }, [cases]);
-
+export default function PublicHomePage() {
   return (
-    <div className="flex-1 flex flex-col">
-      {/* Compact Operational Header */}
-      <section className="border-b border-surface-200 bg-surface-0 px-6 py-4 shadow-subtle">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-surface-900">
-                Investigation Operations
-              </h1>
-              <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-surface-100 text-surface-600 border border-surface-200">
-                US P&amp;C Auto
+    <div className="min-h-screen bg-surface-50 text-surface-900 flex flex-col selection:bg-brand-100 selection:text-brand-900">
+      {/* 1. Public Top Navigation */}
+      <header className="sticky top-0 z-50 border-b border-surface-200/80 bg-surface-0/90 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-900 text-white shadow-xs group-hover:bg-brand-600 transition-colors">
+              <Shield className="h-4.5 w-4.5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-base font-bold tracking-tight text-surface-900 leading-tight">
+                ClaimScope
+              </span>
+              <span className="text-[10px] font-semibold tracking-wider text-surface-400 uppercase">
+                Investigation AI
               </span>
             </div>
-            <p className="text-xs text-surface-500">
-              Multi-document intake, cross-file consistency reasoning, and evidence verification
-            </p>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-surface-600">
+            <a href="#capabilities" className="hover:text-surface-900 transition-colors">
+              Capabilities
+            </a>
+            <a href="#workflow" className="hover:text-surface-900 transition-colors">
+              Workflow Architecture
+            </a>
+            <a href="#preview" className="hover:text-surface-900 transition-colors">
+              Workbench
+            </a>
+            <a href="#responsible-ai" className="hover:text-surface-900 transition-colors">
+              Governance &amp; Safety
+            </a>
+            <Link href="/demo" className="hover:text-surface-900 transition-colors flex items-center gap-1">
+              <span>Demo Lab</span>
+              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-brand-50 text-brand-700 border border-brand-200">
+                5 Scenarios
+              </span>
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <Link href="/dashboard">
+              <Button variant="primary" size="sm" rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>
+                Launch Workspace
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* 2. Hero Section */}
+      <section className="relative pt-20 pb-16 md:pt-28 md:pb-24 border-b border-surface-200/70 bg-gradient-to-b from-surface-0 via-surface-0 to-surface-50">
+        <div className="max-w-5xl mx-auto px-6 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200/80 text-brand-700 text-xs font-semibold shadow-2xs">
+            <Shield className="h-3.5 w-3.5" />
+            <span>US P&amp;C Auto Claim Investigation Intelligence</span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => router.push('/demo')}
-              leftIcon={<FlaskConical className="h-3.5 w-3.5 text-brand-600" />}
-            >
-              Demo Lab
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => router.push('/cases/new')}
-              leftIcon={<PlusCircle className="h-3.5 w-3.5" />}
-            >
-              New Claim Intake
-            </Button>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-surface-900 leading-[1.1] max-w-4xl mx-auto">
+            Every claim tells a story.{' '}
+            <span className="text-brand-600 block sm:inline">ClaimScope connects the evidence.</span>
+          </h1>
+
+          <p className="text-base sm:text-lg text-surface-600 max-w-2xl mx-auto leading-relaxed">
+            An adaptive agentic investigation platform for auto insurance adjusters.
+            Ingest incident packages, analyze damage photographs, cross-examine physical facts against police records,
+            and generate audit-ready, evidence-backed reports.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
+            <Link href="/dashboard">
+              <Button variant="primary" size="lg" rightIcon={<ArrowRight className="h-4 w-4" />}>
+                Launch Adjuster Workspace
+              </Button>
+            </Link>
+            <Link href="/demo">
+              <Button variant="secondary" size="lg">
+                Explore Demo Lab (Cases A – E)
+              </Button>
+            </Link>
+          </div>
+
+          {/* Micro-statement on safety */}
+          <div className="pt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-surface-500 font-medium">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <span>Grounded in source provenance</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <span>Adaptive LangGraph conditional routing</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+              <span>Assistive human-in-the-loop decisions</span>
+            </span>
           </div>
         </div>
       </section>
 
-      {/* Main Operational Body */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
-        {loading ? (
-          <div className="space-y-4">
-            <LoadingState variant="skeleton" count={1} />
-            <LoadingState variant="card-skeleton" count={4} />
+      {/* 3. Product Preview Showcase (Accurate representation of real workbench) */}
+      <section id="preview" className="py-16 md:py-20 max-w-7xl mx-auto px-6 w-full">
+        <div className="text-center space-y-2 mb-10">
+          <div className="text-xs font-semibold text-brand-600 uppercase tracking-wider">
+            Operational Workbench
           </div>
-        ) : error ? (
-          <ErrorState
-            title="Failed to Load Operational Data"
-            message={error}
-            onRetry={refetch}
-          />
-        ) : (
-          <>
-            {/* KPI Cards Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {/* Total Cases */}
-              <Card className="p-4 border-surface-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-500">
-                    Total Ingested
-                  </span>
-                  <FolderOpen className="h-4 w-4 text-surface-400" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-surface-900">
-                    {totalCases}
-                  </span>
-                  <span className="text-xs text-surface-500 font-medium">all records</span>
-                </div>
-              </Card>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-surface-900">
+            Precision Evidence Inspection for Adjusters
+          </h2>
+          <p className="text-sm text-surface-500 max-w-xl mx-auto">
+            Interactive side-by-side reconciliation of FNOL forms, official police reports, itemized estimates, and vehicle damage photography.
+          </p>
+        </div>
 
-              {/* Active / Processing */}
-              <Card className="p-4 border-surface-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-500">
-                    Active Intake
-                  </span>
-                  <Clock className="h-4 w-4 text-brand-600" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-brand-700">
-                    {stats.active}
-                  </span>
-                  <span className="text-xs text-surface-500 font-medium">in queue</span>
-                </div>
-              </Card>
-
-              {/* High / Critical Priority */}
-              <Card className="p-4 border-surface-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-500">
-                    Priority / Flagged
-                  </span>
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-amber-700">
-                    {stats.flagged || stats.highPriority}
-                  </span>
-                  <span className="text-xs text-surface-500 font-medium">require attention</span>
-                </div>
-              </Card>
-
-              {/* Completed */}
-              <Card className="p-4 border-surface-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-500">
-                    Synthesized
-                  </span>
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                </div>
-                <div className="mt-2 flex items-baseline gap-2">
-                  <span className="text-2xl font-bold tracking-tight text-emerald-700">
-                    {stats.completed}
-                  </span>
-                  <span className="text-xs text-surface-500 font-medium">investigations complete</span>
-                </div>
-              </Card>
+        {/* Workbench Mock Frame */}
+        <div className="rounded-xl border border-surface-200 bg-surface-0 shadow-elevated overflow-hidden">
+          {/* Frame Bar */}
+          <div className="h-10 border-b border-surface-200 bg-surface-100/70 px-4 flex items-center justify-between text-xs text-surface-500">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <span className="h-3 w-3 rounded-full bg-surface-300" />
+                <span className="h-3 w-3 rounded-full bg-surface-300" />
+                <span className="h-3 w-3 rounded-full bg-surface-300" />
+              </div>
+              <span className="ml-3 font-mono text-[11px] text-surface-600 font-medium">
+                claimscope.internal/cases/CS-2026-000004
+              </span>
             </div>
+            <Badge variant="brand" size="xs">
+              Live Investigation Session
+            </Badge>
+          </div>
 
-            {/* Quick Demo Lab Banner */}
-            <div className="rounded-lg border border-surface-200 bg-surface-0 p-3.5 shadow-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded bg-surface-100 text-surface-600">
-                  <FlaskConical className="h-4 w-4" />
+          {/* Workbench Interior */}
+          <div className="p-6 space-y-6">
+            {/* Case Header Row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-surface-100 pb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-surface-100 border border-surface-200 text-surface-800">
+                    CS-2026-000004
+                  </span>
+                  <Badge variant="error" size="xs" dot>
+                    ESCALATE FOR HUMAN REVIEW
+                  </Badge>
+                  <Badge variant="warning" size="xs">
+                    HIGH PRIORITY
+                  </Badge>
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold text-surface-900">
-                    Standardized Evaluation Packages Available
-                  </h4>
-                  <p className="text-[11px] text-surface-500">
-                    Test partial intake, vision analysis, fraud contradiction checks, and scanned OCR in the Demo Lab.
-                  </p>
-                </div>
+                <h3 className="text-base font-bold text-surface-900">
+                  Intersection T-Bone Collision with Disputed Impact Timing
+                </h3>
               </div>
 
-              <Link
-                href="/demo"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors shrink-0"
-              >
-                <span>Launch Demo Lab</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-surface-500 font-mono">
+                  VIN: 1HGCR2F83HA029184
+                </span>
+                <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  NHTSA Grounded
+                </span>
+              </div>
             </div>
 
-            {/* Recent Investigations Table Section */}
-            <div className="space-y-3">
+            {/* Stepper Preview */}
+            <div className="rounded-lg border border-surface-200 bg-surface-50/60 p-3.5 space-y-2">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-surface-500">
+                LangGraph 7-Stage Conditional Execution
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
+                {[
+                  { name: 'Intake Classifier', status: 'Completed', color: 'emerald' },
+                  { name: 'FNOL Extraction', status: 'Completed', color: 'emerald' },
+                  { name: 'Police Extractor', status: 'Completed', color: 'emerald' },
+                  { name: 'Vision Agent', status: 'Completed', color: 'emerald' },
+                  { name: 'Consistency Agent', status: 'Conflict Flag', color: 'rose' },
+                  { name: 'External Verifier', status: 'Grounded', color: 'emerald' },
+                  { name: 'Report Synthesizer', status: 'Complete', color: 'emerald' },
+                ].map((s) => (
+                  <div key={s.name} className="p-2 rounded bg-surface-0 border border-surface-200">
+                    <span className="text-[10px] text-surface-400 block font-medium truncate">{s.name}</span>
+                    <span className={`text-[11px] font-bold block text-${s.color}-700`}>{s.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Side-by-side contradiction diff preview */}
+            <div className="rounded-lg border border-rose-200 bg-rose-50/30 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-bold tracking-tight text-surface-900">
-                    Recent Claim Investigations
-                  </h2>
-                  <p className="text-xs text-surface-500">
-                    Live feed of incident packages processed through the investigation pipeline
-                  </p>
+                <div className="flex items-center gap-2 text-rose-900 font-bold text-xs">
+                  <ShieldAlert className="h-4 w-4 text-status-error" />
+                  <span>Cross-Document Evidentiary Contradiction (TRG-MAT-01)</span>
                 </div>
-
-                {totalCases > 0 && (
-                  <Link
-                    href="/cases"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-surface-600 hover:text-brand-600 transition-colors"
-                  >
-                    <span>View all cases ({totalCases})</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                )}
+                <span className="text-[10px] font-mono text-rose-700 uppercase font-semibold">
+                  Rule Triggered
+                </span>
               </div>
 
-              {recentCases.length === 0 ? (
-                <EmptyState
-                  icon={FolderOpen}
-                  title="No active claims in workspace"
-                  description="Begin by creating a new claim case or loading a pre-configured scenario from the Demo Lab."
-                  actionLabel="Create New Claim"
-                  onAction={() => router.push('/cases/new')}
-                />
-              ) : (
-                <RecentCasesTable cases={recentCases} />
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="bg-surface-0 rounded-md p-3 border border-surface-200 space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-surface-400 tracking-wider block">
+                    Source A: Insured FNOL Statement (p.1)
+                  </span>
+                  <p className="font-mono text-surface-800 text-[11px]">
+                    &quot;Collision occurred at approximately 14:30 in broad daylight. Road surface was dry and clear.&quot;
+                  </p>
+                </div>
+                <div className="bg-surface-0 rounded-md p-3 border border-surface-200 space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-surface-400 tracking-wider block">
+                    Source B: Official Police Accident Report (p.2)
+                  </span>
+                  <p className="font-mono text-surface-800 text-[11px]">
+                    &quot;Dispatched to crash site at 02:45 AM during active thunderstorm. Wet asphalt with standing water.&quot;
+                  </p>
+                </div>
+              </div>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Workflow Architecture Visualization */}
+      <section id="workflow" className="py-16 md:py-20 border-t border-b border-surface-200/80 bg-surface-0">
+        <div className="max-w-7xl mx-auto px-6 space-y-12">
+          <div className="text-center space-y-2 max-w-2xl mx-auto">
+            <div className="text-xs font-semibold text-brand-600 uppercase tracking-wider">
+              Investigation Pipeline
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-surface-900">
+              Deterministic Orchestration with LangGraph
+            </h2>
+            <p className="text-sm text-surface-500">
+              ClaimScope doesn&apos;t run a monolithic prompt. It executes an adaptive StateGraph that conditionally routes each file type to specialized agents.
+            </p>
+          </div>
+
+          {/* Workflow Sequence Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {[
+              {
+                step: '01',
+                title: 'Incident Ingestion',
+                desc: 'Upload multi-format package: digital PDFs, scanned forms, and scene photos.',
+                icon: FileText,
+              },
+              {
+                step: '02',
+                title: 'Classification & OCR',
+                desc: 'PyMuPDF native extraction + Gemini Vision OCR for handwritten or degraded scans.',
+                icon: Search,
+              },
+              {
+                step: '03',
+                title: 'Adaptive Routing',
+                desc: 'Supervisor dynamically executes or skips agents based strictly on available evidence.',
+                icon: Cpu,
+              },
+              {
+                step: '04',
+                title: 'Cross-Verification',
+                desc: 'Reconciles narratives and verifies facts against public VIN registries and weather data.',
+                icon: GitCompare,
+              },
+              {
+                step: '05',
+                title: 'Audit Report',
+                desc: 'Compiles explainable findings, confidence scores, and adjuster follow-up items.',
+                icon: FileCheck2,
+              },
+            ].map((st) => {
+              const Icon = st.icon;
+              return (
+                <div
+                  key={st.step}
+                  className="rounded-lg border border-surface-200 bg-surface-50 p-4 space-y-3 flex flex-col justify-between hover:border-brand-300 transition-all shadow-subtle"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200">
+                        {st.step}
+                      </span>
+                      <div className="p-1.5 rounded bg-surface-100 text-surface-600">
+                        <Icon className="h-4 w-4" />
+                      </div>
+                    </div>
+                    <h4 className="text-sm font-bold text-surface-900">{st.title}</h4>
+                    <p className="text-xs text-surface-600 leading-relaxed">{st.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Core Implemented Capabilities */}
+      <section id="capabilities" className="py-16 md:py-24 max-w-7xl mx-auto px-6 w-full space-y-12">
+        <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <div className="text-xs font-semibold text-brand-600 uppercase tracking-wider">
+            Production Engineering
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-surface-900">
+            Engineered for Insurance Evidence Rigor
+          </h2>
+          <p className="text-sm text-surface-500">
+            Built without mock data. Every feature directly executes real Python services and Google Gemini SDK calls.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Capability 1 */}
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-blue-50 text-brand-600">
+              <FileText className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-bold text-surface-900">
+              Multimodal Document Intelligence
+            </h3>
+            <p className="text-xs text-surface-600 leading-relaxed">
+              Handles digital PDFs via PyMuPDF native extraction and gracefully falls back to Gemini Vision OCR for handwritten police statements or degraded faxes.
+            </p>
+          </div>
+
+          {/* Capability 2 */}
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-purple-50 text-purple-600">
+              <Camera className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-bold text-surface-900">
+              Vehicle Damage Vision Analysis
+            </h3>
+            <p className="text-xs text-surface-600 leading-relaxed">
+              Standardized physical severity rubric (Minor, Moderate, Severe) classifies point of impact, structural intrusions, and matches photographic findings against damage estimates.
+            </p>
+          </div>
+
+          {/* Capability 3 */}
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-rose-50 text-rose-600">
+              <GitCompare className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-bold text-surface-900">
+              Cross-Document Conflict Detection
+            </h3>
+            <p className="text-xs text-surface-600 leading-relaxed">
+              Compares timestamps, driver identities, vehicle VINs, and impact narratives across documents, producing granular side-by-side discrepancy diffs.
+            </p>
+          </div>
+
+          {/* Capability 4 */}
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-emerald-50 text-emerald-600">
+              <Globe className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-bold text-surface-900">
+              Source-Grounded Verification
+            </h3>
+            <p className="text-xs text-surface-600 leading-relaxed">
+              Grounds vehicle data against the US Government NHTSA vPIC VIN database and cross-checks reported incident conditions with historical weather archives.
+            </p>
+          </div>
+
+          {/* Capability 5 */}
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-amber-50 text-amber-600">
+              <ShieldAlert className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-bold text-surface-900">
+              Explainable Rule-Driven Outcomes
+            </h3>
+            <p className="text-xs text-surface-600 leading-relaxed">
+              Deterministic assessment recommendations cite explicit rule IDs (e.g. TRG-MAT-01 for narrative conflicts, TRG-SEV-03 for estimate mismatch) rather than black-box AI scores.
+            </p>
+          </div>
+
+          {/* Capability 6 */}
+          <div className="rounded-xl border border-surface-200 bg-surface-0 p-6 space-y-3 shadow-card hover:border-surface-300 transition-all">
+            <div className="p-2 w-fit rounded-lg bg-surface-100 text-surface-700">
+              <FileCheck2 className="h-5 w-5" />
+            </div>
+            <h3 className="text-base font-bold text-surface-900">
+              Complete Provenance &amp; PDF Export
+            </h3>
+            <p className="text-xs text-surface-600 leading-relaxed">
+              Every extracted field records confidence scores, document name, page number, and original quote. Generates institutional printable investigation reports.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Responsible AI & Governance Statement */}
+      <section id="responsible-ai" className="py-16 bg-surface-100/60 border-t border-b border-surface-200">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded bg-surface-200/80 text-surface-700 text-xs font-bold uppercase tracking-wider">
+            <Lock className="h-3.5 w-3.5" />
+            <span>Ethical AI &amp; Regulatory Standard</span>
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight text-surface-900">
+            Assistive Intelligence. Human Authority.
+          </h2>
+          <p className="text-xs sm:text-sm text-surface-600 leading-relaxed">
+            ClaimScope operates strictly under human oversight. The system assists licensed claims adjusters and SIU investigators by surfacing verifiable facts and cross-document inconsistencies.
+            <strong> ClaimScope never independently denies coverage, approves payouts, or labels any claimant or party as fraudulent.</strong>
+            Every finding includes direct provenance back to the source submission.
+          </p>
+        </div>
+      </section>
+
+      {/* 7. Call To Action Footer Banner */}
+      <section className="py-16 md:py-20 bg-surface-0 border-b border-surface-200">
+        <div className="max-w-4xl mx-auto px-6 text-center space-y-6">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-surface-900">
+            Experience the Investigation Workbench
+          </h2>
+          <p className="text-sm text-surface-500 max-w-lg mx-auto">
+            Test the adaptive engine on synthetic incident packages or ingest new claim files.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link href="/dashboard">
+              <Button variant="primary" size="md" rightIcon={<ArrowRight className="h-4 w-4" />}>
+                Open Operational Dashboard
+              </Button>
+            </Link>
+            <Link href="/demo">
+              <Button variant="secondary" size="md">
+                Load Test Scenario (Demo Lab)
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. Tasteful Minimal Footer */}
+      <footer className="py-8 bg-surface-0 text-surface-500 text-xs">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-surface-900 text-white">
+              <Shield className="h-3 w-3" />
+            </div>
+            <span className="font-semibold text-surface-800">ClaimScope</span>
+            <span>• Auto Accident Claim Investigation Assistant</span>
+          </div>
+
+          <div className="text-[11px] text-surface-400">
+            Built by <strong className="text-surface-700 font-medium">Vishnu Pandrangi</strong>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

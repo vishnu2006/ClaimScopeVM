@@ -1,14 +1,27 @@
 'use client';
 
 import React, { Suspense, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 
 export interface AppShellProps {
   children: React.ReactNode;
 }
 
-export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+function AppShellContent({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Public homepage at '/' renders without the internal sidebar
+  const isPublicPage = pathname === '/';
+
+  if (isPublicPage) {
+    return (
+      <main className="min-h-screen flex flex-col bg-surface-50 text-surface-900">
+        {children}
+      </main>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-50 text-surface-800 flex">
@@ -26,8 +39,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <main className="flex-1 min-h-screen flex flex-col">
           <Suspense
             fallback={
-              <div className="flex-1 flex items-center justify-center p-12 text-xs text-surface-400">
-                Loading...
+              <div className="flex-1 flex items-center justify-center p-12 text-sm text-surface-400">
+                Loading workspace...
               </div>
             }
           >
@@ -36,5 +49,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         </main>
       </div>
     </div>
+  );
+}
+
+export const AppShell: React.FC<AppShellProps> = ({ children }) => {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface-50 text-surface-800" />}>
+      <AppShellContent>{children}</AppShellContent>
+    </Suspense>
   );
 };

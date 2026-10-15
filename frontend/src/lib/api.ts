@@ -185,6 +185,20 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  // Health / Connectivity Check
+  async checkHealth(): Promise<{ status: string; version?: string; app?: string } | null> {
+    try {
+      const rootUrl = this.baseUrl.replace(/\/api\/v1$/, '');
+      const response = await fetch(`${rootUrl}/health`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
 }
 
 export const api = new ApiClient(API_BASE);

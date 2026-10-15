@@ -135,7 +135,7 @@ export default function DemoLabPage() {
         title="Evaluation Lab & Sandbox"
         subtitle="Standardized synthetic test packages to evaluate adaptive routing, multimodal vision, and fraud guardrails"
         breadcrumbs={[
-          { label: 'Dashboard', href: '/' },
+          { label: 'Dashboard', href: '/dashboard' },
           { label: 'Demo Lab' },
         ]}
       />

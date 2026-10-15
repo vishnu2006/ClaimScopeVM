@@ -36,6 +36,8 @@ export function formatFileSize(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
+export const formatBytes = formatFileSize;
+
 export function formatStatus(status: CaseStatus | string): string {
   const map: Record<string, string> = {
     new: 'New',

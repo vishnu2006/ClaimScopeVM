@@ -253,29 +253,39 @@ ClaimScope is pre-configured to operate on Google Gemini without requiring any p
 
 ## 8. Enterprise Design System & UX Architecture
 
-The ClaimScope interface was refined to align with enterprise insurance operations and Linear's design principles:
+The ClaimScope interface was refined to align with enterprise insurance operations and modern enterprise design principles:
 
-1. **Design Tokens & Surfaces**:
+1. **Design Tokens & +10% UI Scale Alignment**:
+   - Adjusted base typography scale (`xs` 13px, `sm` 14px, `base` 15px, `lg` 17px, `xl` 20px, `2xl` 24px, `3xl` 30px, `4xl` 36px) to eliminate sub-scale squinting and provide substantial density at standard 100% browser zoom.
+   - Widened sidebar footprint from `260px` to `280px` for optimal breathing room and readable metadata badges.
    - Crisp 1px surface borders (`border-surface-200`) and soft, restrained shadows (`shadow-card`, `shadow-subtle`).
    - Restrained color system: deep navy brand tokens, muted status dots, monospace typography for technical identifiers (`JetBrains Mono`).
 
-2. **Dedicated Evaluation Lab (`/demo`)**:
-   - Isolated the 5 synthetic test packages from the main operational dashboard.
-   - Dedicated evaluation sandbox explaining each scenario's test assertions, input assets, and expected agent routing.
-   - 1-click loading into PostgreSQL with automatic transition to the investigation workbench.
+2. **Public Enterprise Showcase Homepage (`/`)**:
+   - Elegant marketing and product overview at `/` with hero headline: *"Every claim tells a story. ClaimScope connects the evidence."*
+   - Interactive, accurate product preview mirroring the actual investigation workbench (Case CS-2026-000004, 7-stage stepper, side-by-side contradiction diff, NHTSA VIN verification).
+   - 5-step workflow pipeline visualization: `Incident Ingestion → Classification & OCR → Adaptive Routing → Cross-Verification → Audit Report`.
+   - Clear ethical AI governance and regulatory statement enforcing human-in-the-loop compliance with NAIC MDL-900.
+   - Minimalist credit footer: *Built by Vishnu Pandrangi*.
 
-3. **High-Density Operations Hub (`/`)**:
-   - Compact workspace header with live operational indicators.
-   - Persisted KPI aggregate cards derived directly from database records.
-   - High-density `RecentCasesTable` displaying case IDs, loss descriptions, claimants, policy numbers, priorities, statuses, and direct workbench triggers.
+3. **Operational Cockpit (`/dashboard`)**:
+   - Dedicated operational overview answering: *What is happening across cases? Which need attention? What was recently processed?*
+   - 4 live database KPI metrics: Total Ingested, Active Intake, Attention Required, and Synthesized Reports.
+   - Priority Review Queue highlighting cases with detected discrepancies, high exposure, or pending adjuster review.
+   - Quick action triggers for Intake, Demo Lab, and Agentic Engine.
 
-4. **Multi-View Claims Registry (`/cases`)**:
-   - Supports both high-density Table view and Grid view toggles.
-   - Live multi-field search and status filters.
+4. **Multi-View Case Management Workspace (`/cases`)**:
+   - Full-width management table with live search across Case ID, Title, Claimant, Policy.
+   - Status and priority multi-filter controls with column sorting (Case ID, Date, Priority, Document Count) and pagination.
 
-5. **Investigation Workbench UX (`/cases/[id]`)**:
-   - Compact 2-row `CaseHeader` with integrated status pills, priority badges, and report export.
-   - Linear-style `InvestigationStepper` showing the adaptive LangGraph agent execution status, skip rationale, and duration.
-   - First-class evidence provenance modal with confidence metrics and raw source citations.
-   - Side-by-side contradiction diff viewer in `DiscrepancyList` with human adjuster review advisories.
+5. **Agentic Engine Architecture Experience (`/engine`)**:
+   - Visual interactive StateGraph workflow showing all 10 agent nodes and their conditional activation guards.
+   - Live Case Telemetry Inspector: selects any database case and renders its actual LangGraph `agent_executions` history, status, and skip reasons.
+
+6. **Dedicated Cross-Case Investigation Registries**:
+   - **Document Intelligence (`/documents`)**: Ingested file repository across cases with OCR status, page counts, and file types.
+   - **Evidence & Provenance Analysis (`/evidence`)**: Cross-case fact explorer with confidence scores and conflict toggles.
+   - **Discrepancy Review (`/discrepancies`)**: Triage inbox for cross-document contradictions and side-by-side diff comparisons.
+   - **Investigation Reports Archive (`/reports`)**: Central repository of generated assessment outcomes with 1-click PDF download triggers.
+
 
