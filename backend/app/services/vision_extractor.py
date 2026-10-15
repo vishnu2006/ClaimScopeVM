@@ -61,10 +61,10 @@ class VehicleDamageVisionAgent:
 Inspect the submitted accident photograph and provide a structured visual damage assessment.
 
 EVIDENCE-BASED SEVERITY RUBRIC:
-- 'minor': Superficial paint scuffs, light surface scratches, shallow dings (<1 inch depth), lenses intact, exterior trim clips popped, no structural displacement. Vehicle remains safely drivable.
-- 'moderate': Deep panel creases, dented sheet metal, cracked bumper fascia, fractured headlamp/taillamp assemblies, misalignment of adjacent body seams (hood gap, fender gap), requiring panel beating or part replacement. Frame and passenger compartment intact.
-- 'severe': Major structural crumple, deep quarter panel intrusion, deployed airbags, shattered glass/windshield, wheel or suspension displacement, heavy hood buckle, visible fluid leaks. Vehicle non-drivable.
-- 'catastrophic_total_loss': Massive structural crush, passenger compartment intrusion, rollover roof crush, severe firewall or A/B/C pillar collapse. Likely constructive total loss.
+- 'minor': Superficial paint scuffs, light surface scratches, shallow dings (<1 inch depth), lenses intact, exterior trim clips popped, no visible structural displacement. (Note: Mechanical driveability cannot be confirmed from photographs alone).
+- 'moderate': Deep panel creases, dented sheet metal, cracked bumper fascia, fractured headlamp/taillamp assemblies, misalignment of adjacent body seams (hood gap, fender gap), requiring panel beating or bolt-on part replacement. No visible unibody crush.
+- 'severe': Major visible structural crumple, deep quarter panel intrusion, deployed airbags, shattered glass/windshield, wheel or suspension displacement, heavy hood buckle, visible fluid leaks. (Note: Internal mechanical, sensor, or frame alignment requires physical shop teardown inspection).
+- 'catastrophic_total_loss': Massive structural crush, passenger compartment intrusion, rollover roof crush, severe firewall or A/B/C pillar collapse. (Note: Definitive total loss determination requires certified body shop appraisal and statutory salvage threshold calculation).
 
 STRICT INSURANCE GUARDRAILS:
 1. ONLY describe what is visibly evident in the frame.
@@ -74,4 +74,5 @@ STRICT INSURANCE GUARDRAILS:
 5. DO NOT estimate dollar repair costs or total repair bills.
 6. DO NOT declare legal fault or assign liability to any driver.
 7. Identify image limitations honestly (e.g. night glare, low resolution, oblique angle, partial obstruction).
+8. Photographs alone CANNOT establish hidden structural damage, mechanical driveability, or definitive total-loss status; physical shop teardown is always required.
 """

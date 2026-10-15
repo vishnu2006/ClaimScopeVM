@@ -13,6 +13,8 @@ import {
   Camera,
   GitCompare,
   FileCheck,
+  Globe,
+  ShieldCheck,
 } from 'lucide-react';
 import { AgentExecutionRecord } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
@@ -30,6 +32,8 @@ const AGENT_ICONS: Record<string, React.ReactNode> = {
   estimate_extractor: <Wrench className="h-4 w-4" />,
   vision_agent: <Camera className="h-4 w-4" />,
   consistency_agent: <GitCompare className="h-4 w-4" />,
+  external_verifier: <Globe className="h-4 w-4" />,
+  assessment_engine: <ShieldCheck className="h-4 w-4" />,
   synthesis_agent: <FileCheck className="h-4 w-4" />,
 };
 

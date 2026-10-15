@@ -149,25 +149,31 @@ The `VehicleDamageVisionAgent` analyzes submitted accident photographs using Goo
 - **Synthetic Test Packages**: Automated generators for 5 test scenarios (A: Clean Minor, B: Staged Front/Rear Contradiction, C: Total Loss Rollover, D: FNOL Only, E: Hit-and-Run Unidentified).
 - **Interactive Adjuster UI**: 5 dedicated workbench tabs (Incident Documents, Extracted Facts & Provenance, Vision Analysis, Discrepancies, Investigation Report) with real-time Stepper feedback.
 
-### Stage 3: External Grounding, Weather & Geospatial Verification *(Upcoming)*
-- Selective real-time external search integration for grounding suspicious facts.
-- Historical weather API verification matching reported accident time/coordinates with actual atmospheric conditions (e.g., verifying "wet road / heavy rain" claims).
-- Geospatial street-level validation for reported collision intersections.
-- Market repair parts pricing and labor rate validation against regional benchmarks.
+### Stage 3: Selective External Verification, Assessment Engine & PDF Reports *(Completed)*
+- **Selective External Verification**: Real public API grounding capability integrated into LangGraph (`external_verifier_node`):
+  - **NHTSA vPIC Government API**: Authoritative VIN decoding (Year/Make/Model/Plant Country/Vehicle Type) with format and checksum checks.
+  - **Open-Meteo Historical Weather Archive**: Free geocoding + hourly meteorological observation lookups for reported crash location and timestamp (verifying wet road, heavy rain, or clear weather claims).
+  - **Collision Repair Benchmarks**: Regional labor rate and gross total cost range comparisons grounded against US national CCC ONE / Mitchell repair benchmarks.
+  - **Transparent Evidence Provenance**: Statuses (`verified`, `inconclusive`, `source_unavailable`); no fabricated search results or hallucinations.
+- **Explainable Claim Assessment Engine**: Hybrid deterministic rule engine grounded in authentic US P&C adjuster workflows:
+  - `TRG-MAT-01`: Direct liability or physical impact contradiction (FNOL vs. Police Report).
+  - `TRG-VIN-02`: Vehicle identification or VIN mismatch across sources.
+  - `TRG-SEV-03`: Stated low-speed impact versus severe or catastrophic structural damage.
+  - `TRG-DOC-04`: Missing required core casualty documentation.
+  - `TRG-TIM-05`: Suspicious delayed loss reporting (>14 calendar days).
+  - `TRG-EXT-06`: External weather or VIN verification discrepancy.
+  - `TRG-STR-08`: Suspected structural or frame rail compromise requiring physical rack teardown.
+  - **Adjuster Outcomes**: `ROUTINE_REVIEW`, `ADDITIONAL_INFORMATION_REQUIRED`, `ESCALATE_FOR_HUMAN_REVIEW`.
+- **Calibrated Vision Rubric**: Guardrails preventing overconfident conclusions regarding hidden unibody damage or unilateral driveability from single-angle 2D photographs.
+- **Institutional PDF Report Generator**: ReportLab-powered multi-page investigation document (`GET /api/v1/cases/{case_id}/report/pdf`) with official letterhead, recommendation banner, discrepancies table, external verification citations, and decision-support notices.
+- **Synthetic Investigation Sandbox**: 1-click dashboard runner (`POST /api/v1/cases/synthetic/{scenario_id}`) allowing instant loading and examination of Cases A through E.
+- **Frontend Workbench Refinement**: Live polling during investigation execution, 7-stage adaptive stepper, PDF download buttons on case headers and report preview, and visual display of triggered review rules and recommended adjuster action items.
 
-### Stage 4: Rule-Based Evaluation & SIU Fraud Risk Indicators *(Upcoming)*
-- Explainable, deterministic rule engine evaluating claim risk factors:
-  - Timing anomalies (e.g., policy inception within 72 hours of crash).
-  - High discrepancy count between driver statement and police narrative.
-  - Damage severity mismatch with described low-speed collision.
-- Structured risk tier categorization: `Routine`, `Flag for Review`, `Escalate to SIU`.
-- Adjuster override interface allowing human investigators to accept, modify, or dismiss automated findings.
-
-### Stage 5: Final Production Polish, Export & Enterprise Security *(Upcoming)*
-- Comprehensive PDF report export with institutional header and adjuster signature line.
-- End-to-end regression test suite covering all synthetic packages.
-- Docker containerization for one-command deployment.
-- Role-based access control and production environment readiness.
+### Stage 4: Production Polish, Evaluation Suite & CI/CD Readiness *(Upcoming)*
+- Comprehensive quantitative evaluation suite measuring extraction precision, recall, and contradiction detection accuracy across diverse test incident packages.
+- Docker containerization with multi-stage production builds and docker-compose orchestration.
+- Adjuster override interface allowing claims handlers to manually accept, dismiss, or annotate automated findings.
+- End-to-end performance benchmarking and rate-limit guardrails.
 
 ---
 

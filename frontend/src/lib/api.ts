@@ -168,6 +168,23 @@ class ApiClient {
   async getReport(caseId: string): Promise<Report> {
     return this.request<Report>(`/cases/${caseId}/reports`);
   }
+
+  async downloadReportPdf(caseId: string): Promise<Blob> {
+    const url = `${this.baseUrl}/cases/${caseId}/report/pdf`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ detail: 'Failed to download PDF' }));
+      throw new ApiError(response.status, err.detail || 'Failed to download PDF');
+    }
+    return response.blob();
+  }
+
+  // Synthetic Test Case Sandbox
+  async loadSyntheticCase(scenarioId: string): Promise<CaseDetail> {
+    return this.request<CaseDetail>(`/cases/synthetic/${scenarioId}`, {
+      method: 'POST',
+    });
+  }
 }
 
 export const api = new ApiClient(API_BASE);

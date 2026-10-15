@@ -46,21 +46,44 @@ class AgentExecutionRecord(BaseModel):
 
 
 class WebVerificationResult(BaseModel):
-    query: str
-    target_claim: str
-    search_results: List[Dict[str, Any]] = Field(default_factory=list)
-    verified_fact: Optional[str] = None
+    verification_id: str
+    verification_question: str
+    source_name: str
+    source_url: Optional[str] = None
+    retrieved_information: str
+    retrieval_timestamp: datetime = Field(default_factory=get_utc_now)
+    source_date: Optional[str] = None
+    applicability_and_limitations: str
+    status: str = "verified"  # verified, inconclusive, source_unavailable, unverified
+    confidence: float = 0.9
+    raw_response: Optional[Dict[str, Any]] = None
+    # Backward compatibility fields
+    query: Optional[str] = None
+    target_claim: Optional[str] = None
     source_urls: List[str] = Field(default_factory=list)
-    is_plausible: Optional[bool] = None
-    notes: Optional[str] = None
+
+
+class TriggeredRule(BaseModel):
+    rule_id: str
+    rule_name: str
+    category: str
+    severity: str  # low, medium, high, critical
+    description: str
+    supporting_evidence: List[str] = Field(default_factory=list)
+    recommended_action: str
 
 
 class AssessmentResult(BaseModel):
-    classification: str  # routine vs flag_for_review
+    outcome: str = "ROUTINE_REVIEW"  # ROUTINE_REVIEW, ADDITIONAL_INFORMATION_REQUIRED, ESCALATE_FOR_HUMAN_REVIEW
+    classification: str = "routine"  # routine, flag_for_review, escalate
     risk_score: float = Field(0.0, ge=0.0, le=1.0)
+    rationale: str = ""
+    triggered_rules: List[TriggeredRule] = Field(default_factory=list)
     key_findings: List[str] = Field(default_factory=list)
     flagged_reasons: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
+    recommended_adjuster_actions: List[str] = Field(default_factory=list)
+    uncertainty_and_limitations: List[str] = Field(default_factory=list)
     estimated_loss_range: Optional[str] = None
 
 

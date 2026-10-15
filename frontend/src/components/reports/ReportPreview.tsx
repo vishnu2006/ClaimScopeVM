@@ -3,6 +3,7 @@
 import React from 'react';
 import {
   Printer,
+  Download,
   AlertTriangle,
   CheckCircle,
   FileSearch,
@@ -23,12 +24,16 @@ export interface ReportPreviewProps {
   report: Report;
   caseNumber?: string;
   onPrint?: () => void;
+  onDownloadPdf?: () => void;
+  isDownloadingPdf?: boolean;
 }
 
 export const ReportPreview: React.FC<ReportPreviewProps> = ({
   report,
   caseNumber,
   onPrint,
+  onDownloadPdf,
+  isDownloadingPdf,
 }) => {
   const handlePrint = () => {
     if (onPrint) {
@@ -39,40 +44,41 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
   };
 
   const getRecommendationConfig = () => {
-    switch (report?.recommendation) {
-      case 'routine':
-        return {
-          title: 'Routine Processing Recommended',
-          subtitle: 'Consistent incident documentation with standard repair profile.',
-          badgeVariant: 'success' as const,
-          borderClass: 'border-emerald-300 bg-emerald-50/50 text-emerald-950',
-          icon: <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />,
-        };
-      case 'flag_for_review':
-        return {
-          title: 'Flagged for Closer Adjustor Review',
-          subtitle: 'Cross-document discrepancies or scope anomalies detected.',
-          badgeVariant: 'warning' as const,
-          borderClass: 'border-amber-300 bg-amber-50/50 text-amber-950',
-          icon: <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />,
-        };
-      case 'escalate':
-        return {
-          title: 'Escalation Recommended',
-          subtitle: 'High severity flags, suspected material inconsistency, or coverage limit exposure.',
-          badgeVariant: 'error' as const,
-          borderClass: 'border-rose-300 bg-rose-50/50 text-rose-950',
-          icon: <ShieldAlert className="h-5 w-5 text-status-error shrink-0" />,
-        };
-      default:
-        return {
-          title: 'Preliminary Review Required',
-          subtitle: 'Awaiting further document grounding.',
-          badgeVariant: 'info' as const,
-          borderClass: 'border-blue-200 bg-blue-50/40 text-blue-950',
-          icon: <Info className="h-5 w-5 text-brand-600 shrink-0" />,
-        };
+    const outcome = report?.outcome || report?.recommendation;
+    if (outcome === 'ROUTINE_REVIEW' || outcome === 'routine') {
+      return {
+        title: 'Routine Processing Recommended',
+        subtitle: 'Consistent incident documentation with standard repair profile.',
+        badgeVariant: 'success' as const,
+        borderClass: 'border-emerald-300 bg-emerald-50/50 text-emerald-950',
+        icon: <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />,
+      };
     }
+    if (outcome === 'ADDITIONAL_INFORMATION_REQUIRED' || outcome === 'flag_for_review') {
+      return {
+        title: 'Additional Information Required',
+        subtitle: 'Cross-document discrepancies, missing documentation, or scope anomalies detected.',
+        badgeVariant: 'warning' as const,
+        borderClass: 'border-amber-300 bg-amber-50/50 text-amber-950',
+        icon: <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />,
+      };
+    }
+    if (outcome === 'ESCALATE_FOR_HUMAN_REVIEW' || outcome === 'escalate') {
+      return {
+        title: 'Escalate for Senior Human Review',
+        subtitle: 'Suspected material inconsistency, vehicle identification conflict, or significant coverage exposure.',
+        badgeVariant: 'error' as const,
+        borderClass: 'border-rose-300 bg-rose-50/50 text-rose-950',
+        icon: <ShieldAlert className="h-5 w-5 text-status-error shrink-0" />,
+      };
+    }
+    return {
+      title: 'Preliminary Review Required',
+      subtitle: 'Awaiting further document grounding.',
+      badgeVariant: 'info' as const,
+      borderClass: 'border-blue-200 bg-blue-50/40 text-blue-950',
+      icon: <Info className="h-5 w-5 text-brand-600 shrink-0" />,
+    };
   };
 
   const recConfig = getRecommendationConfig();
@@ -89,14 +95,27 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
             Synthesized multi-document findings and adjustor recommendations
           </p>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handlePrint}
-          leftIcon={<Printer className="h-4 w-4" />}
-        >
-          Print Report
-        </Button>
+        <div className="flex items-center gap-2">
+          {onDownloadPdf && (
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={onDownloadPdf}
+              loading={isDownloadingPdf}
+              leftIcon={<Download className="h-4 w-4" />}
+            >
+              Download PDF
+            </Button>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handlePrint}
+            leftIcon={<Printer className="h-4 w-4" />}
+          >
+            Print Report
+          </Button>
+        </div>
       </div>
 
       {/* Main Report Document Container */}
@@ -301,9 +320,68 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
           </ReportSection>
         )}
 
+        {/* Triggered Review Rules & Action Protocols */}
+        {((report.triggered_rules && report.triggered_rules.length > 0) || (report.recommended_actions && report.recommended_actions.length > 0)) && (
+          <ReportSection
+            title="5. Adjuster Review Triggers & Action Protocols"
+            badge={report.triggered_rules?.length ? `${report.triggered_rules.length} Rule Triggered` : undefined}
+            badgeVariant={report.triggered_rules?.some(r => r.severity === 'critical' || r.severity === 'high') ? 'error' : 'warning'}
+          >
+            <div className="space-y-4">
+              {report.triggered_rules && report.triggered_rules.length > 0 && (
+                <div className="space-y-2.5">
+                  <h4 className="text-xs font-semibold text-surface-800 uppercase tracking-wider">
+                    Triggered Assessment Rules
+                  </h4>
+                  <div className="divide-y divide-surface-200 border border-surface-200 rounded-md overflow-hidden bg-surface-50/50">
+                    {report.triggered_rules.map((rule, idx) => (
+                      <div key={idx} className="p-3 text-xs space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono font-semibold text-surface-900 flex items-center gap-2">
+                            <span className="px-1.5 py-0.5 rounded bg-surface-200 text-surface-700 text-[10px]">{rule.rule_id}</span>
+                            {rule.rule_name}
+                          </span>
+                          <Badge
+                            variant={rule.severity === 'critical' || rule.severity === 'high' ? 'error' : rule.severity === 'medium' ? 'warning' : 'info'}
+                            size="sm"
+                          >
+                            {rule.severity.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <p className="text-surface-600 text-[11px] leading-relaxed">{rule.rationale || rule.description}</p>
+                        {rule.recommended_action && (
+                          <div className="text-[11px] text-brand-800 font-medium bg-brand-50 p-2 rounded border border-brand-100">
+                            Recommended Next Step: {rule.recommended_action}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {report.recommended_actions && report.recommended_actions.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-surface-800 uppercase tracking-wider">
+                    Recommended Adjuster Action Items
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {report.recommended_actions.map((act, idx) => (
+                      <li key={idx} className="text-xs text-surface-700 flex items-start gap-2 bg-surface-50 p-2.5 rounded border border-surface-200">
+                        <span className="text-brand-600 font-bold shrink-0 mt-0.5">{idx + 1}.</span>
+                        <span>{act}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </ReportSection>
+        )}
+
         {/* Extracted Facts Matrix */}
         {report.extracted_facts && Object.keys(report.extracted_facts).length > 0 && (
-          <ReportSection title="5. Extracted Fact Verification Matrix">
+          <ReportSection title="6. Extracted Fact Verification Matrix">
             <div className="rounded-md border border-surface-200 overflow-hidden">
               <div className="divide-y divide-surface-200 bg-surface-0">
                 {Object.entries(report.extracted_facts).map(([key, val]) => {
@@ -337,7 +415,7 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
 
         {/* Current Limitations & Exclusions */}
         {report.limitations && report.limitations.length > 0 && (
-          <ReportSection title="6. Investigation Scope & Identified Limitations">
+          <ReportSection title="7. Investigation Scope & Identified Limitations">
             <ul className="space-y-1.5">
               {report.limitations.map((limit, idx) => (
                 <li

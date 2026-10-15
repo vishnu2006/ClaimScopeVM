@@ -124,6 +124,45 @@ export interface AgentExecutionRecord {
   details?: Record<string, unknown> | null;
 }
 
+export interface TriggeredRule {
+  rule_id: string;
+  rule_name: string;
+  category: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description?: string;
+  rationale?: string;
+  supporting_evidence?: string[];
+  recommended_action: string;
+}
+
+export interface AssessmentResult {
+  outcome: 'ROUTINE_REVIEW' | 'ADDITIONAL_INFORMATION_REQUIRED' | 'ESCALATE_FOR_HUMAN_REVIEW' | string;
+  classification: string;
+  risk_score: number;
+  rationale: string;
+  triggered_rules: TriggeredRule[];
+  key_findings: string[];
+  flagged_reasons: string[];
+  recommendations: string[];
+  recommended_adjuster_actions: string[];
+  uncertainty_and_limitations: string[];
+  estimated_loss_range?: string | null;
+}
+
+export interface WebVerificationResult {
+  verification_id: string;
+  verification_question: string;
+  source_name: string;
+  source_url?: string | null;
+  retrieved_information: string;
+  retrieval_timestamp: string;
+  source_date?: string | null;
+  applicability_and_limitations: string;
+  status: 'verified' | 'inconclusive' | 'source_unavailable' | 'unverified' | string;
+  confidence?: number;
+  raw_response?: Record<string, unknown> | null;
+}
+
 export interface CaseState {
   case_id: string;
   case_number: string;
@@ -144,6 +183,8 @@ export interface CaseState {
   agent_executions: AgentExecutionRecord[];
   missing_documents: string[];
   investigation_limitations: string[];
+  web_verifications: WebVerificationResult[];
+  assessment?: AssessmentResult | null;
   generated_report?: Record<string, unknown> | null;
   processing_log: Array<{
     timestamp: string;
@@ -254,6 +295,7 @@ export interface Report {
   case_number?: string;
   report_type?: string;
   status: string;
+  outcome?: 'ROUTINE_REVIEW' | 'ADDITIONAL_INFORMATION_REQUIRED' | 'ESCALATE_FOR_HUMAN_REVIEW' | string;
   recommendation?: 'routine' | 'flag_for_review' | 'escalate' | string;
   recommendation_rationale?: string;
   summary?: string | null;
@@ -266,7 +308,10 @@ export interface Report {
   extracted_facts?: Record<string, unknown>;
   inconsistencies?: InconsistencyItem[];
   web_verifications?: WebVerificationItem[];
+  triggered_rules?: TriggeredRule[];
+  recommended_actions?: string[];
   limitations?: string[];
+  disclaimer?: string;
   sections?: ReportSection[];
   findings?: unknown;
   recommendations?: unknown;

@@ -24,10 +24,17 @@ def event_loop():
     loop.close()
 
 
+from sqlalchemy.pool import StaticPool
+
 @pytest_asyncio.fixture(scope="function")
 async def test_engine():
-    """In-memory SQLite async engine for test isolation."""
-    engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+    """In-memory SQLite async engine for test isolation with StaticPool."""
+    engine = create_async_engine(
+        TEST_DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        echo=False,
+    )
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield engine

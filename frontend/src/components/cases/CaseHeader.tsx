@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Trash2, Calendar, ShieldCheck, User, ArrowLeft, Clock } from 'lucide-react';
+import { Trash2, Calendar, ShieldCheck, User, ArrowLeft, Clock, Download } from 'lucide-react';
 import { CaseDetail } from '@/lib/types';
 import {
   formatDate,
@@ -20,9 +20,16 @@ import { api } from '@/lib/api';
 export interface CaseHeaderProps {
   caseData: CaseDetail;
   onDeleted?: () => void;
+  onDownloadPdf?: () => void;
+  isDownloadingPdf?: boolean;
 }
 
-export const CaseHeader: React.FC<CaseHeaderProps> = ({ caseData, onDeleted }) => {
+export const CaseHeader: React.FC<CaseHeaderProps> = ({
+  caseData,
+  onDeleted,
+  onDownloadPdf,
+  isDownloadingPdf,
+}) => {
   const router = useRouter();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -72,6 +79,18 @@ export const CaseHeader: React.FC<CaseHeaderProps> = ({ caseData, onDeleted }) =
             <Badge variant={getPriorityBadgeVariant(caseData.priority)} size="md">
               {formatPriority(caseData.priority)} Priority
             </Badge>
+            {caseData.report && onDownloadPdf && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={onDownloadPdf}
+                loading={isDownloadingPdf}
+                leftIcon={<Download className="h-4 w-4" />}
+                className="ml-1"
+              >
+                PDF Report
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"

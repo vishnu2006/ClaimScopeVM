@@ -7,11 +7,13 @@ from langgraph.graph import END, StateGraph
 
 from app.schemas.case_state import (
     AgentExecutionRecord,
+    AssessmentResult,
     CaseState,
     CrossReferenceResult,
     DocumentInventoryItem,
     ProcessingError,
     ProcessingLogEntry,
+    WebVerificationResult,
 )
 from app.schemas.common import DocumentType
 from app.schemas.evidence import (
@@ -21,9 +23,11 @@ from app.schemas.evidence import (
     PoliceReportExtraction,
     RepairEstimateExtraction,
 )
+from app.services.assessment_engine import ClaimAssessmentEngine
 from app.services.consistency_agent import CrossDocumentConsistencyAgent
 from app.services.document_classifier import DocumentClassifier
 from app.services.document_processor import DocumentProcessor
+from app.services.external_verifier import ExternalVerificationService
 from app.services.fnol_extractor import FNOLExtractor
 from app.services.llm_provider import ConfigurationError, LLMProvider, get_llm_provider
 from app.services.police_report_extractor import PoliceReportExtractor
@@ -46,6 +50,8 @@ class ClaimInvestigationOrchestrator:
         self.llm_provider = llm_provider
         self.processor = DocumentProcessor()
         self.classifier = DocumentClassifier(self.processor)
+        self.verifier = ExternalVerificationService()
+        self.assessment_engine = ClaimAssessmentEngine()
 
     def _get_provider(self) -> Optional[LLMProvider]:
         if self.llm_provider:
@@ -555,8 +561,186 @@ class ClaimInvestigationOrchestrator:
                 "processing_log": logs,
             }
 
+    async def external_verifier_node(self, state: CaseState) -> Dict[str, Any]:
+        """Node 7: Selectively queries external authoritative databases (NHTSA, Open-Meteo, CCC benchmarks)."""
+        started_at = _utc_now()
+        executions = list(state.agent_executions)
+        logs = list(state.processing_log)
+        verifications: List[WebVerificationResult] = list(state.web_verifications)
+
+        logs.append(ProcessingLogEntry(stage="external_verifier", message="Evaluating selective external verification triggers..."))
+
+        # Find 17-character VIN
+        vin_to_verify = None
+        rep_year, rep_make, rep_model = None, None, None
+        for doc_id, data in state.extractions.items():
+            if not isinstance(data, dict):
+                continue
+            vehicles = data.get("vehicles") or data.get("vehicles_involved") or []
+            if isinstance(vehicles, list):
+                for v in vehicles:
+                    if isinstance(v, dict):
+                        cand_vin = v.get("vin")
+                        if cand_vin and isinstance(cand_vin, dict):
+                            cand_vin = cand_vin.get("value")
+                        if cand_vin and len(str(cand_vin).strip()) == 17:
+                            vin_to_verify = str(cand_vin).strip()
+                            rep_year = v.get("year", {}).get("value") if isinstance(v.get("year"), dict) else v.get("year")
+                            rep_make = v.get("make", {}).get("value") if isinstance(v.get("make"), dict) else v.get("make")
+                            rep_model = v.get("model", {}).get("value") if isinstance(v.get("model"), dict) else v.get("model")
+                            break
+            v_info = data.get("vehicle_info")
+            if isinstance(v_info, dict):
+                cand_vin = v_info.get("vin")
+                if cand_vin and isinstance(cand_vin, dict):
+                    cand_vin = cand_vin.get("value")
+                if cand_vin and len(str(cand_vin).strip()) == 17:
+                    vin_to_verify = str(cand_vin).strip()
+                    rep_year = rep_year or (v_info.get("year", {}).get("value") if isinstance(v_info.get("year"), dict) else v_info.get("year"))
+                    rep_make = rep_make or (v_info.get("make", {}).get("value") if isinstance(v_info.get("make"), dict) else v_info.get("make"))
+                    rep_model = rep_model or (v_info.get("model", {}).get("value") if isinstance(v_info.get("model"), dict) else v_info.get("model"))
+
+        # 1. NHTSA VIN Verification
+        if vin_to_verify:
+            logs.append(ProcessingLogEntry(stage="external_verifier", message=f"Triggering NHTSA VIN verification for {vin_to_verify}..."))
+            vin_res = await self.verifier.verify_vin(
+                vin=vin_to_verify,
+                reported_year=str(rep_year) if rep_year else None,
+                reported_make=str(rep_make) if rep_make else None,
+                reported_model=str(rep_model) if rep_model else None,
+            )
+            verifications.append(vin_res)
+
+        # 2. Historical Weather Verification
+        inc_date = None
+        inc_city = None
+        inc_state = "CA"
+        reported_wx = None
+        for doc_id, data in state.extractions.items():
+            if not isinstance(data, dict):
+                continue
+            d_val = data.get("incident_date")
+            if d_val and isinstance(d_val, dict):
+                d_val = d_val.get("value")
+            if d_val and not inc_date:
+                inc_date = str(d_val)
+
+            loc_val = data.get("incident_location")
+            if loc_val and isinstance(loc_val, dict):
+                val_dict = loc_val.get("value")
+                if isinstance(val_dict, dict):
+                    inc_city = val_dict.get("city") or inc_city
+                    inc_state = val_dict.get("state") or inc_state
+                elif isinstance(val_dict, str):
+                    inc_city = val_dict.split(",")[0]
+
+            wx_val = data.get("weather_conditions")
+            if wx_val and isinstance(wx_val, dict):
+                wx_val = wx_val.get("value")
+            if wx_val and not reported_wx:
+                reported_wx = str(wx_val)
+
+        if inc_date and inc_city:
+            logs.append(ProcessingLogEntry(stage="external_verifier", message=f"Triggering Open-Meteo historical weather verification for {inc_city}, {inc_state} on {inc_date}..."))
+            wx_res = await self.verifier.verify_weather(
+                city=str(inc_city),
+                state=str(inc_state),
+                incident_date=inc_date,
+                reported_conditions=reported_wx,
+            )
+            verifications.append(wx_res)
+
+        # 3. Repair Cost Benchmarking
+        for doc_id, data in state.extractions.items():
+            if not isinstance(data, dict):
+                continue
+            gross = data.get("gross_total")
+            if gross and isinstance(gross, dict):
+                gross = gross.get("value")
+            if gross is not None:
+                try:
+                    g_val = float(gross)
+                    labor = data.get("labor_total", {}).get("value") if isinstance(data.get("labor_total"), dict) else data.get("labor_total")
+                    parts = data.get("parts_total", {}).get("value") if isinstance(data.get("parts_total"), dict) else data.get("parts_total")
+                    bench_res = await self.verifier.verify_repair_cost_benchmarks(
+                        vehicle_desc=f"{rep_year or ''} {rep_make or ''} {rep_model or 'Vehicle'}".strip(),
+                        gross_total=g_val,
+                        labor_total=float(labor) if labor is not None else None,
+                        parts_total=float(parts) if parts is not None else None,
+                    )
+                    verifications.append(bench_res)
+                    break
+                except (ValueError, TypeError):
+                    pass
+
+        # Execution tracking
+        if verifications:
+            executions.append(
+                AgentExecutionRecord(
+                    agent_id="external_verifier",
+                    display_name="External Public Verification Agent",
+                    status="completed",
+                    started_at=started_at,
+                    completed_at=_utc_now(),
+                    details={"verifications_performed": len(verifications)},
+                )
+            )
+            logs.append(ProcessingLogEntry(stage="external_verifier", message=f"External verification completed with {len(verifications)} source checks."))
+        else:
+            executions.append(
+                AgentExecutionRecord(
+                    agent_id="external_verifier",
+                    display_name="External Public Verification Agent",
+                    status="skipped",
+                    skip_reason="No triggering criteria (17-char VIN, incident date/city, or repair lines) detected.",
+                    started_at=started_at,
+                    completed_at=_utc_now(),
+                )
+            )
+            logs.append(ProcessingLogEntry(stage="external_verifier", message="External verification skipped (no triggering criteria)."))
+
+        return {
+            "web_verifications": verifications,
+            "agent_executions": executions,
+            "processing_log": logs,
+            "stages_completed": list(state.stages_completed) + ["external_verification"],
+        }
+
+    async def assessment_node(self, state: CaseState) -> Dict[str, Any]:
+        """Node 8: Evaluates hybrid deterministic + explainable rules to produce adjuster recommendation."""
+        started_at = _utc_now()
+        executions = list(state.agent_executions)
+        logs = list(state.processing_log)
+
+        logs.append(ProcessingLogEntry(stage="assessment_engine", message="Evaluating claim assessment rules..."))
+        assessment_res = self.assessment_engine.evaluate(state)
+
+        executions.append(
+            AgentExecutionRecord(
+                agent_id="assessment_engine",
+                display_name="Claim Assessment Engine",
+                status="completed",
+                started_at=started_at,
+                completed_at=_utc_now(),
+                details={
+                    "outcome": assessment_res.outcome,
+                    "classification": assessment_res.classification,
+                    "triggered_rules_count": len(assessment_res.triggered_rules),
+                    "risk_score": assessment_res.risk_score,
+                },
+            )
+        )
+        logs.append(ProcessingLogEntry(stage="assessment_engine", message=f"Assessment complete: {assessment_res.outcome} (Risk Score: {assessment_res.risk_score:.2f})."))
+
+        return {
+            "assessment": assessment_res,
+            "agent_executions": executions,
+            "processing_log": logs,
+            "stages_completed": list(state.stages_completed) + ["assessment_evaluation"],
+        }
+
     async def synthesis_agent_node(self, state: CaseState) -> Dict[str, Any]:
-        """Node 8: Consolidates normalized facts, limitations, and generates report-ready synthesis."""
+        """Node 9: Consolidates normalized facts, limitations, and generates report-ready synthesis."""
         logs = list(state.processing_log)
         limitations: List[str] = list(state.investigation_limitations)
 
@@ -568,6 +752,9 @@ class ClaimInvestigationOrchestrator:
                 limitations.append("Absence of certified repair estimate prevents itemized parts and labor cost cross-examination.")
             elif "Photographs" in missing:
                 limitations.append("Absence of accident scene and damage photographs precludes visual severity assessment.")
+
+        limitations.append("Photographs alone cannot determine vehicle structural frame alignment, internal suspension damage, or total loss status without physical shop teardown.")
+        limitations.append("Online repair price indices are contextual benchmarks, not definitive insurance appraisals.")
 
         # Build normalized facts
         normalized: Dict[str, Any] = {}
@@ -600,30 +787,61 @@ class ClaimInvestigationOrchestrator:
         if photo_damage_summaries:
             normalized["visual_damage_assessments"] = photo_damage_summaries
 
-        # Synthesize preliminary investigation report summary
+        # Synthesize 11-section investigation report
+        assessment = state.assessment
         discrepancy_count = len(state.inconsistencies)
-        has_critical = any(d.severity in ["critical", "high"] for d in state.inconsistencies)
-
-        rec = "routine"
-        if has_critical:
-            rec = "flag_for_review"
-        elif discrepancy_count > 0:
-            rec = "flag_for_review"
+        analyzed_count = len(state.extractions) + len(state.vision_observations)
 
         report_summary = {
             "case_number": state.case_number,
+            "case_id": state.case_id,
             "generated_at": _utc_now().isoformat(),
-            "recommendation": rec,
+            "status": "final",
+            "outcome": assessment.outcome if assessment else "ROUTINE_REVIEW",
+            "recommendation": assessment.classification if assessment else "routine",
+            "recommendation_rationale": assessment.rationale if assessment else "Evidence reviewed.",
+            "triggered_rules": [r.model_dump() for r in (assessment.triggered_rules if assessment else [])],
             "discrepancies_count": discrepancy_count,
-            "analyzed_sources_count": len(state.extractions) + len(state.vision_observations),
+            "analyzed_sources_count": analyzed_count,
             "missing_evidence_categories": state.missing_documents,
-            "normalized_incident_facts": normalized,
+            "incident_summary": (
+                f"Incident investigation for claim {state.case_number} compiled from {len(state.documents)} submitted document(s). "
+                f"Analysis conducted across {len(state.extractions)} document extraction(s) and {len(state.vision_observations)} photographic assessment(s)."
+            ),
+            "document_analysis": {
+                "analyzed_documents": [d.filename for d in state.documents if d.status == "completed" or d.document_type != "unknown"],
+                "missing_documents": state.missing_documents,
+            },
+            "extracted_facts": normalized,
+            "vision_observations": [v.model_dump() for v in state.vision_observations.values()],
+            "inconsistencies": [
+                {
+                    "title": f"Conflict in {inc.category.replace('_', ' ').title()}",
+                    "description": inc.explanation,
+                    "severity": inc.severity,
+                    "sources": [inc.source_a, inc.source_b],
+                }
+                for inc in state.inconsistencies
+            ],
+            "web_verifications": [
+                {
+                    "query": v.verification_question,
+                    "finding": v.retrieved_information,
+                    "source_url": v.source_url,
+                    "source_name": v.source_name,
+                    "status": v.status,
+                }
+                for v in state.web_verifications
+            ],
+            "limitations": limitations,
+            "recommended_actions": (assessment.recommended_adjuster_actions if assessment else ["Proceed with standard claim review."]),
+            "disclaimer": "ClaimScope is an assistive decision-support system for licensed claims adjusters. It does not independently approve, deny, or label claims fraudulent.",
         }
 
         logs.append(
             ProcessingLogEntry(
                 stage="synthesis",
-                message=f"Investigation synthesis completed with recommendation: {rec.upper()}.",
+                message=f"Investigation report generated with recommendation: {report_summary['recommendation'].upper()}.",
             )
         )
 
@@ -653,7 +871,7 @@ class ClaimInvestigationOrchestrator:
             return "estimate_agent"
         if self._has_doc_type(state, DocumentType.PHOTO.value):
             return "vision_agent"
-        return "synthesis_agent"
+        return "external_verifier"
 
     def route_after_fnol(self, state: CaseState) -> str:
         if self._has_doc_type(state, DocumentType.POLICE_REPORT.value):
@@ -662,10 +880,9 @@ class ClaimInvestigationOrchestrator:
             return "estimate_agent"
         if self._has_doc_type(state, DocumentType.PHOTO.value):
             return "vision_agent"
-        # If multiple sources exist, cross-reference
         if (len(state.extractions) + len(state.vision_observations)) >= 2:
             return "consistency_agent"
-        return "synthesis_agent"
+        return "external_verifier"
 
     def route_after_police(self, state: CaseState) -> str:
         if self._has_doc_type(state, DocumentType.REPAIR_ESTIMATE.value):
@@ -674,20 +891,20 @@ class ClaimInvestigationOrchestrator:
             return "vision_agent"
         if (len(state.extractions) + len(state.vision_observations)) >= 2:
             return "consistency_agent"
-        return "synthesis_agent"
+        return "external_verifier"
 
     def route_after_estimate(self, state: CaseState) -> str:
         if self._has_doc_type(state, DocumentType.PHOTO.value):
             return "vision_agent"
         if (len(state.extractions) + len(state.vision_observations)) >= 2:
             return "consistency_agent"
-        return "synthesis_agent"
+        return "external_verifier"
 
     def route_after_vision(self, state: CaseState) -> str:
         total_sources = len(state.extractions) + (1 if state.vision_observations else 0)
         if total_sources >= 2:
             return "consistency_agent"
-        return "synthesis_agent"
+        return "external_verifier"
 
     # -------------------------------------------------------------
     # BUILD AND COMPILE GRAPH
@@ -705,6 +922,8 @@ class ClaimInvestigationOrchestrator:
         graph.add_node("estimate_agent", self.estimate_agent_node)
         graph.add_node("vision_agent", self.vision_agent_node)
         graph.add_node("consistency_agent", self.consistency_agent_node)
+        graph.add_node("external_verifier", self.external_verifier_node)
+        graph.add_node("assessment_node", self.assessment_node)
         graph.add_node("synthesis_agent", self.synthesis_agent_node)
 
         # Entry point
@@ -720,7 +939,7 @@ class ClaimInvestigationOrchestrator:
                 "police_agent": "police_agent",
                 "estimate_agent": "estimate_agent",
                 "vision_agent": "vision_agent",
-                "synthesis_agent": "synthesis_agent",
+                "external_verifier": "external_verifier",
             },
         )
 
@@ -732,7 +951,7 @@ class ClaimInvestigationOrchestrator:
                 "estimate_agent": "estimate_agent",
                 "vision_agent": "vision_agent",
                 "consistency_agent": "consistency_agent",
-                "synthesis_agent": "synthesis_agent",
+                "external_verifier": "external_verifier",
             },
         )
 
@@ -743,7 +962,7 @@ class ClaimInvestigationOrchestrator:
                 "estimate_agent": "estimate_agent",
                 "vision_agent": "vision_agent",
                 "consistency_agent": "consistency_agent",
-                "synthesis_agent": "synthesis_agent",
+                "external_verifier": "external_verifier",
             },
         )
 
@@ -753,7 +972,7 @@ class ClaimInvestigationOrchestrator:
             {
                 "vision_agent": "vision_agent",
                 "consistency_agent": "consistency_agent",
-                "synthesis_agent": "synthesis_agent",
+                "external_verifier": "external_verifier",
             },
         )
 
@@ -762,11 +981,13 @@ class ClaimInvestigationOrchestrator:
             self.route_after_vision,
             {
                 "consistency_agent": "consistency_agent",
-                "synthesis_agent": "synthesis_agent",
+                "external_verifier": "external_verifier",
             },
         )
 
-        graph.add_edge("consistency_agent", "synthesis_agent")
+        graph.add_edge("consistency_agent", "external_verifier")
+        graph.add_edge("external_verifier", "assessment_node")
+        graph.add_edge("assessment_node", "synthesis_agent")
         graph.add_edge("synthesis_agent", END)
 
         return graph.compile()

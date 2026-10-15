@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from app.schemas.common import BaseSchema, CasePriority, CaseStatus
 from app.schemas.document import DocumentResponse
 from app.schemas.evidence import EvidenceResponse
+from app.schemas.report import ReportResponse
 
 
 class CaseCreate(BaseModel):
@@ -57,5 +58,6 @@ class CaseResponse(BaseSchema):
     evidence_count: int = 0
     documents: List["DocumentResponse"] = Field(default_factory=list)
     evidences: List["EvidenceResponse"] = Field(default_factory=list)
+    report: Optional[ReportResponse] = None
     created_at: datetime
     updated_at: datetime

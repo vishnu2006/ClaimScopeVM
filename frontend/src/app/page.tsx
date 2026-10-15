@@ -13,6 +13,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { useCases } from '@/hooks/useCases';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { CaseCard } from '@/components/cases/CaseCard';
@@ -146,6 +147,109 @@ export default function DashboardPage() {
                   </Card>
                 );
               })}
+            </div>
+
+            {/* Synthetic Incident Package Sandbox */}
+            <div className="rounded-xl border border-brand-200 bg-brand-50/40 p-5 shadow-subtle space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-brand-100 text-brand-800 text-[11px] font-bold uppercase tracking-wider mb-1">
+                    <span>Part 3 Evaluation Sandbox</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-surface-900">
+                    Synthetic Incident Packages (Cases A – E)
+                  </h3>
+                  <p className="text-xs text-surface-600">
+                    Load pre-configured incident packages into the database with one click to test adaptive routing, vision analysis, external verification, and explainable assessment.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                {[
+                  {
+                    id: 'case_a',
+                    tag: 'Case A',
+                    title: 'Clean Minor Rear-End',
+                    docs: '1 FNOL PDF',
+                    desc: 'Tests adaptive node skipping on partial intake.',
+                    badge: 'Partial Intake',
+                  },
+                  {
+                    id: 'case_b',
+                    tag: 'Case B',
+                    title: 'Front Collision + Photos',
+                    docs: 'FNOL + 2 Photos',
+                    desc: 'Tests Vehicle Damage Vision Agent and severity rubric.',
+                    badge: 'Vision Analysis',
+                  },
+                  {
+                    id: 'case_c',
+                    tag: 'Case C',
+                    title: 'Comprehensive Package',
+                    docs: 'FNOL, Police, Estimate, Photos',
+                    desc: 'Tests full consistent pipeline, NHTSA decode, and routine outcome.',
+                    badge: 'Full Baseline',
+                  },
+                  {
+                    id: 'case_d',
+                    tag: 'Case D',
+                    title: 'Contradictory Staged Loss',
+                    docs: 'FNOL, Police, Photos',
+                    desc: 'Tests conflicting collision narratives and VIN mismatch escalation.',
+                    badge: 'Fraud / Contradiction',
+                  },
+                  {
+                    id: 'case_e',
+                    tag: 'Case E',
+                    title: 'Incomplete Scanned Intake',
+                    docs: 'Scanned Statement PDF',
+                    desc: 'Tests multimodal OCR on scans and uncertainty limitations.',
+                    badge: 'Uncertainty / Scan',
+                  },
+                ].map((scenario) => (
+                  <div
+                    key={scenario.id}
+                    className="flex flex-col justify-between bg-surface-0 border border-surface-200 rounded-lg p-3.5 shadow-subtle hover:border-brand-400 hover:shadow-card transition-all"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[11px] font-bold text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200">
+                          {scenario.tag}
+                        </span>
+                        <span className="text-[10px] text-surface-500 font-medium">
+                          {scenario.badge}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-bold text-surface-900 leading-tight">
+                        {scenario.title}
+                      </h4>
+                      <p className="text-[11px] text-brand-600 font-mono font-medium">
+                        {scenario.docs}
+                      </p>
+                      <p className="text-[11px] text-surface-500 leading-snug">
+                        {scenario.desc}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await api.loadSyntheticCase(scenario.id);
+                          router.push(`/cases/${res.id}`);
+                        } catch (err: unknown) {
+                          alert(`Error loading ${scenario.tag}: ${err instanceof Error ? err.message : String(err)}`);
+                        }
+                      }}
+                      className="mt-3 w-full py-1.5 px-2 bg-surface-50 hover:bg-brand-600 hover:text-white border border-surface-200 hover:border-brand-600 rounded text-xs font-semibold text-surface-700 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                    >
+                      <span>Load &amp; Investigate</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Recent Cases Section */}

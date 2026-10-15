@@ -54,6 +54,41 @@ export default function CaseDetailPage() {
   const [investigationState, setInvestigationState] = useState<CaseState | null>(null);
   const [isInvestigating, setIsInvestigating] = useState(false);
   const [investigationError, setInvestigationError] = useState<string | null>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    if (!caseId) return;
+    setIsDownloadingPdf(true);
+    try {
+      const blob = await api.downloadReportPdf(caseId);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ClaimScope_Report_${caseData?.case_number || caseId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to download report PDF';
+      setInvestigationError(msg);
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
+  // Poll investigation state while running so stepper updates live
+  useEffect(() => {
+    if (!isInvestigating || !caseId) return;
+    const interval = setInterval(() => {
+      api.getInvestigation(caseId)
+        .then((state) => {
+          if (state) setInvestigationState(state);
+        })
+        .catch(() => {});
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isInvestigating, caseId]);
 
   const loadInvestigation = async () => {
     if (!caseId) return;
@@ -143,6 +178,8 @@ export default function CaseDetailPage() {
       <CaseHeader
         caseData={caseData}
         onDeleted={() => router.push('/cases')}
+        onDownloadPdf={handleDownloadPdf}
+        isDownloadingPdf={isDownloadingPdf}
       />
 
       <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
@@ -408,7 +445,12 @@ export default function CaseDetailPage() {
         {activeTab === 'report' && (
           <div className="space-y-4">
             {caseData.report ? (
-              <ReportPreview report={caseData.report} caseNumber={caseData.case_number} />
+              <ReportPreview
+                report={caseData.report}
+                caseNumber={caseData.case_number}
+                onDownloadPdf={handleDownloadPdf}
+                isDownloadingPdf={isDownloadingPdf}
+              />
             ) : (
               <EmptyState
                 title="No report generated yet"
