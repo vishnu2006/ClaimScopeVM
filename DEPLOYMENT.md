@@ -121,3 +121,4 @@ Click **Save and Deploy**. Cloudflare Pages will build the Next.js frontend and 
 4. [ ] **Investigation Stepper**: Click **Run Adaptive Investigation**. Telemetry steps should execute with Gemini 2.5 Flash.
 5. [ ] **Dossier PDF Download**: Click **Download Official Dossier (PDF)**. A clean A4 PDF should download with exact page numbers (*Page X of Y*) and footer attribution (*Built by Vishnu Pandrangi*).
 6. [ ] **Persistence**: Refresh or reopen after backend spins down; historical case state should load intact from PostgreSQL.
+
