@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     GEMINI_MAX_TOKENS: int = 8192
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
-    CORS_ORIGIN_REGEX: Optional[str] = r"^https:\/\/.*\.pages\.dev$"
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,https://claimscopevm.vishnu-pandrangi123.workers.dev"
+    CORS_ORIGIN_REGEX: Optional[str] = r"^https:\/\/(.*\.(pages\.dev|workers\.dev)|localhost(:\d+)?)$"
 
     @property
     def effective_gemini_api_key(self) -> Optional[str]:

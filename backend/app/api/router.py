@@ -5,7 +5,7 @@ from app.api.documents import router as documents_router
 from app.api.reports import router as reports_router
 from app.api.diagnostics import router as diagnostics_router
 
-api_router = APIRouter(prefix="/api/v1")
+api_router = APIRouter()
 
 # Case CRUD and case evidence
 api_router.include_router(cases_router)

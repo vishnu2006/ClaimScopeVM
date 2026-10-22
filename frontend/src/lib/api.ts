@@ -10,7 +10,11 @@ import {
   Report,
 } from './types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    ? 'https://claimscopevm-api.onrender.com/api/v1'
+    : 'http://localhost:8000/api/v1');
 
 export class ApiError extends Error {
   constructor(
