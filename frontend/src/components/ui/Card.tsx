@@ -11,8 +11,8 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
       <div
         ref={ref}
         className={cn(
-          'bg-surface-0 border border-surface-200 rounded-lg shadow-card text-surface-900 transition-all duration-150',
-          hover && 'hover:shadow-elevated hover:border-surface-300 cursor-pointer',
+          'bg-surface-0 border border-surface-200 rounded-xl shadow-subtle text-surface-900 transition-all duration-200',
+          hover && 'hover:shadow-elevated hover:border-surface-300 hover:-translate-y-0.5 cursor-pointer',
           className
         )}
         {...props}
@@ -37,12 +37,12 @@ export const CardHeader = React.forwardRef<
 CardHeader.displayName = 'CardHeader';
 
 export const CardTitle = React.forwardRef<
-  HTMLParagraphElement,
+  HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn('text-base font-semibold leading-tight tracking-tight text-surface-900', className)}
+    className={cn('text-base font-bold leading-tight tracking-tight text-surface-900', className)}
     {...props}
   />
 ));
@@ -64,7 +64,7 @@ export const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('p-5 sm:p-6 pt-2', className)} {...props} />
+  <div ref={ref} className={cn('p-5 sm:p-6 pt-0', className)} {...props} />
 ));
 CardContent.displayName = 'CardContent';
 
