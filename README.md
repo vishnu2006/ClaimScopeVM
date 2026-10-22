@@ -34,11 +34,15 @@ ClaimScope transforms this workflow. Rather than acting as a generic chatbot or 
 
 ## Key Capabilities & Features
 
-- **Public Showcase & Enterprise Homepage (`/`)**: Dedicated public homepage highlighting real multimodal capabilities, workflow architecture, interactive workbench preview, and responsible AI governance.
-- **Operational Cockpit (`/dashboard`)**: Dedicated operational overview featuring live KPI metric cards, priority attention queue, priority distribution breakdown, and quick actions.
-- **Full Case Management Registry (`/cases`)**: Multi-faceted search, status and priority filters, multi-column sorting, and pagination.
-- **Agentic Engine Deep Dive (`/engine`)**: Detailed visual workflow of the 10-node LangGraph StateGraph, shared `CaseState` schema, and live case execution telemetry inspector.
-- **Dedicated Investigation Registries**: Cross-case registries for **Document Intelligence** (`/documents`), **Evidence & Provenance Analysis** (`/evidence`), **Discrepancy Review** (`/discrepancies`), and **Investigation Reports Archive** (`/reports`).
+- **Public Enterprise Showcase (`/`)**: Refined editorial homepage inspired by modern enterprise design with balanced typography, strategic capability pillars, interactive workbench preview, and NAIC governance disclosures.
+- **Enterprise Horizontal Workspace Navigation**: Replaced the persistent sidebar with a streamlined corporate horizontal application header featuring dropdown navigation (Overview, Claims, Investigation, Reports, Platform), active indicators, genuine system health telemetry, and 1-click New Investigation trigger.
+- **Operational Cockpit (`/dashboard`)**: Full-width claims operations cockpit featuring live KPI metric cards, priority attention queue for contradictions, portfolio priority distribution, and concise recent claims table.
+- **Full Claims Registry (`/cases`)**: High-density enterprise data grid with multi-faceted search, status and priority filters, multi-column sorting, and pagination.
+- **New Claim Intake Workflow (`/cases/new`)**: Professional two-column intake layout with package guidelines, supported format standards (PDF, JPEG, PNG), and streamlined submission.
+- **Flagship Investigation Workbench (`/cases/[id]`)**: Full-width multi-tab evidence workspace featuring live LangGraph execution stepper, structured facts with provenance citations, Gemini multimodal vision inspection, side-by-side contradiction diffs, NHTSA/weather grounding, and ReportLab PDF compilation.
+- **Agentic Engine Architecture (`/engine`)**: Concise, interactive LangGraph StateGraph visualization with plain-language stage explainers and live database case execution inspector.
+- **Polished Demo Sandbox (`/demo`)**: Compact scenario-selection workspace for the 5 standardized collision evaluation packages with expandable technical focus and 1-click provisioning.
+- **Cross-Case Investigation Registries**: Cross-case registries for **Document Intelligence** (`/documents`), **Evidence Analysis** (`/evidence`), **Discrepancy Review** (`/discrepancies`), and **Investigation Reports Archive** (`/reports`).
 - **Adaptive Multi-Agent Orchestration**: Dynamic LangGraph `StateGraph(CaseState)` workflow with supervisor routing that inspects package contents and conditionally executes only applicable extractors while gracefully logging skipped files.
 - **Multimodal Document AI**: Native vector PDF parsing via PyMuPDF, paired with Google Gemini multimodal vision for scanned, handwritten, and photographic evidence.
 - **Photographic Vehicle Damage Analysis**: Structured visual inspection extracting visible regions, affected components, severity ratings (`minor`, `moderate`, `severe`, `catastrophic_total_loss`), and explicit image quality limitations.

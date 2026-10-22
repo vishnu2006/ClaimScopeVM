@@ -15,7 +15,7 @@ from app.config import settings
 
 def main():
     print("=" * 65)
-    print("  ClaimScope — Google Gemini Connectivity Diagnostic")
+    print("  ClaimScope - Google Gemini Connectivity Diagnostic")
     print("=" * 65)
 
     print(f"\n[1] Application Config:")
@@ -48,13 +48,13 @@ def main():
             contents="Hello! Please reply with exactly: 'Gemini connectivity established successfully.'",
         )
         reply = response.text.strip() if hasattr(response, "text") and response.text else "OK"
-        print(f"    ✓ Connection SUCCESSFUL!")
+        print(f"    [OK] Connection SUCCESSFUL!")
         print(f"    - Response: \"{reply}\"")
         print("\n" + "=" * 65)
         print("  All multimodal AI capabilities are fully active.")
         print("=" * 65)
     except Exception as exc:
-        print(f"    ✗ Connection FAILED!")
+        print(f"    [X] Connection FAILED!")
         print(f"    - Error: {exc}")
         print("\n    Please verify that your GEMINI_API_KEY is valid and has active API quota.")
         print("=" * 65)

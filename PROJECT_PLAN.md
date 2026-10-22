@@ -251,51 +251,66 @@ ClaimScope is pre-configured to operate on Google Gemini without requiring any p
 
 ---
 
-## 8. Enterprise Design System & UX Architecture
+## 8. ValueMomentum-Inspired Enterprise Visual Redesign & Design System
 
-The ClaimScope interface was refined to align with enterprise insurance operations and modern enterprise design principles:
+In accordance with enterprise visual design standards and inspired by [ValueMomentum](https://www.valuemomentum.com/), ClaimScope underwent a complete corporate redesign to embody the maturity, editorial hierarchy, and clarity of a leading Property & Casualty (P&C) insurance technology product.
 
-1. **Design Tokens & +10% UI Scale Alignment**:
-   - Adjusted base typography scale (`xs` 13px, `sm` 14px, `base` 15px, `lg` 17px, `xl` 20px, `2xl` 24px, `3xl` 30px, `4xl` 36px) to eliminate sub-scale squinting and provide substantial density at standard 100% browser zoom.
-   - Widened sidebar footprint from `260px` to `280px` for optimal breathing room and readable metadata badges.
-   - Crisp 1px surface borders (`border-surface-200`) and soft, restrained shadows (`shadow-card`, `shadow-subtle`).
-   - Restrained color system: deep navy brand tokens, muted status dots, monospace typography for technical identifiers (`JetBrains Mono`).
+### 1. Brand Identity & Logo
+- **Official Brand Logo (`vmlogo.png`)**:
+  - ValueMomentum brand identity bird mascot integrated across the public homepage, application sidebar, header, browser metadata, and footer.
+  - Transparent PNG assets generated and housed under `frontend/public/brand/vmlogo.png` and `frontend/public/brand/vmlogo-icon.png`.
+  - Displayed on a dedicated white backing container in both light and dark modes to preserve true brand wing colors (Cobalt `#086afc` and Growth Green `#5eba46` with Innovation Gold `#febc10`) without color inversion or contrast loss.
+- **Footer Attribution**:
+  - Small footer credit preserved: *Built by Vishnu Pandrangi*.
 
-2. **Public Enterprise Showcase Homepage (`/`)**:
-   - Elegant marketing and product overview at `/` with hero headline: *"Every claim tells a story. ClaimScope connects the evidence."*
-   - Dual-theme atmospheric background integration: refined airy light-mode vignette focal treatment and deep navy night mode with controlled blue network highlights.
-   - Complete Light/Dark Theme toggle with persistent local storage, system preference auto-detection, and zero-FOUC initialization script.
-   - Interactive, accurate product preview mirroring the actual investigation workbench (Case CS-2026-000004, 7-stage stepper, side-by-side contradiction diff, NHTSA VIN verification).
-   - Dedicated **System Architecture Section** (*"Intelligence that follows the evidence."*): interactive visualization of the real LangGraph StateGraph pipeline, displaying conditional extractor routing (FNOL, Police, Estimate, Vision), shared `CaseState` provenance, consistency checking, external grounding, and explainable assessment rules.
-   - Clear ethical AI governance and regulatory statement enforcing assistive human-in-the-loop decision intelligence.
-   - Minimalist credit footer: *Built by Vishnu Pandrangi*.
+### 2. Corporate Color Palette & Design Tokens
+Inspired by ValueMomentum's visual language:
+- **Executive Navy (`#0a1f44` / `brand-950`)**: Primary corporate anchor for headings, navigation banners, hero sections, and executive accents.
+- **Momentum Cobalt (`#086afc` / `brand-600`)**: Core interactive accent for primary buttons, active tabs, and pipeline telemetry.
+- **Growth Green (`#5eba46` / `growth-600` / `growth-500`)**: Used for verified provenance, synthesis completion, positive status indicators, and domain trust markers.
+- **Innovation Amber/Gold (`#febc10`)**: Used for high-exposure review flags, attention notices, and regulatory alerts.
+- **Executive Dark Mode Slate (`#0a111e` canvas, `#121c2e` surface)**: Deliberate charcoal-slate dark theme avoiding oversaturated blue wash while maintaining high contrast.
 
-3. **Complete Dark Mode Theme Architecture**:
-   - Semantic CSS variable tokens mapped to Tailwind colors (`--color-surface-0` through `950`, `--color-brand-50` through `950`).
-   - Refined neutral charcoal/slate developer-grade palette (`#101114` main canvas, `#15171B` sidebar, `#1B1E24` elevated surfaces, `#22262D` secondary surfaces, `#30343D` 1px borders, `#F2F3F5` primary text, `#A5ACB8` secondary text) avoiding oversaturated navy blue dominance.
-   - Dual-theme atmospheric background integration: refined airy light-mode vignette and controlled charcoal dark-mode vignette with cyan/blue network highlights at sides and bottom.
-   - Streamlined Agentic Engine architecture page (`/engine`) with concise introductory summary, interactive live database case telemetry, and progressive disclosure for the 10 graph node specifications.
-   - Print media fallback ensuring institutional PDF reports and paper printouts remain clean black-on-white regardless of UI theme.
+### 3. Redesigned Public Homepage (`/`)
+- **Editorial Hero Section**: Strong typography with dual-tone heading (*"Every claim tells a story. We connect the evidence."*), clear P&C domain positioning, and quick CTA access.
+- **Four Strategic Value Pillars**:
+  1. *Adaptive Multi-Agent Intake* — Dynamic routing skipping missing documents without hallucination.
+  2. *Multimodal Vision Reasoning* — Physical appraisal scored against damage rubrics.
+  3. *Cross-Document Contradiction Detection* — Explainable side-by-side reconciliation between driver statements, police reports, and estimates.
+  4. *Deterministic External Grounding* — Live validation against NHTSA vPIC vehicle registry and historical weather data.
+- **Interactive Multi-Document Workbench Preview**: Real-time interactive inspection card showing case facts, photos, and contradiction diffs.
+- **Redesigned System Architecture Graph**: LangGraph state machine visualization with ValueMomentum node tokens.
+- **NAIC Model Act Regulatory Compliance**: Clear human-in-the-loop governance statements.
 
-4. **Operational Cockpit (`/dashboard`)**:
-   - Dedicated operational overview answering: *What is happening across cases? Which need attention? What was recently processed?*
-   - 4 live database KPI metrics: Total Ingested, Active Intake, Attention Required, and Synthesized Reports.
-   - Priority Review Queue highlighting cases with detected discrepancies, high exposure, or pending adjuster review.
-   - Quick action triggers for Intake, Demo Lab, and Agentic Engine.
+### 4. Horizontal Workspace Navigation & Full-Width Workspace Redesign
+- **Removal of Persistent Sidebar**: Replaced the previous left navigation drawer with an enterprise top horizontal navigation header (`WorkspaceNavbar.tsx`), granting internal pages full horizontal canvas width (`max-w-[1440px]`).
+- **Horizontal Dropdown Navigation Structure**:
+  - **Overview**: Direct link to the Claims Operations Cockpit (`/dashboard`).
+  - **Claims**: Dropdown providing *All Claims* (`/cases`) and *New Claim Intake* (`/cases/new`).
+  - **Investigation**: Dropdown providing *Document Intelligence* (`/documents`), *Discrepancy Review* (`/discrepancies`), and *Evidence Analysis* (`/evidence`).
+  - **Reports**: Direct link to the Investigation Reports Archive (`/reports`).
+  - **Platform**: Dropdown providing *Agentic Engine* (`/engine`) and *Demo Lab* (`/demo`).
+- **Telemetry & Controls**: Genuine live health indicator showing FastAPI backend state and active Gemini model (`gemini-3.5-flash-lite`), public site navigation shortcut, theme toggle, and 1-click New Claim CTA.
+- **Responsive Mobile Drawer**: Built-in drawer menu ensuring seamless navigation on mobile devices.
 
-5. **Multi-View Case Management Workspace (`/cases`)**:
-   - Full-width management table with live search across Case ID, Title, Claimant, Policy.
-   - Status and priority multi-filter controls with column sorting (Case ID, Date, Priority, Document Count) and pagination.
+### 5. Individual Page Redesigns
+- **Executive Dashboard (`/dashboard`)**: Operations cockpit with 4 KPI cards, attention queue for discrepancies, portfolio priority breakdown, and concise recent claims table.
+- **Claims Registry (`/cases`)**: Full-width high-density management table with search, status/priority filters, column sorting, and pagination.
+- **New Claim Intake (`/cases/new`)**: Two-column layout pairing metadata inputs with supported package standards (PDF, JPEG, PNG).
+- **Flagship Investigation Workbench (`/cases/[id]`)**: Full-width evidence review screen with live LangGraph stepper, structured facts, vision analysis, contradiction diffs, and ReportLab PDF compilation.
+- **Investigation Reports (`/reports`)**: Central repository of synthesized assessments with recommendation badges and 1-click PDF download triggers.
+- **Agentic Engine (`/engine`)**: Concise LangGraph state visualization with plain-language stage explainers and live database case execution inspector.
+- **Demo Lab (`/demo`)**: Compact scenario cards with expandable evaluation focus and 1-click automated case provisioning.
 
-6. **Agentic Engine Architecture Experience (`/engine`)**:
-   - Visual interactive StateGraph workflow showing all 10 agent nodes and their conditional activation guards.
-   - Live Case Telemetry Inspector: selects any database case and renders its actual LangGraph `agent_executions` history, status, and skip reasons.
+### 6. Universal Device Scale & Responsive Calibration
+- **Homepage Typography & Vertical Rhythm Normalization**: Calibrated homepage hero and section typography (Hero H1 reduced from oversized `text-6xl` [60px] to crisp, balanced `text-2xl sm:text-3xl md:text-4xl lg:text-[2.65rem]`, section headings calibrated to `text-xl sm:text-2xl lg:text-3xl`).
+- **Standardized Vertical Padding**: Refined exaggerated section paddings from `py-20 md:py-24` down to standard corporate `py-10 sm:py-14` and header height from `h-20` (80px) down to standard `h-16` (64px), perfectly aligning with the workspace navbar.
+- **Proportional Card Density**: Tuned preview cards, architecture canvas, and capability cards to use sleek `p-4.5 sm:p-5` padding and refined text sizing, eliminating the bloated 'zoomed-in' perception at standard 100% browser zoom while matching the sleek density praised inside the app.
+- **Universal Multi-Screen Compatibility**: Standardized layout bounds with `max-w-[1240px]` on the public showcase and `max-w-[1440px]` on the workspace application, paired with fluid `px-4 sm:px-6 lg:px-8` container gutters and `text-size-adjust: 100%`. Renders with crisp proportions across 1366x768 laptops, standard 1080p (with 100% and 125% OS scaling), 1440p, 4K, tablets, and mobile devices.
 
-7. **Dedicated Cross-Case Investigation Registries**:
-   - **Document Intelligence (`/documents`)**: Ingested file repository across cases with OCR status, page counts, and file types.
-   - **Evidence & Provenance Analysis (`/evidence`)**: Cross-case fact explorer with confidence scores and conflict toggles.
-   - **Discrepancy Review (`/discrepancies`)**: Triage inbox for cross-document contradictions and side-by-side diff comparisons.
-   - **Investigation Reports Archive (`/reports`)**: Central repository of generated assessment outcomes with 1-click PDF download triggers.
+### 7. Verification & Production Build
+- **Build Status**: Verified with Next.js 16.4.1 (Turbopack) production build. `npm run build` completed successfully (`code 0`) across all 14 routes.
+- **Functional Integrity**: 100% preservation of FastAPI backend, Gemini multimodal extraction, LangGraph orchestration, and document persistence.
 
 
 

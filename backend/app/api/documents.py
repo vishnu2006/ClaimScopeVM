@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import List, Optional
 import aiofiles
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -168,6 +169,36 @@ async def get_document(
             detail=f"Document with ID {doc_id} not found for case {case_id}",
         )
     return doc
+
+
+@router.get("/{doc_id}/raw")
+async def get_document_raw_file(
+    case_id: uuid.UUID,
+    doc_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db_session),
+):
+    """Serve the raw uploaded document or image file directly for in-browser inspection."""
+    query = select(Document).where(Document.id == doc_id, Document.case_id == case_id)
+    result = await db.execute(query)
+    doc = result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Document with ID {doc_id} not found for case {case_id}",
+        )
+    if not doc.file_path or not os.path.exists(doc.file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Raw document file not found at path: {doc.file_path}",
+        )
+
+    mime = doc.mime_type or "application/octet-stream"
+    return FileResponse(
+        path=doc.file_path,
+        media_type=mime,
+        filename=doc.original_filename,
+        content_disposition_type="inline",
+    )
 
 
 @router.delete("/{doc_id}", status_code=status.HTTP_200_OK)
