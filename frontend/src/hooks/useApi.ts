@@ -31,7 +31,8 @@ export function useApi<T>(
   const isMountedRef = useRef(true);
 
   const refetch = useCallback(async (): Promise<T | null> => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
+    // Keep previous data visible instead of flashing full empty loading screen
+    setState((prev) => ({ ...prev, loading: prev.data === null, error: null }));
     try {
       const result = await fetcherRef.current();
       if (isMountedRef.current) {

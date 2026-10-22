@@ -23,6 +23,21 @@ export class ApiError extends Error {
   }
 }
 
+// Simple in-memory response cache with TTL for ultra-fast, snappy navigation
+const clientCache = new Map<string, { data: unknown; expiry: number }>();
+
+export function invalidateApiCache(prefix?: string) {
+  if (!prefix) {
+    clientCache.clear();
+    return;
+  }
+  for (const key of clientCache.keys()) {
+    if (key.includes(prefix)) {
+      clientCache.delete(key);
+    }
+  }
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -30,8 +45,19 @@ class ApiClient {
     this.baseUrl = baseUrl.replace(/\/$/, '');
   }
 
-  private async request<T>(path: string, options?: RequestInit): Promise<T> {
+  private async request<T>(path: string, options?: RequestInit, cacheTtlMs: number = 0): Promise<T> {
     const url = `${this.baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+    const method = (options?.method || 'GET').toUpperCase();
+
+    // Check cache for GET requests if TTL is requested
+    const cacheKey = `${method}:${url}`;
+    if (method === 'GET' && cacheTtlMs > 0) {
+      const cached = clientCache.get(cacheKey);
+      if (cached && cached.expiry > Date.now()) {
+        return cached.data as T;
+      }
+    }
+
     const headers: Record<string, string> = {
       ...(options?.headers as Record<string, string>),
     };
@@ -67,7 +93,11 @@ class ApiClient {
         return {} as T;
       }
 
-      return await response.json();
+      const result = await response.json();
+      if (method === 'GET' && cacheTtlMs > 0) {
+        clientCache.set(cacheKey, { data: result, expiry: Date.now() + cacheTtlMs });
+      }
+      return result;
     } catch (error) {
       if (error instanceof ApiError) {
         throw error;
@@ -82,14 +112,17 @@ class ApiClient {
   // Cases
   async getCases(status?: string): Promise<CaseSummary[]> {
     const query = status ? `?status=${encodeURIComponent(status)}` : '';
-    return this.request<CaseSummary[]>(`/cases${query}`);
+    // Cache case summaries for 8 seconds for fast tab switching
+    return this.request<CaseSummary[]>(`/cases${query}`, undefined, 8000);
   }
 
   async getCase(id: string): Promise<CaseDetail> {
-    return this.request<CaseDetail>(`/cases/${id}`);
+    // Cache case detail for 10 seconds for instant tab loads
+    return this.request<CaseDetail>(`/cases/${id}`, undefined, 10000);
   }
 
   async createCase(data: CreateCaseData): Promise<CaseDetail> {
+    invalidateApiCache();
     return this.request<CaseDetail>('/cases', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -97,6 +130,7 @@ class ApiClient {
   }
 
   async updateCase(id: string, data: Partial<CreateCaseData>): Promise<CaseDetail> {
+    invalidateApiCache(id);
     return this.request<CaseDetail>(`/cases/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -104,6 +138,7 @@ class ApiClient {
   }
 
   async deleteCase(id: string): Promise<void> {
+    invalidateApiCache();
     await this.request<void>(`/cases/${id}`, {
       method: 'DELETE',
     });
@@ -111,6 +146,7 @@ class ApiClient {
 
   // Documents
   async uploadDocuments(caseId: string, files: File[]): Promise<DocumentUploadResult[]> {
+    invalidateApiCache(caseId);
     const formData = new FormData();
     files.forEach((file) => {
       formData.append('files', file);
@@ -123,28 +159,35 @@ class ApiClient {
   }
 
   async getDocuments(caseId: string): Promise<Document[]> {
-    return this.request<Document[]>(`/cases/${caseId}/documents`);
+    return this.request<Document[]>(`/cases/${caseId}/documents`, undefined, 8000);
   }
 
   async processDocument(caseId: string, docId: string): Promise<ProcessingResult> {
+    invalidateApiCache(caseId);
     return this.request<ProcessingResult>(`/cases/${caseId}/documents/${docId}/process`, {
       method: 'POST',
     });
   }
 
   async deleteDocument(caseId: string, docId: string): Promise<void> {
+    invalidateApiCache(caseId);
     await this.request<void>(`/cases/${caseId}/documents/${docId}`, {
       method: 'DELETE',
     });
   }
 
+  getDocumentRawUrl(caseId: string, docId: string): string {
+    return `${this.baseUrl}/cases/${caseId}/documents/${docId}/raw`;
+  }
+
   // Evidence
   async getCaseEvidence(caseId: string): Promise<Evidence[]> {
-    return this.request<Evidence[]>(`/cases/${caseId}/evidence`);
+    return this.request<Evidence[]>(`/cases/${caseId}/evidence`, undefined, 8000);
   }
 
   // Adaptive LangGraph Investigation
   async runInvestigation(caseId: string): Promise<CaseState> {
+    invalidateApiCache(caseId);
     return this.request<CaseState>(`/cases/${caseId}/investigate`, {
       method: 'POST',
     });
@@ -152,7 +195,7 @@ class ApiClient {
 
   async getInvestigation(caseId: string): Promise<CaseState | null> {
     try {
-      return await this.request<CaseState>(`/cases/${caseId}/investigation`);
+      return await this.request<CaseState>(`/cases/${caseId}/investigation`, undefined, 10000);
     } catch {
       return null;
     }
@@ -160,13 +203,14 @@ class ApiClient {
 
   // Reports
   async generateReport(caseId: string): Promise<Report> {
+    invalidateApiCache(caseId);
     return this.request<Report>(`/cases/${caseId}/reports`, {
       method: 'POST',
     });
   }
 
   async getReport(caseId: string): Promise<Report> {
-    return this.request<Report>(`/cases/${caseId}/reports`);
+    return this.request<Report>(`/cases/${caseId}/reports`, undefined, 10000);
   }
 
   async downloadReportPdf(caseId: string): Promise<Blob> {
@@ -198,6 +242,10 @@ class ApiClient {
     } catch {
       return null;
     }
+  }
+
+  async healthCheck(): Promise<{ status: string; version?: string; app?: string } | null> {
+    return this.checkHealth();
   }
 
   // Gemini & System Diagnostics Check

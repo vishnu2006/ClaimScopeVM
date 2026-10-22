@@ -11,13 +11,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'ClaimScope — Auto Accident Claim Investigation Assistant',
+  title: 'ClaimScope — P&C Auto Claim Adjudication & Decision Support',
   description:
-    'Enterprise multi-document AI investigation pipeline for US P&C Auto Claims. Automated intake, damage extraction, cross-referencing, and adjustor reporting.',
+    'Next-generation multimodal decision-support intelligence for Property & Casualty automobile claim investigation, damage cross-referencing, and adjustor compliance.',
   icons: {
-    icon: '/brand/claimscope-logo.png',
-    shortcut: '/brand/claimscope-logo.png',
-    apple: '/brand/claimscope-logo.png',
+    icon: '/brand/vmlogo.png',
+    shortcut: '/brand/vmlogo.png',
+    apple: '/brand/vmlogo.png',
   },
 };
 

@@ -8,21 +8,37 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Primary brand - deep professional blue (linked to CSS vars)
+        // ValueMomentum inspired brand colors: Deep Navy, Precision Blue, Forest/Growth Green, Innovation Amber
         brand: {
-          50: 'var(--color-brand-50, #eff6ff)',
-          100: 'var(--color-brand-100, #dbeafe)',
-          200: 'var(--color-brand-200, #bfdbfe)',
-          300: 'var(--color-brand-300, #93c5fd)',
-          400: 'var(--color-brand-400, #60a5fa)',
-          500: 'var(--color-brand-500, #3b82f6)',
-          600: 'var(--color-brand-600, #2563eb)',
-          700: 'var(--color-brand-700, #1d4ed8)',
-          800: 'var(--color-brand-800, #1e40af)',
-          900: 'var(--color-brand-900, #1e3a8a)',
-          950: 'var(--color-brand-950, #172554)',
+          50: 'var(--color-brand-50, #f0f6ff)',
+          100: 'var(--color-brand-100, #e0eeff)',
+          200: 'var(--color-brand-200, #b9dbfe)',
+          300: 'var(--color-brand-300, #7cb9fd)',
+          400: 'var(--color-brand-400, #3694fc)',
+          500: 'var(--color-brand-500, #086afc)', // ValueMomentum Electric Cobalt
+          600: 'var(--color-brand-600, #0056d6)',
+          700: 'var(--color-brand-700, #0045ad)',
+          800: 'var(--color-brand-800, #033a8c)',
+          900: 'var(--color-brand-900, #0a1f44)', // Deep Enterprise P&C Navy
+          950: 'var(--color-brand-950, #061329)',
         },
-        // Neutral surfaces (linked to CSS vars)
+        growth: {
+          50: '#f2fbf0',
+          100: '#e1f7dd',
+          200: '#c5efbd',
+          300: '#9acf84',
+          400: '#75be5a',
+          500: '#5eba46', // ValueMomentum Momentum Green
+          600: '#469b30',
+          700: '#387a27',
+          800: '#2f6123',
+          900: '#285120',
+        },
+        accent: {
+          amber: '#febc10', // ValueMomentum Innovation Gold/Amber
+          navy: '#0b192e',
+        },
+        // Neutral surfaces (Corporate editorial slate & warm charcoal)
         surface: {
           0: 'var(--color-surface-0, #ffffff)',
           50: 'var(--color-surface-50, #f8fafc)',
@@ -37,17 +53,17 @@ const config: Config = {
           900: 'var(--color-surface-900, #0f172a)',
           950: 'var(--color-surface-950, #020617)',
         },
-        // Status colors (linked to CSS vars)
+        // Status colors
         status: {
-          success: 'var(--color-status-success, #059669)',
+          success: 'var(--color-status-success, #2e7d32)',
           warning: 'var(--color-status-warning, #d97706)',
-          error: 'var(--color-status-error, #dc2626)',
-          info: 'var(--color-status-info, #2563eb)',
-          pending: 'var(--color-status-pending, #8b5cf6)',
+          error: 'var(--color-status-error, #c62828)',
+          info: 'var(--color-status-info, #086afc)',
+          pending: 'var(--color-status-pending, #6366f1)',
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        sans: ['var(--font-inter)', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {
@@ -61,6 +77,7 @@ const config: Config = {
         '3xl': ['1.875rem', { lineHeight: '2.25rem' }],
         '4xl': ['2.25rem', { lineHeight: '2.75rem' }],
         '5xl': ['3rem', { lineHeight: '1.15' }],
+        '6xl': ['3.75rem', { lineHeight: '1.1' }],
       },
       spacing: {
         '4.5': '1.125rem',
@@ -75,32 +92,14 @@ const config: Config = {
         'lg': '0.5rem',
         'xl': '0.75rem',
         '2xl': '1rem',
+        '3xl': '1.5rem',
       },
       boxShadow: {
-        '2xs': '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-        'subtle': '0 1px 2px 0 rgb(0 0 0 / 0.03)',
-        'card': '0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)',
-        'elevated': '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
-        'modal': '0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.06)',
-      },
-      animation: {
-        'fade-in': 'fadeIn 0.2s ease-out',
-        'slide-in': 'slideIn 0.2s ease-out',
-        'pulse-subtle': 'pulseSubtle 2s ease-in-out infinite',
-      },
-      keyframes: {
-        fadeIn: {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
-        },
-        slideIn: {
-          '0%': { opacity: '0', transform: 'translateY(-4px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        pulseSubtle: {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.7' },
-        },
+        '2xs': '0 1px 2px 0 rgb(0 0 0 / 0.04)',
+        'subtle': '0 1px 3px 0 rgb(15 23 42 / 0.05), 0 1px 2px -1px rgb(15 23 42 / 0.03)',
+        'card': '0 2px 5px -1px rgb(15 23 42 / 0.06), 0 1px 3px -1px rgb(15 23 42 / 0.04)',
+        'elevated': '0 10px 25px -5px rgb(15 23 42 / 0.08), 0 8px 10px -6px rgb(15 23 42 / 0.04)',
+        'modal': '0 20px 40px -10px rgb(15 23 42 / 0.16), 0 10px 15px -5px rgb(15 23 42 / 0.08)',
       },
     },
   },

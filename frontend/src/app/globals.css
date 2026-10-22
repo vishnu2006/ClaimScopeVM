@@ -2,23 +2,24 @@
 @config "../../tailwind.config.ts";
 
 /* 
- * Semantic design tokens using CSS variables 
- * Light theme is default; .dark selector overrides surface tokens to a premium neutral charcoal/slate palette.
+ * ClaimScope Design Tokens
+ * Inspired by ValueMomentum's P&C Insurance enterprise aesthetic:
+ * Deep Trust Navy (#0a1f44), Momentum Cobalt (#086afc), Growth Green (#5eba46), Innovation Amber (#febc10)
  */
 :root {
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-300: #93c5fd;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --color-brand-900: #1e3a8a;
-  --color-brand-950: #172554;
+  --color-brand-50: #f0f6ff;
+  --color-brand-100: #e0eeff;
+  --color-brand-200: #b9dbfe;
+  --color-brand-300: #7cb9fd;
+  --color-brand-400: #3694fc;
+  --color-brand-500: #086afc;
+  --color-brand-600: #0056d6;
+  --color-brand-700: #0045ad;
+  --color-brand-800: #033a8c;
+  --color-brand-900: #0a1f44;
+  --color-brand-950: #061329;
 
-  /* Surface tokens (Light Mode) */
+  /* Surface tokens (Light Mode - Crisp, architectural corporate white & soft cool slate) */
   --color-surface-0: #ffffff;
   --color-surface-50: #f8fafc;
   --color-surface-100: #f1f5f9;
@@ -29,111 +30,117 @@
   --color-surface-600: #475569;
   --color-surface-700: #334155;
   --color-surface-800: #1e293b;
-  --color-surface-900: #0f172a;
-  --color-surface-950: #020617;
+  --color-surface-900: #0a1f44;
+  --color-surface-950: #061329;
 
-  /* Status tokens (Light Mode) */
-  --color-status-success: #059669;
+  /* Status tokens */
+  --color-status-success: #2e7d32;
   --color-status-warning: #d97706;
-  --color-status-error: #dc2626;
-  --color-status-info: #2563eb;
-  --color-status-pending: #8b5cf6;
+  --color-status-error: #c62828;
+  --color-status-info: #086afc;
+  --color-status-pending: #6366f1;
 
   --sidebar-width: 280px;
 }
 
 /* 
  * Dark theme token overrides
- * Premium neutral charcoal/slate palette inspired by modern developer/enterprise tools.
- * Eliminates oversaturated navy; blue is reserved for deliberate interactive accents.
- * 
- * Main Canvas: #101114
- * Sidebar/Nav: #15171B
- * Elevated Card / Base Surface: #1B1E24
- * Secondary / Inset Surface: #22262D
- * Borders: #30343D
- * Primary Text: #F2F3F5
- * Secondary Text: #A5ACB8
+ * High-end corporate executive slate/charcoal (#0c1322 / #111a2e / #18243c)
+ * Clean, restrained, professional.
  */
 .dark {
-  /* Brand accents tuned for contrast on dark charcoal */
-  --color-brand-50: #152238;
-  --color-brand-100: #1c3358;
-  --color-brand-200: #24477c;
-  --color-brand-300: #2d5ea5;
-  --color-brand-400: #3b82f6;
-  --color-brand-500: #60a5fa;
-  --color-brand-600: #3b82f6;
-  --color-brand-700: #60a5fa;
-  --color-brand-800: #93c5fd;
-  --color-brand-900: #bfdbfe;
-  --color-brand-950: #eff6ff;
+  --color-brand-50: #0e1e38;
+  --color-brand-100: #132a52;
+  --color-brand-200: #1c3d77;
+  --color-brand-300: #25529f;
+  --color-brand-400: #3694fc;
+  --color-brand-500: #4da1fd;
+  --color-brand-600: #3694fc;
+  --color-brand-700: #7cb9fd;
+  --color-brand-800: #b9dbfe;
+  --color-brand-900: #e0eeff;
+  --color-brand-950: #f0f6ff;
 
-  /* Premium Charcoal / Slate Surfaces */
-  --color-surface-0: #1b1e24;    /* Elevated cards, headers, modal panels */
-  --color-surface-50: #101114;   /* Main page background canvas */
-  --color-surface-100: #22262d;  /* Secondary inset surfaces, hovered rows, subtle tags */
-  --color-surface-200: #30343d;  /* Primary 1px structural dividers and borders */
-  --color-surface-300: #3f4552;  /* Interactive borders, hovered buttons, inputs */
-  --color-surface-400: #6c7584;  /* Muted icons, subtle metadata */
-  --color-surface-500: #a5acb8;  /* Secondary descriptive body text */
-  --color-surface-600: #c9ced8;  /* Stronger body text */
-  --color-surface-700: #dfe3ea;  /* High readability copy */
-  --color-surface-800: #f2f3f5;  /* Headings & key metrics */
-  --color-surface-900: #ffffff;  /* High-emphasis text */
+  /* Elevated slate charcoal surfaces */
+  --color-surface-0: #121c2e;    /* Elevated cards, headers, modal panels */
+  --color-surface-50: #0a111e;   /* Main page canvas */
+  --color-surface-100: #17243b;  /* Inset surfaces, table headers, hovered rows */
+  --color-surface-200: #233554;  /* Structural dividers & borders */
+  --color-surface-300: #324a73;  /* Interactive borders, inputs */
+  --color-surface-400: #6b82a6;  /* Muted metadata & subtle icons */
+  --color-surface-500: #94a7c4;  /* Secondary descriptive body copy */
+  --color-surface-600: #c2d0e4;  /* Medium emphasis text */
+  --color-surface-700: #e2eaf5;  /* High readability copy */
+  --color-surface-800: #f0f5fc;  /* Headings & key metrics */
+  --color-surface-900: #ffffff;  /* Pure white primary headers */
   --color-surface-950: #f8fafc;
 
-  /* Balanced status colors on charcoal */
-  --color-status-success: #10b981;
+  /* Balanced status colors on executive slate */
+  --color-status-success: #388e3c;
   --color-status-warning: #f59e0b;
-  --color-status-error: #ef4444;
-  --color-status-info: #3b82f6;
-  --color-status-pending: #a855f7;
+  --color-status-error: #ef5350;
+  --color-status-info: #4da1fd;
+  --color-status-pending: #818cf8;
 }
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-surface-50 text-surface-800 antialiased;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     text-rendering: optimizeLegibility;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
-  
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+
+  /* Logo container styling:
+   * Clean white in light mode with subtle crisp border,
+   * Dark in dark mode with dark-surface border.
+   */
+  .brand-logo-container {
+    background-color: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: background-color 0.2s ease, border-color 0.2s ease;
   }
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
+  .dark .brand-logo-container {
+    background-color: #121c2e;
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-surface-300 rounded-full;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-surface-400;
+
+  /* Permanently hide Next.js developer overlay badges / indicators on bottom-left / bottom-right */
+  nextjs-portal,
+  [data-nextjs-dev-tools-button],
+  [data-nextjs-toast],
+  div[data-nextjs-dev-tools-button],
+  button[data-nextjs-dev-tools-button] {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
   }
 }
 
-/* Ensure clean print output irrespective of active dark mode */
-@media print {
-  .dark {
-    --color-surface-0: #ffffff;
-    --color-surface-50: #ffffff;
-    --color-surface-100: #f8fafc;
-    --color-surface-200: #e2e8f0;
-    --color-surface-300: #cbd5e1;
-    --color-surface-400: #94a3b8;
-    --color-surface-500: #64748b;
-    --color-surface-600: #475569;
-    --color-surface-700: #334155;
-    --color-surface-800: #1e293b;
-    --color-surface-900: #0f172a;
-    --color-brand-600: #1d4ed8;
-  }
+/* ValueMomentum-inspired corporate gradient utilities */
+.vm-gradient-hero {
+  background: linear-gradient(135deg, #0a1f44 0%, #0d2859 45%, #086afc 100%);
+}
 
-  body {
-    background: #ffffff !important;
-    color: #0f172a !important;
-  }
+.vm-gradient-subtle {
+  background: linear-gradient(180deg, rgba(8, 106, 252, 0.03) 0%, rgba(94, 186, 70, 0.03) 100%);
+}
+
+.vm-badge-pillar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
 }
