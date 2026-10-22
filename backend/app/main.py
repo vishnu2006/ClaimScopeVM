@@ -35,10 +35,11 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS configuration
+    # CORS configuration with Cloudflare Pages regex support
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins_list,
+        allow_origin_regex=settings.CORS_ORIGIN_REGEX,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -60,11 +61,11 @@ def create_app() -> FastAPI:
             "status": "healthy",
             "app": settings.APP_NAME,
             "version": settings.APP_VERSION,
-            "environment": "debug" if settings.DEBUG else "production",
+            "gemini_configured": bool(settings.effective_gemini_api_key),
         }
 
-    # Mount API routers
-    app.include_router(api_router)
+    # Register API v1 routes
+    app.include_router(api_router, prefix="/api/v1")
 
     return app
 
