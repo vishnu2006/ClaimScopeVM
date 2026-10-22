@@ -22,16 +22,16 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           targetSelector=".cursor-target"
           cursorColor="#086afc"
           cursorColorOnTarget="#5eba46"
-          spinDuration={3.3}
+          spinDuration={4.5}
           hoverDuration={0.2}
           parallaxOn={true}
           hideDefaultCursor={false}
-          size={26}
-          cornerSize={10}
-          thickness={2.5}
-          padding={6}
+          size={20}
+          cornerSize={8}
+          thickness={2}
+          padding={5}
           matchRadius={true}
-          dotSize={4}
+          dotSize={3.5}
           showLabel={true}
           clickEffect={true}
         />
@@ -46,16 +46,16 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         targetSelector=".cursor-target"
         cursorColor="#086afc"
         cursorColorOnTarget="#5eba46"
-        spinDuration={3.3}
+        spinDuration={4.5}
         hoverDuration={0.2}
         parallaxOn={true}
         hideDefaultCursor={false}
-        size={26}
-        cornerSize={10}
-        thickness={2.5}
-        padding={6}
+        size={20}
+        cornerSize={8}
+        thickness={2}
+        padding={5}
         matchRadius={true}
-        dotSize={4}
+        dotSize={3.5}
         showLabel={true}
         clickEffect={true}
       />
