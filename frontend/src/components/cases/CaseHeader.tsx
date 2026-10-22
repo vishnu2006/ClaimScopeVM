@@ -23,6 +23,7 @@ import {
 } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { StarBorder } from '@/components/ui/StarBorder';
 import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
 
@@ -64,8 +65,8 @@ export const CaseHeader: React.FC<CaseHeaderProps> = ({
 
   return (
     <>
-      <div className="border-b border-surface-200 bg-surface-0 px-4 sm:px-6 py-3.5 shadow-subtle">
-        <div className="max-w-7xl mx-auto space-y-3">
+      <div className="border-b border-surface-200 bg-surface-0 px-4 sm:px-6 lg:px-8 py-3.5 shadow-subtle">
+        <div className="max-w-[1440px] mx-auto space-y-3">
           {/* Top Row: Back button, Case Number, Status, Priority, and Primary Actions */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
@@ -92,15 +93,25 @@ export const CaseHeader: React.FC<CaseHeaderProps> = ({
 
             <div className="flex items-center gap-2">
               {caseData.report && onDownloadPdf && (
-                <Button
-                  variant="secondary"
-                  size="xs"
+                <StarBorder
+                  as="button"
                   onClick={onDownloadPdf}
-                  loading={isDownloadingPdf}
-                  leftIcon={<Download className="h-3 w-3" />}
+                  disabled={isDownloadingPdf}
+                  color="#086afc"
+                  trailColor="#5eba46"
+                  duration={3.5}
+                  thickness={1.5}
+                  radius={6}
+                  glow={0.6}
+                  hover="lap"
+                  backgroundColor="#ffffff"
+                  textColor="#086afc"
+                  borderColor="rgba(8, 106, 252, 0.3)"
+                  className="!py-1 !px-2.5 !text-[11px] !font-bold border border-surface-200 shadow-2xs transition-transform active:scale-95 cursor-pointer inline-flex items-center dark:!bg-[#121c2e] dark:!text-white"
                 >
-                  PDF Report
-                </Button>
+                  <Download className="h-3 w-3 mr-1" />
+                  <span>{isDownloadingPdf ? 'Exporting...' : 'PDF Report'}</span>
+                </StarBorder>
               )}
               <Button
                 variant="ghost"

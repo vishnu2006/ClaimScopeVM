@@ -1,53 +1,85 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense } from 'react';
 import { usePathname } from 'next/navigation';
-import { Sidebar } from './Sidebar';
+import { WorkspaceNavbar } from './WorkspaceNavbar';
+import { TargetCursor } from '@/components/ui/TargetCursor';
 
 export interface AppShellProps {
   children: React.ReactNode;
 }
 
 function AppShellContent({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  // Public homepage at '/' renders without the internal sidebar
+  // Public homepage at '/' renders without the internal horizontal workspace navbar
   const isPublicPage = pathname === '/';
 
   if (isPublicPage) {
     return (
       <main className="min-h-screen flex flex-col bg-surface-50 text-surface-900">
+        <TargetCursor
+          targetSelector=".cursor-target"
+          cursorColor="#086afc"
+          cursorColorOnTarget="#5eba46"
+          spinDuration={3.3}
+          hoverDuration={0.2}
+          parallaxOn={true}
+          hideDefaultCursor={false}
+          size={26}
+          cornerSize={10}
+          thickness={2.5}
+          padding={6}
+          matchRadius={true}
+          dotSize={4}
+          showLabel={true}
+          clickEffect={true}
+        />
         {children}
       </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-surface-50 text-surface-800 flex">
-      {/* Sidebar for desktop & mobile drawer */}
+    <div className="min-h-screen bg-surface-50 text-surface-800 flex flex-col">
+      <TargetCursor
+        targetSelector=".cursor-target"
+        cursorColor="#086afc"
+        cursorColorOnTarget="#5eba46"
+        spinDuration={3.3}
+        hoverDuration={0.2}
+        parallaxOn={true}
+        hideDefaultCursor={false}
+        size={26}
+        cornerSize={10}
+        thickness={2.5}
+        padding={6}
+        matchRadius={true}
+        dotSize={4}
+        showLabel={true}
+        clickEffect={true}
+      />
+      {/* Refined Enterprise Horizontal Workspace Header */}
       <Suspense
         fallback={
-          <aside className="fixed inset-y-0 left-0 z-40 w-sidebar border-r border-surface-200 bg-surface-0 hidden lg:block" />
+          <header className="h-16 border-b border-surface-200 bg-surface-0 w-full animate-pulse" />
         }
       >
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <WorkspaceNavbar />
       </Suspense>
 
-      {/* Main wrapper offset by sidebar width on lg screens */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-sidebar transition-[padding] duration-200">
-        <main className="flex-1 min-h-screen flex flex-col">
-          <Suspense
-            fallback={
-              <div className="flex-1 flex items-center justify-center p-12 text-sm text-surface-400">
-                Loading workspace...
-              </div>
-            }
-          >
-            {children}
-          </Suspense>
-        </main>
-      </div>
+      {/* Full-width Workspace Canvas */}
+      <main className="flex-1 flex flex-col min-w-0 w-full">
+        <Suspense
+          fallback={
+            <div className="flex-1 flex items-center justify-center p-12 text-sm text-surface-400">
+              Loading workspace...
+            </div>
+          }
+        >
+          {children}
+        </Suspense>
+      </main>
     </div>
   );
 }
@@ -59,3 +91,4 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     </Suspense>
   );
 };
+
