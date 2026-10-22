@@ -21,6 +21,7 @@ import {
 import { useCases } from '@/hooks/useCases';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
+import { StarBorder } from '@/components/ui/StarBorder';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -135,23 +136,33 @@ export default function CasesPage() {
             >
               Demo Lab
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
+            <StarBorder
+              as="button"
               onClick={() => router.push('/cases/new')}
-              leftIcon={<PlusCircle className="h-4 w-4" />}
+              color="#086afc"
+              trailColor="#5eba46"
+              duration={3.5}
+              thickness={2}
+              radius={8}
+              glow={0.7}
+              hover="lap"
+              backgroundColor="#086afc"
+              textColor="#ffffff"
+              borderColor="rgba(8, 106, 252, 0.4)"
+              className="!py-2 !px-4 !text-xs !font-bold text-white shadow-sm transition-transform active:scale-95 cursor-pointer inline-flex items-center"
             >
-              New Investigation
-            </Button>
+              <PlusCircle className="h-4 w-4 mr-1.5" />
+              <span>New Investigation</span>
+            </StarBorder>
           </div>
         }
       />
 
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-4">
+      <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
         {/* Filters and Management Toolbar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-0 border border-surface-200 rounded-lg p-3 shadow-subtle">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-0 border border-surface-200 rounded-lg p-3.5 shadow-subtle">
           {/* Search box */}
-          <div className="w-full md:w-80">
+          <div className="w-full md:w-96">
             <Input
               placeholder="Search by case #, title, claimant, or policy..."
               value={searchTerm}
@@ -160,7 +171,7 @@ export default function CasesPage() {
                 setCurrentPage(1);
               }}
               leftIcon={<Search className="h-4 w-4" />}
-              className="text-xs h-8.5"
+              className="text-xs h-9"
             />
           </div>
 

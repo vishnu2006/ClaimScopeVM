@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 export default function NotFound() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-900 text-white mb-4 shadow-subtle p-2">
+      <div className="flex h-14 w-14 items-center justify-center rounded-2xl brand-logo-container mb-4 shadow-subtle p-2">
         <Image
           src="/brand/claimscope-logo.png"
           alt="ClaimScope"

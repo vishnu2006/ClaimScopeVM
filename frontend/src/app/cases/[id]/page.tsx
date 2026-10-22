@@ -32,6 +32,9 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
+import { StarBorder } from '@/components/ui/StarBorder';
+import RubberSegment from '@/components/ui/RubberSegment';
+import { useTheme } from '@/context/ThemeContext';
 import { CaseState, Evidence } from '@/lib/types';
 
 export default function CaseDetailPage() {
@@ -62,6 +65,8 @@ export default function CaseDetailPage() {
   const [isInvestigating, setIsInvestigating] = useState(false);
   const [investigationError, setInvestigationError] = useState<string | null>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const handleDownloadPdf = async () => {
     if (!caseId) return;
@@ -191,7 +196,7 @@ export default function CaseDetailPage() {
         isDownloadingPdf={isDownloadingPdf}
       />
 
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-5">
+      <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-5">
         {/* Pipeline Progress Status */}
         <CaseTimeline documents={documents} report={caseData.report} />
 
@@ -201,139 +206,138 @@ export default function CaseDetailPage() {
           isInvestigating={isInvestigating}
         />
 
-        {/* Linear-Style Tabs & Action Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-surface-200 pb-2">
-          {/* Tabs Group */}
-          <div className="flex flex-wrap items-center gap-1">
-            {/* Tab 1: Documents */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('documents')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                activeTab === 'documents'
-                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
-                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
-              }`}
-            >
-              <FileText className="h-3.5 w-3.5" />
-              <span>Incident Package</span>
-              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-600 border border-surface-200">
-                {documents.length}
-              </span>
-            </button>
-
-            {/* Tab 2: Extracted Facts */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('evidence')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                activeTab === 'evidence'
-                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
-                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
-              }`}
-            >
-              <Search className="h-3.5 w-3.5" />
-              <span>Extracted Facts</span>
-              <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-600 border border-surface-200">
-                {evidenceList.length}
-              </span>
-            </button>
-
-            {/* Tab 3: Vision Analysis */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('vision')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                activeTab === 'vision'
-                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
-                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
-              }`}
-            >
-              <Camera className="h-3.5 w-3.5" />
-              <span>Vision Analysis</span>
-              {visionEntries.length > 0 && (
-                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-600 border border-surface-200">
-                  {visionEntries.length}
-                </span>
-              )}
-            </button>
-
-            {/* Tab 4: Discrepancies */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('discrepancies')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                activeTab === 'discrepancies'
-                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
-                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
-              }`}
-            >
-              <GitCompare className="h-3.5 w-3.5" />
-              <span>Discrepancies</span>
-              {discrepancies.length > 0 ? (
-                <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-50 text-rose-700 border border-rose-200">
-                  {discrepancies.length}
-                </span>
-              ) : (
-                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-400">
-                  0
-                </span>
-              )}
-            </button>
-
-            {/* Tab 5: External Grounding */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('verification')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                activeTab === 'verification'
-                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
-                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
-              }`}
-            >
-              <Globe className="h-3.5 w-3.5" />
-              <span>External Grounding</span>
-              {verifications.length > 0 && (
-                <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-100 text-surface-600 border border-surface-200">
-                  {verifications.length}
-                </span>
-              )}
-            </button>
-
-            {/* Tab 6: Report */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('report')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-                activeTab === 'report'
-                  ? 'bg-surface-0 text-brand-700 shadow-xs border border-surface-200'
-                  : 'text-surface-600 hover:text-surface-900 hover:bg-surface-100'
-              }`}
-            >
-              <FileCheck2 className="h-3.5 w-3.5" />
-              <span>Report</span>
-              {caseData.report && (
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              )}
-            </button>
+        {/* RubberSegment Navigation & Action Bar */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-surface-200 pb-3">
+          {/* RubberSegment Control */}
+          <div className="overflow-x-auto pb-1 max-w-full">
+            <RubberSegment
+              items={[
+                {
+                  value: 'documents',
+                  label: (
+                    <span className="flex items-center gap-1.5 font-semibold">
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>Incident Package</span>
+                      <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-200/60 dark:bg-surface-700/60">
+                        {documents.length}
+                      </span>
+                    </span>
+                  )
+                },
+                {
+                  value: 'evidence',
+                  label: (
+                    <span className="flex items-center gap-1.5 font-semibold">
+                      <Search className="h-3.5 w-3.5" />
+                      <span>Extracted Facts</span>
+                      <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-200/60 dark:bg-surface-700/60">
+                        {evidenceList.length}
+                      </span>
+                    </span>
+                  )
+                },
+                {
+                  value: 'vision',
+                  label: (
+                    <span className="flex items-center gap-1.5 font-semibold">
+                      <Camera className="h-3.5 w-3.5" />
+                      <span>Vision Analysis</span>
+                      {visionEntries.length > 0 && (
+                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-200/60 dark:bg-surface-700/60">
+                          {visionEntries.length}
+                        </span>
+                      )}
+                    </span>
+                  )
+                },
+                {
+                  value: 'discrepancies',
+                  label: (
+                    <span className="flex items-center gap-1.5 font-semibold">
+                      <GitCompare className="h-3.5 w-3.5" />
+                      <span>Discrepancies</span>
+                      {discrepancies.length > 0 ? (
+                        <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-600 dark:text-rose-300">
+                          {discrepancies.length}
+                        </span>
+                      ) : (
+                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-200/60 dark:bg-surface-700/60">
+                          0
+                        </span>
+                      )}
+                    </span>
+                  )
+                },
+                {
+                  value: 'verification',
+                  label: (
+                    <span className="flex items-center gap-1.5 font-semibold">
+                      <Globe className="h-3.5 w-3.5" />
+                      <span>External Grounding</span>
+                      {verifications.length > 0 && (
+                        <span className="font-mono text-[10px] px-1.5 py-0.2 rounded bg-surface-200/60 dark:bg-surface-700/60">
+                          {verifications.length}
+                        </span>
+                      )}
+                    </span>
+                  )
+                },
+                {
+                  value: 'report',
+                  label: (
+                    <span className="flex items-center gap-1.5 font-semibold">
+                      <FileCheck2 className="h-3.5 w-3.5" />
+                      <span>Report</span>
+                      {caseData.report && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      )}
+                    </span>
+                  )
+                }
+              ]}
+              value={activeTab}
+              onChange={(val) => setActiveTab(val as any)}
+              trackColor={isDark ? '#17243b' : '#f1f5f9'}
+              thumbColor={isDark ? '#086afc' : '#ffffff'}
+              textColor={isDark ? '#94a7c4' : '#475569'}
+              activeTextColor={isDark ? '#ffffff' : '#086afc'}
+              size="md"
+              radius={10}
+              inset={3}
+              equalSlots={false}
+              stretch={80}
+              squash={2}
+              draggable
+            />
           </div>
 
           {/* Action Button: Run / Re-run Investigation */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="primary"
-              size="sm"
+          <div className="flex items-center gap-2 shrink-0">
+            <StarBorder
+              as="button"
               onClick={handleRunInvestigation}
-              loading={isInvestigating}
               disabled={isInvestigating || documents.length === 0}
-              leftIcon={<Cpu className="h-3.5 w-3.5" />}
+              color="#086afc"
+              trailColor="#5eba46"
+              duration={3.5}
+              thickness={2}
+              radius={8}
+              glow={0.7}
+              hover="lap"
+              backgroundColor="#086afc"
+              textColor="#ffffff"
+              borderColor="rgba(8, 106, 252, 0.4)"
+              className="!py-2 !px-4 !text-xs !font-bold text-white shadow-sm transition-transform active:scale-95 cursor-pointer inline-flex items-center disabled:opacity-50 disabled:pointer-events-none"
             >
-              {isInvestigating
-                ? 'Investigating Package...'
-                : investigationState
-                ? 'Re-run Investigation'
-                : 'Run Adaptive Investigation'}
-            </Button>
+              <Cpu className="h-3.5 w-3.5 mr-1.5" />
+              <span>
+                {isInvestigating
+                  ? 'Investigating Package...'
+                  : investigationState
+                  ? 'Re-run Investigation'
+                  : 'Run Adaptive Investigation'}
+              </span>
+            </StarBorder>
           </div>
         </div>
 
@@ -345,98 +349,94 @@ export default function CaseDetailPage() {
         )}
 
         {/* Tab 1: Documents & Intake */}
-        {activeTab === 'documents' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1">
-                <div className="sticky top-20">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700 mb-2">
-                    Ingest Incident Files
-                  </h3>
-                  <DocumentUpload
-                    caseId={caseId}
-                    onUpload={async (files) => {
-                      await uploadDocuments(files);
-                      await refetchCase();
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="lg:col-span-2 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700">
-                    Uploaded Package Files ({documents.length})
-                  </h3>
-                  {documents.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="xs"
-                      onClick={() => refetchDocs()}
-                      leftIcon={<RefreshCw className="h-3 w-3" />}
-                    >
-                      Refresh
-                    </Button>
-                  )}
-                </div>
-
-                <DocumentList
-                  documents={documents}
-                  loading={docsLoading}
-                  onProcess={async (docId) => {
-                    await processDocument(docId);
+        <div className={activeTab === 'documents' ? 'space-y-6' : 'hidden'}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <div className="sticky top-20">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700 mb-2">
+                  Ingest Incident Files
+                </h3>
+                <DocumentUpload
+                  caseId={caseId}
+                  onUpload={async (files) => {
+                    await uploadDocuments(files);
                     await refetchCase();
-                    await loadInvestigation();
-                  }}
-                  onDelete={async (docId) => {
-                    await deleteDocument(docId);
-                    await refetchCase();
-                    await loadInvestigation();
                   }}
                 />
               </div>
             </div>
+
+            <div className="lg:col-span-2 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700">
+                  Uploaded Package Files ({documents.length})
+                </h3>
+                {documents.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => refetchDocs()}
+                    leftIcon={<RefreshCw className="h-3 w-3" />}
+                  >
+                    Refresh
+                  </Button>
+                )}
+              </div>
+
+              <DocumentList
+                documents={documents}
+                loading={docsLoading}
+                onProcess={async (docId) => {
+                  await processDocument(docId);
+                  await refetchCase();
+                  await loadInvestigation();
+                }}
+                onDelete={async (docId) => {
+                  await deleteDocument(docId);
+                  await refetchCase();
+                  await loadInvestigation();
+                }}
+              />
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Tab 2: Extracted Facts */}
-        {activeTab === 'evidence' && (
+        <div className={activeTab === 'evidence' ? 'block' : 'hidden'}>
           <EvidenceInspection evidences={evidenceList} />
-        )}
+        </div>
 
         {/* Tab 3: Vision Observations */}
-        {activeTab === 'vision' && (
+        <div className={activeTab === 'vision' ? 'block' : 'hidden'}>
           <VisionObservations observations={investigationState?.vision_observations || {}} />
-        )}
+        </div>
 
         {/* Tab 4: Cross-Document Discrepancies */}
-        {activeTab === 'discrepancies' && (
+        <div className={activeTab === 'discrepancies' ? 'block' : 'hidden'}>
           <DiscrepancyList inconsistencies={discrepancies} />
-        )}
+        </div>
 
         {/* Tab 5: External Grounding */}
-        {activeTab === 'verification' && (
+        <div className={activeTab === 'verification' ? 'block' : 'hidden'}>
           <ExternalVerificationList verifications={verifications} />
-        )}
+        </div>
 
         {/* Tab 6: Report Preview */}
-        {activeTab === 'report' && (
-          <div className="space-y-4">
-            {caseData.report ? (
-              <ReportPreview
-                report={caseData.report}
-                caseNumber={caseData.case_number}
-                onDownloadPdf={handleDownloadPdf}
-                isDownloadingPdf={isDownloadingPdf}
-              />
-            ) : (
-              <EmptyState
-                title="No report generated yet"
-                description="Run the adaptive investigation or click Generate Report to compile multi-document findings."
-              />
-            )}
-          </div>
-        )}
+        <div className={activeTab === 'report' ? 'space-y-4' : 'hidden'}>
+          {caseData.report ? (
+            <ReportPreview
+              report={caseData.report}
+              caseNumber={caseData.case_number}
+              onDownloadPdf={handleDownloadPdf}
+              isDownloadingPdf={isDownloadingPdf}
+            />
+          ) : (
+            <EmptyState
+              title="No report generated yet"
+              description="Run the adaptive investigation or click Generate Report to compile multi-document findings."
+            />
+          )}
+        </div>
       </div>
     </div>
   );

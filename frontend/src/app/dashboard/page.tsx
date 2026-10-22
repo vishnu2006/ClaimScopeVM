@@ -11,22 +11,19 @@ import {
   CheckCircle2,
   Clock,
   FlaskConical,
-  Activity,
-  Layers,
   Cpu,
   ShieldAlert,
-  Search,
-  ExternalLink,
   ChevronRight,
-  Sparkles,
+  FileText,
+  Search,
+  RefreshCw,
 } from 'lucide-react';
 import { useCases } from '@/hooks/useCases';
 import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
+import { StarBorder } from '@/components/ui/StarBorder';
 import { Badge } from '@/components/ui/Badge';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { formatDate, formatPriority, formatStatus, getPriorityBadgeVariant, getStatusBadgeVariant } from '@/lib/utils';
 import { CaseSummary } from '@/lib/types';
 
@@ -34,7 +31,6 @@ export default function DashboardPage() {
   const router = useRouter();
   const { cases, loading, error, refetch } = useCases();
 
-  // Aggregate metrics derived strictly from actual persisted cases
   const totalCases = cases ? cases.length : 0;
 
   const { activeCases, reviewCases, completedCases, recentCases, priorityDistribution } = React.useMemo(() => {
@@ -54,22 +50,18 @@ export default function DashboardPage() {
     const priorityDist = { critical: 0, high: 0, medium: 0, low: 0 };
 
     cases.forEach((c) => {
-      // Priority count
       if (c.priority in priorityDist) {
         priorityDist[c.priority as keyof typeof priorityDist]++;
       }
 
-      // Active intake
       if (['open', 'new', 'processing', 'in_progress'].includes(c.status)) {
         active++;
       }
 
-      // Review queue: flagged or high priority
       if (['flagged', 'in_review'].includes(c.status) || ['critical', 'high'].includes(c.priority)) {
         reviewList.push(c);
       }
 
-      // Completed
       if (['completed', 'investigation_complete', 'report_generated', 'closed'].includes(c.status)) {
         completed++;
       }
@@ -77,11 +69,11 @@ export default function DashboardPage() {
 
     const sortedRecent = [...cases]
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 6);
+      .slice(0, 10);
 
     return {
       activeCases: active,
-      reviewCases: reviewList.slice(0, 5),
+      reviewCases: reviewList,
       completedCases: completed,
       recentCases: sortedRecent,
       priorityDistribution: priorityDist,
@@ -90,356 +82,348 @@ export default function DashboardPage() {
 
   return (
     <div className="flex-1 flex flex-col">
-      {/* Top Workspace Header */}
-      <section className="border-b border-surface-200 bg-surface-0 px-6 py-5 shadow-subtle">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-surface-900">
-                Claims Operational Cockpit
-              </h1>
-              <span className="font-mono text-xs px-2 py-0.5 rounded bg-surface-100 text-surface-700 border border-surface-200">
-                P&amp;C Operations
-              </span>
-            </div>
+      {/* Sub-Header: Clean, Restrained, Executive */}
+      <section className="border-b border-surface-200/80 bg-surface-0 dark:bg-[#0c1322] px-4 sm:px-6 lg:px-8 py-3.5">
+        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-[#0a1f44] dark:text-white">
+              Claims Operations Cockpit
+            </h1>
             <p className="text-xs text-surface-500">
-              Live overview of active intakes, flagged contradictions, and synthesized investigation reports
+              Portfolio intake, contradiction triage, and adjudication status
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => refetch()}
+              leftIcon={<RefreshCw className="h-3 w-3 text-surface-400" />}
+            >
+              Sync
+            </Button>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => router.push('/demo')}
-              leftIcon={<FlaskConical className="h-4 w-4 text-brand-600" />}
+              leftIcon={<FlaskConical className="h-3 w-3 text-surface-500" />}
             >
               Demo Lab
             </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => router.push('/engine')}
-              leftIcon={<Cpu className="h-4 w-4 text-surface-600" />}
-            >
-              Agentic Engine
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
+            <StarBorder
+              as="button"
               onClick={() => router.push('/cases/new')}
-              leftIcon={<PlusCircle className="h-4 w-4" />}
+              color="#086afc"
+              trailColor="#5eba46"
+              duration={3.5}
+              thickness={2}
+              radius={8}
+              glow={0.7}
+              hover="lap"
+              backgroundColor="#086afc"
+              textColor="#ffffff"
+              borderColor="rgba(8, 106, 252, 0.4)"
+              className="!py-2 !px-4 !text-xs !font-bold text-white shadow-sm transition-transform active:scale-95 cursor-pointer inline-flex items-center"
             >
-              New Investigation
-            </Button>
+              <PlusCircle className="h-3.5 w-3.5 mr-1.5" />
+              <span>New Investigation</span>
+            </StarBorder>
           </div>
         </div>
       </section>
 
-      {/* Main Dashboard Grid */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      {/* Main Cockpit Body */}
+      <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {loading ? (
           <div className="space-y-4">
             <LoadingState variant="skeleton" count={1} />
-            <LoadingState variant="card-skeleton" count={4} />
+            <LoadingState variant="card-skeleton" count={3} />
           </div>
         ) : error ? (
           <ErrorState
-            title="Failed to Load Dashboard Telemetry"
+            title="Failed to Load Dashboard Data"
             message={error}
             onRetry={refetch}
           />
         ) : (
           <>
-            {/* 4 Core KPI Metric Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="p-5 border-surface-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
+            {/* 1. Single Unified Operational Metrics Bar */}
+            <div className="rounded-xl border border-surface-200 bg-surface-0 dark:bg-[#121c2e] p-4 sm:p-5 shadow-2xs">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-surface-100 dark:divide-surface-200/60">
+                {/* Total Claims */}
+                <div className="space-y-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-400 block">
                     Total Ingested
                   </span>
-                  <div className="p-1.5 rounded-md bg-surface-100 text-surface-600">
-                    <FolderOpen className="h-4 w-4" />
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-extrabold tracking-tight text-surface-900 dark:text-white">
+                      {totalCases}
+                    </span>
+                    <span className="text-[11px] text-surface-500">claim files</span>
                   </div>
                 </div>
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold tracking-tight text-surface-900">
-                    {totalCases}
-                  </span>
-                  <span className="text-xs text-surface-500">total cases</span>
-                </div>
-              </Card>
 
-              <Card className="p-5 border-surface-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
-                    Active Intake
+                {/* Active Intake */}
+                <div className="space-y-1 pt-3 md:pt-0 md:pl-5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-400 block">
+                    Active Pipeline
                   </span>
-                  <div className="p-1.5 rounded-md bg-brand-50 text-brand-600">
-                    <Clock className="h-4 w-4" />
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-extrabold tracking-tight text-brand-600 dark:text-brand-400">
+                      {activeCases}
+                    </span>
+                    <span className="text-[11px] text-surface-500">in processing</span>
                   </div>
                 </div>
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold tracking-tight text-brand-700">
-                    {activeCases}
-                  </span>
-                  <span className="text-xs text-surface-500">processing pipeline</span>
-                </div>
-              </Card>
 
-              <Card className="p-5 border-surface-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
+                {/* Attention Required */}
+                <div className="space-y-1 pt-3 md:pt-0 md:pl-5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-400 block">
                     Attention Required
                   </span>
-                  <div className="p-1.5 rounded-md bg-amber-50 text-amber-600">
-                    <AlertTriangle className="h-4 w-4" />
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400">
+                      {reviewCases.length}
+                    </span>
+                    <span className="text-[11px] text-surface-500">flagged / critical</span>
                   </div>
                 </div>
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold tracking-tight text-amber-700">
-                    {reviewCases.length}
-                  </span>
-                  <span className="text-xs text-surface-500">flagged / critical</span>
-                </div>
-              </Card>
 
-              <Card className="p-5 border-surface-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-surface-500">
-                    Synthesized
+                {/* Audit Ready */}
+                <div className="space-y-1 pt-3 md:pt-0 md:pl-5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-surface-400 block">
+                    Adjudicated Reports
                   </span>
-                  <div className="p-1.5 rounded-md bg-emerald-50 text-emerald-600">
-                    <CheckCircle2 className="h-4 w-4" />
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-extrabold tracking-tight text-growth-600 dark:text-growth-400">
+                      {completedCases}
+                    </span>
+                    <span className="text-[11px] text-surface-500">ready for export</span>
                   </div>
                 </div>
-                <div className="mt-3 flex items-baseline gap-2">
-                  <span className="text-3xl font-bold tracking-tight text-emerald-700">
-                    {completedCases}
-                  </span>
-                  <span className="text-xs text-surface-500">audit reports ready</span>
-                </div>
-              </Card>
+              </div>
             </div>
 
-            {/* Two-Column Operational Layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left 2 Cols: Priority Attention Queue */}
-              <div className="lg:col-span-2 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-sm font-bold tracking-tight text-surface-900 flex items-center gap-2">
-                      <ShieldAlert className="h-4 w-4 text-amber-600" />
-                      <span>Investigations Requiring Adjuster Attention</span>
-                    </h2>
-                    <p className="text-xs text-surface-500">
-                      Claims flagged with evidentiary discrepancies, high exposure, or pending supervisor review
-                    </p>
-                  </div>
-                  <Link
-                    href="/discrepancies"
-                    className="text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors inline-flex items-center gap-1"
-                  >
-                    <span>View all discrepancies</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+            {/* 2. Priority Attention Worklist (Table Format, Not Chunky Cards) */}
+            <div className="rounded-xl border border-surface-200 bg-surface-0 dark:bg-[#121c2e] shadow-2xs overflow-hidden">
+              <div className="p-4 sm:px-5 border-b border-surface-100 dark:border-surface-200/60 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-amber-500 shrink-0" />
+                  <h2 className="text-sm font-bold tracking-tight text-surface-900 dark:text-white">
+                    Investigations Requiring Adjuster Attention
+                  </h2>
+                  <span className="font-mono text-[10px] px-2 py-0.2 rounded-full bg-surface-100 dark:bg-surface-200/50 text-surface-600 font-semibold">
+                    {reviewCases.length}
+                  </span>
                 </div>
 
-                {reviewCases.length === 0 ? (
-                  <div className="rounded-lg border border-surface-200 bg-surface-0 p-8 text-center space-y-2">
-                    <CheckCircle2 className="h-6 w-6 text-emerald-600 mx-auto" />
-                    <h4 className="text-sm font-semibold text-surface-800">No Critical Flags Pending</h4>
-                    <p className="text-xs text-surface-500 max-w-sm mx-auto">
-                      All currently processed packages have mutually consistent records without escalated discrepancy flags.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {reviewCases.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => router.push(`/cases/${item.id}`)}
-                        className="group bg-surface-0 border border-surface-200 hover:border-brand-400 rounded-lg p-4 transition-all duration-150 cursor-pointer shadow-subtle hover:shadow-card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
-                      >
-                        <div className="space-y-1.5 flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-surface-100 text-surface-800 border border-surface-200">
-                              {item.case_number}
-                            </span>
+                <Link
+                  href="/discrepancies"
+                  className="text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors inline-flex items-center gap-1"
+                >
+                  <span>Review all discrepancies</span>
+                  <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+
+              {reviewCases.length === 0 ? (
+                <div className="p-8 text-center text-xs text-surface-500 space-y-1">
+                  <CheckCircle2 className="h-5 w-5 text-growth-600 mx-auto" />
+                  <p className="font-medium text-surface-800">No Critical Flags Pending</p>
+                  <p className="text-surface-400">All submitted incident files have mutually consistent evidence.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-surface-100 dark:divide-surface-200/40 text-left text-xs">
+                    <thead className="bg-surface-50 dark:bg-surface-100/30 text-surface-500 font-semibold uppercase tracking-wider text-[10px]">
+                      <tr>
+                        <th className="px-5 py-3">Case ID</th>
+                        <th className="px-5 py-3">Incident Summary</th>
+                        <th className="px-5 py-3">Claimant / Policy</th>
+                        <th className="px-5 py-3">Priority</th>
+                        <th className="px-5 py-3">Status</th>
+                        <th className="px-5 py-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-100 dark:divide-surface-200/30 font-normal">
+                      {reviewCases.map((item) => (
+                        <tr
+                          key={item.id}
+                          onClick={() => router.push(`/cases/${item.id}`)}
+                          className="hover:bg-surface-50 dark:hover:bg-surface-100/20 transition-colors cursor-pointer group"
+                        >
+                          <td className="px-5 py-3 whitespace-nowrap font-mono font-semibold text-surface-900 dark:text-white group-hover:text-brand-600">
+                            {item.case_number}
+                          </td>
+                          <td className="px-5 py-3 max-w-sm truncate font-medium text-surface-800 dark:text-surface-200">
+                            {item.title}
+                          </td>
+                          <td className="px-5 py-3 whitespace-nowrap text-surface-600 dark:text-surface-400">
+                            <div>{item.claimant_name || <span className="italic text-surface-400">—</span>}</div>
+                            {item.policy_number && (
+                              <div className="font-mono text-[10px] text-surface-400">{item.policy_number}</div>
+                            )}
+                          </td>
+                          <td className="px-5 py-3 whitespace-nowrap">
                             <Badge variant={getPriorityBadgeVariant(item.priority)} size="xs" dot>
-                              {formatPriority(item.priority)} Priority
+                              {formatPriority(item.priority)}
                             </Badge>
+                          </td>
+                          <td className="px-5 py-3 whitespace-nowrap">
                             <Badge variant={getStatusBadgeVariant(item.status)} size="xs">
                               {formatStatus(item.status)}
                             </Badge>
-                          </div>
+                          </td>
+                          <td className="px-5 py-3 text-right whitespace-nowrap">
+                            <span className="text-xs font-semibold text-brand-600 group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-0.5">
+                              Open Workbench <ChevronRight className="h-3 w-3" />
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
 
-                          <h3 className="text-sm font-semibold text-surface-900 group-hover:text-brand-600 transition-colors truncate">
-                            {item.title}
-                          </h3>
-
-                          <div className="flex items-center gap-4 text-xs text-surface-500">
-                            {item.claimant_name && (
-                              <span>Claimant: <strong className="text-surface-700">{item.claimant_name}</strong></span>
-                            )}
-                            {item.policy_number && (
-                              <span className="font-mono">Policy: {item.policy_number}</span>
-                            )}
-                            <span>Files: {item.document_count}</span>
-                          </div>
-                        </div>
-
-                        <div className="shrink-0 flex items-center gap-2">
-                          <span className="text-xs font-semibold text-brand-600 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-                            <span>Open Workbench</span>
-                            <ChevronRight className="h-4 w-4" />
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Processing Status Breakdown */}
-                <div className="rounded-lg border border-surface-200 bg-surface-0 p-5 shadow-subtle space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700">
-                    Investigation Priority Distribution
+            {/* 3. Balanced Split Section: Recent Activity & Triage Status */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left 8 Cols: Recent Registry Activity Table */}
+              <div className="lg:col-span-8 rounded-xl border border-surface-200 bg-surface-0 dark:bg-[#121c2e] shadow-2xs overflow-hidden">
+                <div className="p-4 sm:px-5 border-b border-surface-100 dark:border-surface-200/60 flex items-center justify-between">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300">
+                    Recent Activity Registry
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                    <div className="p-3 rounded bg-surface-50 border border-surface-200">
-                      <span className="text-[11px] text-surface-500 block uppercase font-medium">Critical</span>
-                      <span className="text-xl font-bold text-rose-700 mt-1 block">
+                  <Link
+                    href="/cases"
+                    className="text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors"
+                  >
+                    All Cases ({totalCases})
+                  </Link>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-surface-100 dark:divide-surface-200/40 text-left text-xs">
+                    <thead className="bg-surface-50 dark:bg-surface-100/30 text-surface-500 font-semibold uppercase tracking-wider text-[10px]">
+                      <tr>
+                        <th className="px-5 py-2.5">Case ID</th>
+                        <th className="px-5 py-2.5">Loss Description</th>
+                        <th className="px-5 py-2.5">Files</th>
+                        <th className="px-5 py-2.5">Status</th>
+                        <th className="px-5 py-2.5 text-right">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-100 dark:divide-surface-200/30 font-normal">
+                      {recentCases.map((rc) => (
+                        <tr
+                          key={rc.id}
+                          onClick={() => router.push(`/cases/${rc.id}`)}
+                          className="hover:bg-surface-50 dark:hover:bg-surface-100/20 transition-colors cursor-pointer group"
+                        >
+                          <td className="px-5 py-2.5 whitespace-nowrap font-mono font-semibold text-surface-800 dark:text-surface-200 group-hover:text-brand-600">
+                            {rc.case_number}
+                          </td>
+                          <td className="px-5 py-2.5 max-w-xs truncate text-surface-700 dark:text-surface-300">
+                            {rc.title}
+                          </td>
+                          <td className="px-5 py-2.5 whitespace-nowrap text-surface-500 font-mono text-[11px]">
+                            {rc.document_count} files
+                          </td>
+                          <td className="px-5 py-2.5 whitespace-nowrap">
+                            <Badge variant={getStatusBadgeVariant(rc.status)} size="xs">
+                              {formatStatus(rc.status)}
+                            </Badge>
+                          </td>
+                          <td className="px-5 py-2.5 text-right whitespace-nowrap text-surface-400 text-[11px]">
+                            {formatDate(rc.created_at)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Right 4 Cols: Clean Priority Breakdown & Operational Shortcuts */}
+              <div className="lg:col-span-4 space-y-4">
+                {/* Priority Matrix */}
+                <div className="rounded-xl border border-surface-200 bg-surface-0 dark:bg-[#121c2e] p-4.5 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between border-b border-surface-100 dark:border-surface-200/60 pb-2">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300">
+                      Portfolio Priority Tiers
+                    </h3>
+                    <span className="text-[11px] font-mono text-surface-400">{totalCases} Total</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="p-2.5 rounded-lg bg-surface-50 dark:bg-surface-100/40 border border-surface-200">
+                      <span className="text-[10px] uppercase font-bold text-surface-500 block">Critical</span>
+                      <span className="text-xl font-extrabold text-surface-900 dark:text-white mt-0.5 block">
                         {priorityDistribution.critical}
                       </span>
                     </div>
-                    <div className="p-3 rounded bg-surface-50 border border-surface-200">
-                      <span className="text-[11px] text-surface-500 block uppercase font-medium">High</span>
-                      <span className="text-xl font-bold text-amber-700 mt-1 block">
+                    <div className="p-2.5 rounded-lg bg-surface-50 dark:bg-surface-100/40 border border-surface-200">
+                      <span className="text-[10px] uppercase font-bold text-surface-500 block">High</span>
+                      <span className="text-xl font-extrabold text-surface-900 dark:text-white mt-0.5 block">
                         {priorityDistribution.high}
                       </span>
                     </div>
-                    <div className="p-3 rounded bg-surface-50 border border-surface-200">
-                      <span className="text-[11px] text-surface-500 block uppercase font-medium">Medium</span>
-                      <span className="text-xl font-bold text-surface-800 mt-1 block">
+                    <div className="p-2.5 rounded-lg bg-surface-50 dark:bg-surface-100/40 border border-surface-200">
+                      <span className="text-[10px] uppercase font-bold text-surface-500 block">Medium</span>
+                      <span className="text-xl font-extrabold text-surface-900 dark:text-white mt-0.5 block">
                         {priorityDistribution.medium}
                       </span>
                     </div>
-                    <div className="p-3 rounded bg-surface-50 border border-surface-200">
-                      <span className="text-[11px] text-surface-500 block uppercase font-medium">Low</span>
-                      <span className="text-xl font-bold text-surface-600 mt-1 block">
+                    <div className="p-2.5 rounded-lg bg-surface-50 dark:bg-surface-100/40 border border-surface-200">
+                      <span className="text-[10px] uppercase font-bold text-surface-500 block">Low</span>
+                      <span className="text-xl font-extrabold text-surface-900 dark:text-white mt-0.5 block">
                         {priorityDistribution.low}
                       </span>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Right Col: Quick Actions & Recent Intake Feed */}
-              <div className="space-y-6">
-                {/* Quick Actions Panel */}
-                <div className="rounded-lg border border-surface-200 bg-surface-0 p-5 shadow-subtle space-y-3">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700">
-                    Quick Operational Actions
+                {/* Direct Operational Shortcuts */}
+                <div className="rounded-xl border border-surface-200 bg-surface-0 dark:bg-[#121c2e] p-4.5 shadow-2xs space-y-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700 dark:text-surface-300 border-b border-surface-100 dark:border-surface-200/60 pb-2">
+                    Quick Workflows
                   </h3>
-                  <div className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={() => router.push('/cases/new')}
-                      className="w-full flex items-center justify-between p-3 rounded-md bg-surface-50 hover:bg-brand-50 border border-surface-200 hover:border-brand-300 text-left transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <PlusCircle className="h-4 w-4 text-brand-600" />
-                        <div>
-                          <div className="text-xs font-bold text-surface-900 group-hover:text-brand-700">
-                            Create New Case
-                          </div>
-                          <div className="text-[11px] text-surface-500">
-                            Upload FNOL forms &amp; police reports
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-surface-400 group-hover:text-brand-600" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => router.push('/demo')}
-                      className="w-full flex items-center justify-between p-3 rounded-md bg-surface-50 hover:bg-brand-50 border border-surface-200 hover:border-brand-300 text-left transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <FlaskConical className="h-4 w-4 text-brand-600" />
-                        <div>
-                          <div className="text-xs font-bold text-surface-900 group-hover:text-brand-700">
-                            Launch Demo Lab
-                          </div>
-                          <div className="text-[11px] text-surface-500">
-                            1-click load of 5 evaluation packages
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-surface-400 group-hover:text-brand-600" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => router.push('/engine')}
-                      className="w-full flex items-center justify-between p-3 rounded-md bg-surface-50 hover:bg-brand-50 border border-surface-200 hover:border-brand-300 text-left transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Cpu className="h-4 w-4 text-brand-600" />
-                        <div>
-                          <div className="text-xs font-bold text-surface-900 group-hover:text-brand-700">
-                            Inspect Agentic Graph
-                          </div>
-                          <div className="text-[11px] text-surface-500">
-                            LangGraph state machine &amp; telemetry
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-surface-400 group-hover:text-brand-600" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Compact Recent Cases Feed */}
-                <div className="rounded-lg border border-surface-200 bg-surface-0 p-5 shadow-subtle space-y-3">
-                  <div className="flex items-center justify-between border-b border-surface-100 pb-2">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-surface-700">
-                      Recent Activity Feed
-                    </h3>
+                  <div className="divide-y divide-surface-100 dark:divide-surface-200/40">
                     <Link
-                      href="/cases"
-                      className="text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors"
+                      href="/cases/new"
+                      className="py-2.5 flex items-center justify-between text-xs text-surface-700 dark:text-surface-200 hover:text-brand-600 transition-colors group"
                     >
-                      All ({totalCases})
+                      <div className="flex items-center gap-2">
+                        <PlusCircle className="h-3.5 w-3.5 text-brand-600" />
+                        <span className="font-semibold">New Claim Registration</span>
+                      </div>
+                      <ChevronRight className="h-3.5 w-3.5 text-surface-400 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+
+                    <Link
+                      href="/demo"
+                      className="py-2.5 flex items-center justify-between text-xs text-surface-700 dark:text-surface-200 hover:text-brand-600 transition-colors group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FlaskConical className="h-3.5 w-3.5 text-purple-600" />
+                        <span className="font-semibold">Demo Evaluation Scenarios</span>
+                      </div>
+                      <ChevronRight className="h-3.5 w-3.5 text-surface-400 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+
+                    <Link
+                      href="/engine"
+                      className="py-2.5 flex items-center justify-between text-xs text-surface-700 dark:text-surface-200 hover:text-brand-600 transition-colors group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Cpu className="h-3.5 w-3.5 text-brand-600" />
+                        <span className="font-semibold">Agentic Graph Inspection</span>
+                      </div>
+                      <ChevronRight className="h-3.5 w-3.5 text-surface-400 group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                   </div>
-
-                  {recentCases.length === 0 ? (
-                    <p className="text-xs text-surface-400 italic py-2">No recent claims submitted.</p>
-                  ) : (
-                    <div className="divide-y divide-surface-100">
-                      {recentCases.map((rc) => (
-                        <Link
-                          key={rc.id}
-                          href={`/cases/${rc.id}`}
-                          className="py-2.5 block group hover:bg-surface-50 px-2 rounded -mx-2 transition-colors"
-                        >
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-mono font-semibold text-surface-800 group-hover:text-brand-600">
-                              {rc.case_number}
-                            </span>
-                            <span className="text-[11px] text-surface-400">
-                              {formatDate(rc.created_at)}
-                            </span>
-                          </div>
-                          <p className="text-xs text-surface-600 truncate mt-0.5">
-                            {rc.title}
-                          </p>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

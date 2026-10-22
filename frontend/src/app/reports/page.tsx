@@ -61,8 +61,11 @@ export default function InvestigationReportsPage() {
     Promise.resolve().then(() => {
       if (mounted) setLoading(true);
     });
+
+    const activeSample = cases.slice(0, 12);
+
     Promise.allSettled(
-      cases.map(async (c) => {
+      activeSample.map(async (c) => {
         try {
           const detail = await api.getCase(c.id);
           return {
@@ -174,7 +177,7 @@ export default function InvestigationReportsPage() {
         ]}
       />
 
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-4">
+      <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
         {/* Search Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-0 border border-surface-200 rounded-lg p-3 shadow-subtle">
           <div className="w-full sm:w-80">

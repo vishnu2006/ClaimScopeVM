@@ -51,8 +51,10 @@ export default function DiscrepancyReviewPage() {
       if (mounted) setLoading(true);
     });
 
+    const activeSample = cases.slice(0, 12);
+
     Promise.allSettled(
-      cases.map(async (c) => {
+      activeSample.map(async (c) => {
         try {
           const state = await api.getInvestigation(c.id);
           if (state && state.inconsistencies && state.inconsistencies.length > 0) {
@@ -101,7 +103,7 @@ export default function DiscrepancyReviewPage() {
         ]}
       />
 
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Regulatory Guardrail Notice */}
         <div className="rounded-lg border border-amber-200 bg-amber-50/70 p-4 flex items-start gap-3 text-xs text-amber-950 leading-relaxed shadow-subtle">
           <Info className="h-5 w-5 shrink-0 text-amber-700 mt-0.5" />
