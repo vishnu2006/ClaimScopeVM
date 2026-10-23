@@ -80,7 +80,7 @@ class GeminiProvider(LLMProvider):
 
     async def _execute_with_retry(self, call_fn, max_retries: int = 3):
         """Execute async Gemini API call with exponential backoff for rate limits."""
-        delay = 2.0
+        delay = 0.8
         last_error = None
         for attempt in range(max_retries):
             try:
@@ -173,19 +173,37 @@ class GeminiProvider(LLMProvider):
         return response.text or ""
 
 
+_cached_provider: Optional[GeminiProvider] = None
+_cached_key: Optional[str] = None
+_cached_model: Optional[str] = None
+
+
 def get_llm_provider() -> LLMProvider:
-    """Factory that returns the configured Gemini LLM provider.
+    """Factory that returns the configured Gemini LLM provider with singleton client pooling.
     Raises clear ConfigurationError if GEMINI_API_KEY is missing.
     """
+    global _cached_provider, _cached_key, _cached_model
     key = settings.effective_gemini_api_key
     if not key or not key.strip():
         raise ConfigurationError(
             "GEMINI_API_KEY is not configured. Set GEMINI_API_KEY in your backend/.env file."
         )
 
-    return GeminiProvider(
+    # Reuse cached instance with active connection pool if configuration matches
+    if (
+        _cached_provider is not None
+        and _cached_key == key
+        and _cached_model == settings.GEMINI_MODEL
+    ):
+        return _cached_provider
+
+    provider = GeminiProvider(
         api_key=key,
         model=settings.GEMINI_MODEL,
         temperature=settings.GEMINI_TEMPERATURE,
         max_tokens=settings.GEMINI_MAX_TOKENS,
     )
+    _cached_provider = provider
+    _cached_key = key
+    _cached_model = settings.GEMINI_MODEL
+    return provider

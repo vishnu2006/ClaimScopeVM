@@ -4,6 +4,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { UploadCloud, FileText, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn, formatFileSize } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
+import { ThoughtLine } from '@/components/ui/ThoughtLine';
 
 export interface DocumentUploadProps {
   caseId?: string;
@@ -211,6 +212,24 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({
               </div>
             ))}
           </div>
+
+          {uploading && (
+            <div className="p-3.5 rounded-xl border border-brand-200/90 dark:border-brand-800 bg-brand-50/80 dark:bg-brand-950/40 shadow-xs mb-3">
+              <ThoughtLine
+                working={uploading}
+                steps={[
+                  'Streaming file payloads to ClaimScope repository',
+                  'Verifying MIME headers and storage integrity',
+                  'Cataloging files into Evidence Vault',
+                ]}
+                label="Uploading & cataloging claim documents…"
+                doneLabel="Documents uploaded in"
+                fontSize={13}
+                showTimer
+                color="var(--color-brand-600, #2563eb)"
+              />
+            </div>
+          )}
 
           <div className="flex justify-end pt-2">
             <Button

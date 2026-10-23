@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/Button';
 import { ProcessingStatus } from './ProcessingStatus';
 import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
+import { ThoughtLine } from '@/components/ui/ThoughtLine';
 
 export interface DocumentCardProps {
   document: Document;
@@ -129,6 +130,25 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
             />
           </div>
         </div>
+
+        {/* ThoughtLine Active Processing indicator */}
+        {(processing || document.processing_status === 'processing') && (
+          <div className="mt-2.5 p-2.5 rounded-lg border border-brand-200 dark:border-brand-800 bg-brand-50/70 dark:bg-brand-950/40">
+            <ThoughtLine
+              working={true}
+              steps={[
+                'Extracting native text & OCR layers',
+                'Classifying document taxonomy',
+                'Extracting key claims entities with Gemini',
+              ]}
+              label="Processing document intelligence…"
+              doneLabel="Processed in"
+              fontSize={12}
+              showTimer
+              color="var(--color-brand-600, #2563eb)"
+            />
+          </div>
+        )}
 
         {/* Footer: Date + Actions */}
         <div className="flex items-center justify-between border-t border-surface-100 pt-3 mt-3 text-xs">

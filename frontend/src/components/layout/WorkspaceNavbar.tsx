@@ -19,6 +19,7 @@ import {
   ArrowUpRight,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { UserProfileMenu } from '@/components/layout/UserProfileMenu';
 import { Button } from '@/components/ui/Button';
 import { StarBorder } from '@/components/ui/StarBorder';
 import { GooeyNav, GooeyNavItem } from '@/components/ui/GooeyNav';
@@ -172,6 +173,7 @@ export function WorkspaceNavbar() {
         {/* Right: Theme & Primary Action */}
         <div className="flex items-center gap-3 shrink-0">
           <ThemeToggle className="h-8 w-8 p-1.5 rounded-lg" />
+          <UserProfileMenu />
 
           {/* Primary Action Button with StarBorder */}
           <StarBorder

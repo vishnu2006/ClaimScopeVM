@@ -1,19 +1,26 @@
+'use client';
+
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ThoughtLine } from '@/components/ui/ThoughtLine';
 
 export interface LoadingStateProps {
   message?: string;
-  variant?: 'spinner' | 'skeleton' | 'card-skeleton';
+  variant?: 'spinner' | 'skeleton' | 'card-skeleton' | 'thought';
   count?: number;
   className?: string;
+  steps?: string[];
+  doneLabel?: string;
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
   message = 'Loading data...',
-  variant = 'spinner',
+  variant = 'thought',
   count = 3,
   className,
+  steps,
+  doneLabel = 'Loaded in',
 }) => {
   if (variant === 'skeleton') {
     return (
@@ -52,15 +59,51 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
     );
   }
 
+  if (variant === 'spinner') {
+    return (
+      <div
+        className={cn(
+          'flex flex-col items-center justify-center p-12 text-center text-surface-500 w-full',
+          className
+        )}
+      >
+        <Loader2 className="h-7 w-7 animate-spin text-brand-600 mb-3" />
+        <p className="text-xs font-medium text-surface-600">{message}</p>
+      </div>
+    );
+  }
+
+  // ThoughtLine variant (React Bits component)
+  const defaultSteps = steps || [
+    'Connecting to ClaimScope intelligence layer',
+    'Ingesting claim records & provenance data',
+    'Preparing structured response',
+  ];
+
   return (
     <div
       className={cn(
-        'flex flex-col items-center justify-center p-12 text-center text-surface-500 w-full',
+        'flex flex-col items-center justify-center p-8 sm:p-12 text-center w-full max-w-lg mx-auto',
         className
       )}
     >
-      <Loader2 className="h-7 w-7 animate-spin text-brand-600 mb-3" />
-      <p className="text-xs font-medium text-surface-600">{message}</p>
+      <div className="p-4 rounded-xl border border-surface-200/90 dark:border-surface-800 bg-surface-0/90 dark:bg-surface-900/60 shadow-sm backdrop-blur-xs">
+        <ThoughtLine
+          working={true}
+          steps={defaultSteps}
+          label={message}
+          doneLabel={doneLabel}
+          glyph="sparkle"
+          fontSize={14}
+          breathPeriod={1.6}
+          breathDepth={0.45}
+          settleDuration={350}
+          collapsible={true}
+          collapseOnSettle={false}
+          showTimer={true}
+          color="var(--color-brand-600, #2563eb)"
+        />
+      </div>
     </div>
   );
 };

@@ -6,8 +6,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.auth import get_optional_current_user
+from app.auth_utils import get_authorized_case
 from app.dependencies import get_db_session
 from app.models.case import Case
+from app.models.user import User
 from app.models.evidence import Evidence
 from app.models.report import Report
 from app.schemas.common import CaseStatus, ReportStatus, ReportType
@@ -173,20 +176,15 @@ async def generate_report(
     case_id: uuid.UUID,
     payload: Optional[ReportCreate] = None,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Generate or refresh structured investigation report for a case."""
-    query = (
-        select(Case)
-        .options(selectinload(Case.documents), selectinload(Case.evidences), selectinload(Case.reports))
-        .where(Case.id == case_id)
+    """Generate or refresh structured investigation report for a case with ownership check."""
+    case = await get_authorized_case(
+        case_id=case_id,
+        db=db,
+        user=current_user,
+        options=[selectinload(Case.documents), selectinload(Case.evidences), selectinload(Case.reports)],
     )
-    result = await db.execute(query)
-    case = result.scalar_one_or_none()
-    if not case:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID {case_id} not found",
-        )
 
     investigation_report = _build_investigation_report(case)
     now = datetime.now(timezone.utc)
@@ -232,15 +230,10 @@ async def generate_report(
 async def list_reports(
     case_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """List reports for a specific case."""
-    case_query = select(Case.id).where(Case.id == case_id)
-    case_res = await db.execute(case_query)
-    if not case_res.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID {case_id} not found",
-        )
+    """List reports for a specific case with ownership check."""
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
 
     query = select(Report).where(Report.case_id == case_id).order_by(Report.created_at.desc())
     result = await db.execute(query)
@@ -253,7 +246,9 @@ async def get_report(
     case_id: uuid.UUID,
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
     """Get a specific report by ID."""
     query = select(Report).where(Report.id == report_id, Report.case_id == case_id)
     result = await db.execute(query)

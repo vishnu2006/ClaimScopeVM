@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import DateTime, Enum as SAEnum, String, Text, Uuid
+from sqlalchemy import DateTime, Enum as SAEnum, ForeignKey, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from app.models.document import Document
     from app.models.evidence import Evidence
     from app.models.report import Report
+    from app.models.user import User
 
 
 class Case(Base, TimestampMixin):
@@ -41,8 +42,16 @@ class Case(Base, TimestampMixin):
     incident_date: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     # Relationships
+    user: Mapped[Optional["User"]] = relationship(
+        "User",
+        back_populates="cases",
+        lazy="selectin",
+    )
     documents: Mapped[List["Document"]] = relationship(
         "Document",
         back_populates="case",

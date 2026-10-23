@@ -26,6 +26,7 @@ import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { formatDate, formatPriority, formatStatus, getPriorityBadgeVariant, getStatusBadgeVariant } from '@/lib/utils';
 import { CaseSummary } from '@/lib/types';
+import { ThoughtLine } from '@/components/ui/ThoughtLine';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -137,7 +138,21 @@ export default function DashboardPage() {
       <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         {loading ? (
           <div className="space-y-4">
-            <LoadingState variant="skeleton" count={1} />
+            <div className="p-4 rounded-xl border border-surface-200/90 dark:border-surface-800 bg-surface-0/90 dark:bg-surface-900/60 shadow-xs flex justify-center">
+              <ThoughtLine
+                working={loading}
+                steps={[
+                  'Connecting to ClaimScope intelligence layer',
+                  'Loading operational claims docket',
+                  'Aggregating adjustor metrics & fraud triage queues',
+                ]}
+                label="Initializing Investigation Cockpit…"
+                doneLabel="Cockpit ready in"
+                fontSize={14}
+                showTimer
+                color="var(--color-brand-600, #2563eb)"
+              />
+            </div>
             <LoadingState variant="card-skeleton" count={3} />
           </div>
         ) : error ? (

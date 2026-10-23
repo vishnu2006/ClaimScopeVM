@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { AgentExecutionRecord } from '@/lib/types';
 import { Badge } from '@/components/ui/Badge';
+import { ThoughtLine } from '@/components/ui/ThoughtLine';
 
 interface InvestigationStepperProps {
   executions?: AgentExecutionRecord[];
@@ -103,6 +104,29 @@ export function InvestigationStepper({
           )}
         </div>
       </div>
+
+      {/* Real-time ThoughtLine Trace while investigating */}
+      {isInvestigating && (
+        <div className="p-3 bg-brand-50/70 dark:bg-brand-950/40 rounded-lg border border-brand-200/80 dark:border-brand-800">
+          <ThoughtLine
+            working={isInvestigating}
+            steps={
+              executions.length > 0
+                ? executions.map((e) => `${e.display_name || e.agent_id}: ${e.status}`)
+                : [
+                    'Intake Classifier evaluating document types',
+                    'Supervisor determining required investigation nodes',
+                    'Dispatching specialist agents',
+                  ]
+            }
+            label="Agentic Investigation Pipeline executing…"
+            doneLabel="Pipeline finished in"
+            fontSize={13}
+            showTimer
+            color="var(--color-brand-600, #2563eb)"
+          />
+        </div>
+      )}
 
       {/* Grid of Agent Execution Records */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">

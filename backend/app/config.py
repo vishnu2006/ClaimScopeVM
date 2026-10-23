@@ -24,8 +24,14 @@ class Settings(BaseSettings):
     GEMINI_MAX_TOKENS: int = 8192
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,https://claimscopevm.vishnu-pandrangi123.workers.dev"
-    CORS_ORIGIN_REGEX: Optional[str] = r"^https:\/\/(.*\.(pages\.dev|workers\.dev)|localhost(:\d+)?)$"
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000,https://claimscopevm.vishnu-pandrangi123.workers.dev,https://aethergraph.in,https://www.aethergraph.in"
+    CORS_ORIGIN_REGEX: Optional[str] = r"^https:\/\/(.*\.(pages\.dev|workers\.dev)|aethergraph\.in|localhost(:\d+)?)$"
+
+    # Firebase Authentication & Admin SDK
+    FIREBASE_PROJECT_ID: Optional[str] = None
+    FIREBASE_SERVICE_ACCOUNT_JSON: Optional[str] = None
+    FIREBASE_SERVICE_ACCOUNT_PATH: Optional[str] = None
+    REQUIRE_AUTH: bool = False  # If True, requests without valid tokens are strictly rejected
 
     @property
     def effective_gemini_api_key(self) -> Optional[str]:

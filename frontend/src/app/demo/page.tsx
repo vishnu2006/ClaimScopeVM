@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { StarBorder } from '@/components/ui/StarBorder';
 import { api } from '@/lib/api';
+import { ThoughtLine } from '@/components/ui/ThoughtLine';
 import { cn } from '@/lib/utils';
 
 interface Scenario {
@@ -190,6 +191,26 @@ export default function DemoLabPage() {
             5 Test Packages
           </Badge>
         </div>
+
+        {/* ThoughtLine Loading Banner when Scenario is Loading */}
+        {loadingId && (
+          <div className="p-4 sm:p-5 rounded-2xl border-2 border-brand-500/30 bg-surface-0/95 dark:bg-[#121826]/95 shadow-md backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+            <ThoughtLine
+              working={Boolean(loadingId)}
+              steps={[
+                `Provisioning synthetic claim dossier for package ${loadingId.toUpperCase()}`,
+                'Synthesizing First Notice of Loss statements & telemetry',
+                'Generating damage forensic photos & police records',
+                'Cataloging documents into evidence vault & redirecting',
+              ]}
+              label={`Provisioning & loading test claim package…`}
+              doneLabel="Test package ready in"
+              fontSize={14}
+              showTimer
+              color="var(--color-brand-600, #2563eb)"
+            />
+          </div>
+        )}
 
         {/* Compact Scenario Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4.5">

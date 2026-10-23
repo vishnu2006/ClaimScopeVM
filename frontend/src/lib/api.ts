@@ -27,12 +27,14 @@ export class ApiError extends Error {
   }
 }
 
-// Simple in-memory response cache with TTL for ultra-fast, snappy navigation
+// High-performance in-memory cache with TTL and concurrent request deduplication
 const clientCache = new Map<string, { data: unknown; expiry: number }>();
+const inFlightRequests = new Map<string, Promise<unknown>>();
 
 export function invalidateApiCache(prefix?: string) {
   if (!prefix) {
     clientCache.clear();
+    inFlightRequests.clear();
     return;
   }
   for (const key of clientCache.keys()) {
@@ -40,6 +42,20 @@ export function invalidateApiCache(prefix?: string) {
       clientCache.delete(key);
     }
   }
+  for (const key of inFlightRequests.keys()) {
+    if (key.includes(prefix)) {
+      inFlightRequests.delete(key);
+    }
+  }
+}
+
+// Global token provider callback to supply the current Firebase ID token
+let idTokenProvider: (() => Promise<string | null>) | null = null;
+
+export function setIdTokenProvider(provider: (() => Promise<string | null>) | null) {
+  idTokenProvider = provider;
+  // Clear cached data on auth change
+  invalidateApiCache();
 }
 
 class ApiClient {
@@ -62,55 +78,89 @@ class ApiClient {
       }
     }
 
+    // Deduplicate identical in-flight GET requests
+    if (method === 'GET') {
+      const inFlight = inFlightRequests.get(cacheKey);
+      if (inFlight) {
+        return inFlight as Promise<T>;
+      }
+    }
+
     const headers: Record<string, string> = {
       ...(options?.headers as Record<string, string>),
     };
+
+    // Attach Authorization header if token provider is registered
+    if (!headers['Authorization'] && idTokenProvider) {
+      try {
+        const token = await idTokenProvider();
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+      } catch (err) {
+        console.warn('Failed to retrieve Firebase ID token for API request:', err);
+      }
+    }
 
     // Don't set Content-Type for FormData
     if (!(options?.body instanceof FormData)) {
       headers['Content-Type'] = 'application/json';
     }
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
+    const executeFetch = async (): Promise<T> => {
+      try {
+        const response = await fetch(url, {
+          ...options,
+          headers,
+        });
 
-      if (!response.ok) {
-        let errorMessage = `Request failed with status ${response.status}`;
-        let details: unknown = null;
+        if (!response.ok) {
+          let errorMessage = `Request failed with status ${response.status}`;
+          let details: unknown = null;
 
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.detail || errorData.message || errorMessage;
-          details = errorData;
-        } catch {
-          // Response is not JSON
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.detail || errorData.message || errorMessage;
+            details = errorData;
+          } catch {
+            // Response is not JSON
+          }
+
+          throw new ApiError(response.status, errorMessage, details);
         }
 
-        throw new ApiError(response.status, errorMessage, details);
-      }
+        // Handle 204 No Content
+        if (response.status === 204) {
+          return {} as T;
+        }
 
-      // Handle 204 No Content
-      if (response.status === 204) {
-        return {} as T;
+        const result = await response.json();
+        if (method === 'GET' && cacheTtlMs > 0) {
+          clientCache.set(cacheKey, { data: result, expiry: Date.now() + cacheTtlMs });
+        }
+        return result;
+      } catch (error) {
+        if (error instanceof ApiError) {
+          throw error;
+        }
+        throw new ApiError(
+          0,
+          error instanceof Error ? error.message : 'Network error or backend unreachable'
+        );
+      } finally {
+        if (method === 'GET') {
+          inFlightRequests.delete(cacheKey);
+        }
       }
+    };
 
-      const result = await response.json();
-      if (method === 'GET' && cacheTtlMs > 0) {
-        clientCache.set(cacheKey, { data: result, expiry: Date.now() + cacheTtlMs });
-      }
-      return result;
-    } catch (error) {
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(
-        0,
-        error instanceof Error ? error.message : 'Network error or backend unreachable'
-      );
+    if (method === 'GET') {
+      const promise = executeFetch();
+      inFlightRequests.set(cacheKey, promise);
+      return promise;
     }
+
+    return executeFetch();
   }
 
   // Cases
@@ -219,7 +269,14 @@ class ApiClient {
 
   async downloadReportPdf(caseId: string): Promise<Blob> {
     const url = `${this.baseUrl}/cases/${caseId}/report/pdf`;
-    const response = await fetch(url);
+    const headers: Record<string, string> = {};
+    if (idTokenProvider) {
+      try {
+        const token = await idTokenProvider();
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+      } catch {}
+    }
+    const response = await fetch(url, { headers });
     if (!response.ok) {
       const err = await response.json().catch(() => ({ detail: 'Failed to download PDF' }));
       throw new ApiError(response.status, err.detail || 'Failed to download PDF');
@@ -235,17 +292,57 @@ class ApiClient {
   }
 
   // Health / Connectivity Check
+  private _cachedHealth: { data: { status: string; version?: string; app?: string }; expiry: number } | null = null;
+
   async checkHealth(): Promise<{ status: string; version?: string; app?: string } | null> {
+    if (this._cachedHealth && this._cachedHealth.expiry > Date.now()) {
+      return this._cachedHealth.data;
+    }
     try {
       const rootUrl = this.baseUrl.replace(/\/api\/v1$/, '');
       const response = await fetch(`${rootUrl}/health`);
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        this._cachedHealth = { data, expiry: Date.now() + 30000 };
+        return data;
       }
       return null;
     } catch {
       return null;
     }
+  }
+
+  
+  // Authentication & User Profile
+  async getMyProfile(): Promise<{
+    id: string;
+    firebase_uid: string;
+    email: string;
+    display_name?: string | null;
+    photo_url?: string | null;
+    is_active: boolean;
+    is_verified: boolean;
+    created_at: string;
+    last_sign_in_at?: string | null;
+  } | null> {
+    try {
+      return await this.request('/auth/me', undefined, 10000);
+    } catch {
+      return null;
+    }
+  }
+
+  async updateMyProfile(data: { display_name?: string; photo_url?: string }): Promise<{
+    id: string;
+    firebase_uid: string;
+    email: string;
+    display_name?: string | null;
+    photo_url?: string | null;
+  }> {
+    return await this.request('/auth/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
   }
 
   async healthCheck(): Promise<{ status: string; version?: string; app?: string } | null> {
@@ -269,7 +366,7 @@ class ApiClient {
         masked_key: string | null;
         connectivity_status: 'connected' | 'unconfigured' | 'error';
         message: string;
-      }>('/diagnostics/gemini');
+      }>('/diagnostics/gemini', undefined, 30000);
     } catch {
       return null;
     }

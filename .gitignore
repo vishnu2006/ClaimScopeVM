@@ -21,6 +21,8 @@ htmlcov/
 .env.*.local
 *.pem
 *.key
+*firebase-adminsdk*.json
+serviceAccountKey*.json
 
 # Next.js
 .next/

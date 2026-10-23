@@ -3,5 +3,6 @@ from app.models.case import Case
 from app.models.document import Document
 from app.models.evidence import Evidence
 from app.models.report import Report
+from app.models.user import User
 
-__all__ = ["Base", "TimestampMixin", "Case", "Document", "Evidence", "Report"]
+__all__ = ["Base", "TimestampMixin", "User", "Case", "Document", "Evidence", "Report"]

@@ -9,11 +9,15 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, load_only
+import io
 
 from app.config import settings
+from app.auth import get_optional_current_user
+from app.auth_utils import get_authorized_case
 from app.dependencies import get_db_session
 from app.models.case import Case
+from app.models.user import User
 from app.models.document import Document
 from app.models.evidence import Evidence
 from app.models.report import Report
@@ -26,6 +30,7 @@ from app.services.document_classifier import DocumentClassifier
 from app.services.pdf_generator import ReportPDFGenerator
 
 logger = logging.getLogger(__name__)
+_pdf_cache: Dict[str, bytes] = {}
 
 router = APIRouter(prefix="/cases", tags=["cases"])
 
@@ -87,6 +92,7 @@ def _case_to_summary(case: Case) -> CaseSummary:
 async def create_case(
     payload: CaseCreate,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Create a new case with an auto-generated case number."""
     case_number = await _generate_case_number(db)
@@ -99,6 +105,7 @@ async def create_case(
         incident_date=payload.incident_date,
         priority=payload.priority,
         status=CaseStatus.OPEN,
+        user_id=current_user.id if current_user else None,
     )
     db.add(case)
     await db.flush()
@@ -112,13 +119,24 @@ async def list_cases(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """List cases with summary metrics and optional status filtering."""
+    """List cases with summary metrics, private user workspace filtering, and optional status filtering."""
     query = (
         select(Case)
-        .options(selectinload(Case.documents), selectinload(Case.evidences))
+        .options(
+            selectinload(Case.documents).load_only(Document.id, Document.case_id),
+            selectinload(Case.evidences).load_only(Evidence.id, Evidence.case_id),
+        )
         .order_by(Case.created_at.desc())
     )
+    if current_user:
+        # Show user-owned cases plus shared unassigned synthetic/demo cases
+        query = query.where((Case.user_id == current_user.id) | (Case.user_id.is_(None)))
+    else:
+        # Unauthenticated users only see public unassigned cases
+        query = query.where(Case.user_id.is_(None))
+
     if status_filter:
         query = query.where(Case.status == status_filter)
 
@@ -132,20 +150,15 @@ async def list_cases(
 async def get_case(
     case_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Get case details including attached documents and evidence observations."""
-    query = (
-        select(Case)
-        .options(selectinload(Case.documents), selectinload(Case.evidences), selectinload(Case.reports))
-        .where(Case.id == case_id)
+    """Get case details including attached documents and evidence observations with ownership checks."""
+    case = await get_authorized_case(
+        case_id=case_id,
+        db=db,
+        user=current_user,
+        options=[selectinload(Case.documents), selectinload(Case.evidences), selectinload(Case.reports)],
     )
-    result = await db.execute(query)
-    case = result.scalar_one_or_none()
-    if not case:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID {case_id} not found",
-        )
     return _case_to_response(case)
 
 
@@ -154,20 +167,15 @@ async def update_case(
     case_id: uuid.UUID,
     payload: CaseUpdate,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Update case metadata or status."""
-    query = (
-        select(Case)
-        .options(selectinload(Case.documents), selectinload(Case.evidences))
-        .where(Case.id == case_id)
+    """Update case metadata or status with ownership validation."""
+    case = await get_authorized_case(
+        case_id=case_id,
+        db=db,
+        user=current_user,
+        options=[selectinload(Case.documents), selectinload(Case.evidences)],
     )
-    result = await db.execute(query)
-    case = result.scalar_one_or_none()
-    if not case:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID {case_id} not found",
-        )
 
     update_data = payload.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -182,16 +190,10 @@ async def update_case(
 async def delete_case(
     case_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Delete a case and all associated documents, evidence, and reports."""
-    query = select(Case).where(Case.id == case_id)
-    result = await db.execute(query)
-    case = result.scalar_one_or_none()
-    if not case:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID {case_id} not found",
-        )
+    """Delete a case and all associated documents, evidence, and reports with ownership check."""
+    case = await get_authorized_case(case_id=case_id, db=db, user=current_user)
 
     await db.delete(case)
     return {"message": "Case deleted successfully", "id": str(case_id)}
@@ -201,15 +203,10 @@ async def delete_case(
 async def get_case_evidence(
     case_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Get all evidence observations associated with a case."""
-    case_query = select(Case.id).where(Case.id == case_id)
-    case_res = await db.execute(case_query)
-    if not case_res.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID {case_id} not found",
-        )
+    """Get all evidence observations associated with a case with ownership check."""
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
 
     query = select(Evidence).where(Evidence.case_id == case_id).order_by(Evidence.created_at.asc())
     result = await db.execute(query)
@@ -221,21 +218,15 @@ async def get_case_evidence(
 async def run_case_investigation(
     case_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Execute adaptive LangGraph investigation pipeline on all documents in the package."""
-    # 1. Fetch case with documents
-    query = (
-        select(Case)
-        .options(selectinload(Case.documents))
-        .where(Case.id == case_id)
+    case = await get_authorized_case(
+        case_id=case_id,
+        db=db,
+        user=current_user,
+        options=[selectinload(Case.documents)],
     )
-    result = await db.execute(query)
-    case = result.scalar_one_or_none()
-    if not case:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID {case_id} not found",
-        )
 
     case.status = CaseStatus.PROCESSING
     await db.flush()
@@ -387,8 +378,10 @@ async def run_case_investigation(
 async def get_case_investigation(
     case_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Retrieve the latest investigation CaseState for a case."""
+    """Retrieve the latest investigation CaseState for a case with ownership check."""
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
     report_query = select(Report).where(Report.case_id == case_id)
     report_res = await db.execute(report_query)
     report = report_res.scalar_one_or_none()
@@ -407,8 +400,10 @@ async def get_case_investigation(
 async def download_case_report_pdf(
     case_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """Generate and stream a professional PDF investigation report."""
+    """Generate and stream a professional PDF investigation report with ownership check."""
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
     report_query = select(Report).where(Report.case_id == case_id)
     report_res = await db.execute(report_query)
     report = report_res.scalar_one_or_none()
@@ -420,8 +415,18 @@ async def download_case_report_pdf(
 
     try:
         case_state = CaseState.model_validate(report.report_data)
-        pdf_gen = ReportPDFGenerator()
-        pdf_buffer = pdf_gen.generate_pdf(case_state)
+        cache_key = f"{report.id}_{report.updated_at}"
+        cached_bytes = _pdf_cache.get(cache_key)
+
+        if cached_bytes:
+            pdf_buffer = io.BytesIO(cached_bytes)
+        else:
+            pdf_gen = ReportPDFGenerator()
+            raw_buffer = pdf_gen.generate_pdf(case_state)
+            cached_bytes = raw_buffer.getvalue()
+            _pdf_cache[cache_key] = cached_bytes
+            pdf_buffer = io.BytesIO(cached_bytes)
+
         filename = f"ClaimScope_Report_{case_state.case_number}.pdf"
         return StreamingResponse(
             pdf_buffer,
@@ -440,6 +445,7 @@ async def download_case_report_pdf(
 async def load_synthetic_case(
     scenario_id: str,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """One-click load synthetic accident incident package (case_a, case_b, case_c, case_d, case_e).
     Instantly creates the case in DB and copies/classifies the synthetic documents."""
@@ -509,6 +515,7 @@ async def load_synthetic_case(
         incident_date=datetime.now(timezone.utc),
         priority=matched_scenario["priority"],
         status=CaseStatus.OPEN,
+        user_id=current_user.id if current_user else None,
     )
     db.add(new_case)
     await db.flush()

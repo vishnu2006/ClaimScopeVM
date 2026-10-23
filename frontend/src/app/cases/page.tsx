@@ -30,6 +30,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { CaseCard } from '@/components/cases/CaseCard';
 import { formatDate, formatPriority, formatStatus, getPriorityBadgeVariant, getStatusBadgeVariant } from '@/lib/utils';
 import { CaseSummary } from '@/lib/types';
+import { ThoughtLine } from '@/components/ui/ThoughtLine';
 
 type SortField = 'case_number' | 'created_at' | 'priority' | 'document_count';
 type SortOrder = 'asc' | 'desc';
@@ -250,7 +251,21 @@ export default function CasesPage() {
         {/* Main Content Area */}
         {loading ? (
           <div className="space-y-4">
-            <LoadingState variant="skeleton" count={1} />
+            <div className="p-4 rounded-xl border border-surface-200/90 dark:border-surface-800 bg-surface-0/90 dark:bg-surface-900/60 shadow-xs flex justify-center">
+              <ThoughtLine
+                working={loading}
+                steps={[
+                  'Querying claims docket database',
+                  'Aggregating attached documents and forensic artifacts',
+                  'Evaluating investigation priority and claim statuses',
+                ]}
+                label="Retrieving Claims Registry…"
+                doneLabel="Claims loaded in"
+                fontSize={14}
+                showTimer
+                color="var(--color-brand-600, #2563eb)"
+              />
+            </div>
             <LoadingState variant="card-skeleton" count={5} />
           </div>
         ) : error ? (

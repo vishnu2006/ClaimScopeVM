@@ -9,8 +9,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.auth import get_optional_current_user
+from app.auth_utils import get_authorized_case
 from app.dependencies import get_db_session, get_document_processor, get_fnol_extractor
 from app.models.case import Case
+from app.models.user import User
 from app.models.document import Document
 from app.models.evidence import Evidence
 from app.schemas.common import DocumentType, EvidenceType, ProcessingStatus
@@ -33,17 +36,10 @@ async def upload_documents(
     case_id: uuid.UUID,
     files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     """Upload one or multiple documents for a specific case with automated content classification."""
-    # Verify case exists
-    case_query = select(Case).where(Case.id == case_id)
-    case_res = await db.execute(case_query)
-    case = case_res.scalar_one_or_none()
-    if not case:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID {case_id} not found",
-        )
+    case = await get_authorized_case(case_id=case_id, db=db, user=current_user)
 
     if not files:
         raise HTTPException(
@@ -103,8 +99,10 @@ async def upload_documents(
         classification = classifier.classify_by_content(destination_path, mime_type=mime)
         doc_type = classification.document_type
 
-        # Save record in database
+        # Save record in database with explicit pre-generated UUID
+        doc_id = uuid.uuid4()
         doc = Document(
+            id=doc_id,
             case_id=case_id,
             original_filename=file.filename or "file",
             stored_filename=stored_filename,
@@ -116,12 +114,9 @@ async def upload_documents(
             processing_status=ProcessingStatus.PENDING,
         )
         db.add(doc)
-        await db.flush()
-        await db.refresh(doc)
-
         uploaded_docs.append(
             DocumentUploadResponse(
-                id=doc.id,
+                id=doc_id,
                 original_filename=doc.original_filename,
                 processing_status=doc.processing_status,
                 document_type=doc.document_type,
@@ -130,6 +125,7 @@ async def upload_documents(
             )
         )
 
+    await db.flush()
     return uploaded_docs
 
 
@@ -137,15 +133,10 @@ async def upload_documents(
 async def list_documents(
     case_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    """List all documents attached to a case."""
-    case_query = select(Case.id).where(Case.id == case_id)
-    case_res = await db.execute(case_query)
-    if not case_res.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID {case_id} not found",
-        )
+    """List all documents attached to a case with user authorization."""
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
 
     query = select(Document).where(Document.case_id == case_id).order_by(Document.uploaded_at.asc())
     result = await db.execute(query)
@@ -158,7 +149,9 @@ async def get_document(
     case_id: uuid.UUID,
     doc_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
     """Get metadata and extracted text for a specific document."""
     query = select(Document).where(Document.id == doc_id, Document.case_id == case_id)
     result = await db.execute(query)
@@ -176,7 +169,9 @@ async def get_document_raw_file(
     case_id: uuid.UUID,
     doc_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
     """Serve the raw uploaded document or image file directly for in-browser inspection."""
     query = select(Document).where(Document.id == doc_id, Document.case_id == case_id)
     result = await db.execute(query)
@@ -206,7 +201,9 @@ async def delete_document(
     case_id: uuid.UUID,
     doc_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
     """Delete a document record and its underlying stored file."""
     query = select(Document).where(Document.id == doc_id, Document.case_id == case_id)
     result = await db.execute(query)
@@ -234,7 +231,9 @@ async def process_document(
     db: AsyncSession = Depends(get_db_session),
     processor: DocumentProcessor = Depends(get_document_processor),
     fnol_extractor: FNOLExtractor = Depends(get_fnol_extractor),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
+    await get_authorized_case(case_id=case_id, db=db, user=current_user)
     """Trigger text extraction via PyMuPDF/Gemini and structured extraction based on document type."""
     query = select(Document).where(Document.id == doc_id, Document.case_id == case_id)
     result = await db.execute(query)

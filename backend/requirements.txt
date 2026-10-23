@@ -19,5 +19,6 @@ anthropic==0.34.0
 google-genai>=0.1.1
 google-generativeai==0.8.0
 aiofiles==24.1.0
+firebase-admin>=6.2.0
 pytest==8.3.0
 pytest-asyncio==0.24.0

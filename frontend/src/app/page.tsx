@@ -37,6 +37,7 @@ import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { StarBorder } from '@/components/ui/StarBorder';
 import { GooeyNav, GooeyNavItem } from '@/components/ui/GooeyNav';
 import { SystemArchitectureSection } from '@/components/home/SystemArchitectureSection';
+import { UserProfileMenu } from '@/components/layout/UserProfileMenu';
 
 export default function PublicHomePage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -98,6 +99,7 @@ export default function PublicHomePage() {
           {/* Right Action Cluster */}
           <div className="flex items-center gap-2.5">
             <ThemeToggle className="h-8 w-8 p-1.5 rounded-lg" />
+            <UserProfileMenu />
             <Link href="/dashboard" className="hidden sm:inline-flex">
               <StarBorder
                 as="span"

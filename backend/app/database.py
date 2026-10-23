@@ -1,3 +1,4 @@
+import os
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -20,8 +21,23 @@ def _normalize_database_url(raw_url: str) -> str:
 
 def _get_engine():
     db_url = _normalize_database_url(settings.DATABASE_URL)
+    is_postgres = "postgresql" in db_url
+
+    engine_kwargs = {"echo": settings.DEBUG}
+    if is_postgres:
+        # High-performance async connection pooling for Render PostgreSQL
+        engine_kwargs.update(
+            {
+                "pool_size": 10,
+                "max_overflow": 20,
+                "pool_pre_ping": True,
+                "pool_recycle": 300,
+                "pool_timeout": 30,
+            }
+        )
+
     try:
-        return create_async_engine(db_url, echo=settings.DEBUG)
+        return create_async_engine(db_url, **engine_kwargs)
     except Exception:
         # Fallback to local SQLite if PostgreSQL driver or connection is unavailable
         fallback_url = "sqlite+aiosqlite:///./claimscope.db"

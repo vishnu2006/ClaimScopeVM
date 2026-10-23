@@ -36,6 +36,7 @@ import { StarBorder } from '@/components/ui/StarBorder';
 import RubberSegment from '@/components/ui/RubberSegment';
 import { useTheme } from '@/context/ThemeContext';
 import { CaseState, Evidence } from '@/lib/types';
+import { ThoughtLine } from '@/components/ui/ThoughtLine';
 
 export default function CaseDetailPage() {
   const router = useRouter();
@@ -164,7 +165,14 @@ export default function CaseDetailPage() {
   if (caseLoading) {
     return (
       <div className="flex-1 flex items-center justify-center p-12">
-        <LoadingState message="Retrieving case investigation records..." />
+        <LoadingState
+          message="Retrieving claim investigation records..."
+          steps={[
+            'Connecting to ClaimScope intelligence layer',
+            'Fetching claim docket metadata & claimant records',
+            'Loading incident documents and forensic evidence',
+          ]}
+        />
       </div>
     );
   }
@@ -197,6 +205,31 @@ export default function CaseDetailPage() {
       />
 
       <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-5">
+        {/* ThoughtLine Live Investigation Orchestration Banner */}
+        {isInvestigating && (
+          <div className="p-4 sm:p-5 rounded-2xl border-2 border-brand-500/30 bg-surface-0/95 dark:bg-[#121826]/95 shadow-md backdrop-blur-md animate-in fade-in slide-in-from-top-2 duration-200">
+            <ThoughtLine
+              working={isInvestigating}
+              steps={[
+                'Classifying intake package documents & verifying signatures',
+                'Running Gemini Vision forensic analysis on damage photos',
+                'Extracting First Notice of Loss statements & Police reports',
+                'Cross-referencing testimony across evidence documents',
+                'Grounding claim via external weather & geospatial verification',
+                'Synthesizing liability assessment & fraud risk score',
+              ]}
+              label="Multimodal Claim Investigation Orchestrator in progress…"
+              doneLabel="Investigation concluded in"
+              glyph="sparkle"
+              fontSize={15}
+              breathPeriod={1.5}
+              collapsible={true}
+              collapseOnSettle={false}
+              showTimer={true}
+              color="var(--color-brand-600, #2563eb)"
+            />
+          </div>
+        )}
         {/* Pipeline Progress Status */}
         <CaseTimeline documents={documents} report={caseData.report} />
 
