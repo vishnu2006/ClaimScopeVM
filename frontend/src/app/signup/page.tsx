@@ -70,10 +70,8 @@ function SignUpForm() {
     try {
       setLoading(true);
       await signUpWithEmail(email, password, displayName);
-      setVerificationSent(true);
-      setTimeout(() => {
-        router.push(redirectPath);
-      }, 2500);
+      
+      router.push(redirectPath);
     } catch (err: any) {
       setLocalError(err.message || 'Failed to create investigator account.');
     } finally {

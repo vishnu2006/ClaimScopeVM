@@ -150,12 +150,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           displayName: displayName.trim(),
         });
       }
-      // Send email verification
-      try {
-        await sendEmailVerification(cred.user);
-      } catch (verificationErr) {
-        console.warn('Could not send initial verification email:', verificationErr);
-      }
+      // Email verification disabled as requested
+      // (Account is immediately active upon creation)
       const token = await cred.user.getIdToken(true);
       await syncBackendProfile(token);
     } catch (err: any) {

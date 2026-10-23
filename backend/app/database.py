@@ -61,3 +61,9 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Auto-migrate: ensure cases table has user_id column if created prior to auth model addition
+        try:
+            from sqlalchemy import text
+            await conn.execute(text('ALTER TABLE cases ADD COLUMN user_id UUID REFERENCES users(id) ON DELETE SET NULL'))
+        except Exception:
+            pass
