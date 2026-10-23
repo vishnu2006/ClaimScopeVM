@@ -343,18 +343,19 @@ async def run_case_investigation(
 
         for field_name, field_val in ext_data.items():
             if isinstance(field_val, dict) and field_val.get("value") is not None:
+                src_loc = field_val.get("source_text")
                 ev = Evidence(
                     case_id=case.id,
                     document_id=uuid.UUID(doc_id) if doc_id in doc_map else None,
                     evidence_type=EvidenceType.EXTRACTED_FIELD,
                     category="document_fact",
-                    field_name=field_name,
+                    field_name=str(field_name)[:100],
                     field_value=str(field_val.get("value")),
                     confidence=field_val.get("confidence") or 0.9,
-                    source_document=field_val.get("source_document") or doc_name,
+                    source_document=str(field_val.get("source_document") or doc_name)[:255],
                     source_page=field_val.get("source_page"),
-                    source_location=field_val.get("source_text"),
-                    notes=field_val.get("extraction_notes"),
+                    source_location=str(src_loc)[:255] if src_loc else None,
+                    notes=str(field_val.get("extraction_notes")) if field_val.get("extraction_notes") else None,
                 )
                 db.add(ev)
 
@@ -367,10 +368,10 @@ async def run_case_investigation(
             document_id=uuid.UUID(doc_id) if doc_id in doc_map else None,
             evidence_type=EvidenceType.VISUAL_OBSERVATION,
             category="visual_damage",
-            field_name=vision.visible_vehicle_region,
+            field_name=str(vision.visible_vehicle_region or "vehicle_region")[:100],
             field_value=f"Severity: {vision.severity_category.upper()}. {vision.severity_explanation}",
             confidence=vision.confidence_score,
-            source_document=doc_name,
+            source_document=str(doc_name)[:255],
             conflicting_values={
                 "observable_damage": vision.observable_damage,
                 "affected_components": vision.affected_components,
@@ -385,11 +386,11 @@ async def run_case_investigation(
         ev = Evidence(
             case_id=case.id,
             evidence_type=EvidenceType.CROSS_REFERENCE,
-            category=finding.category,
-            field_name=finding.field_name,
+            category=str(finding.category or "discrepancy")[:100],
+            field_name=str(finding.field_name or "finding")[:100],
             field_value=finding.explanation,
             confidence=finding.confidence,
-            source_document=finding.source_a,
+            source_document=str(finding.source_a or "")[:255] if finding.source_a else None,
             is_conflicting=True,
             conflicting_values={
                 "source_a": finding.source_a,
