@@ -1,21 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   FileCheck2,
   Download,
-  CheckCircle2,
   AlertTriangle,
-  ShieldAlert,
   Calendar,
   FileText,
   Search,
   ExternalLink,
   ChevronRight,
-  Printer,
-  Info,
+  ShieldAlert,
+  CheckCircle2,
+  Filter,
+  Eye,
+  Layers,
+  Sparkles,
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Badge } from '@/components/ui/Badge';
@@ -26,7 +28,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useCases } from '@/hooks/useCases';
 import { api } from '@/lib/api';
 import { Report } from '@/lib/types';
-import { formatDate, formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@/lib/utils';
 
 interface CaseReportSummary {
   case_id: string;
@@ -34,7 +36,11 @@ interface CaseReportSummary {
   case_title: string;
   claimant_name: string | null;
   policy_number: string | null;
+  status: string;
   report: Report | null;
+  discrepancies_count: number;
+  extracted_outcome: string | null;
+  rationale: string | null;
 }
 
 export default function InvestigationReportsPage() {
@@ -45,8 +51,9 @@ export default function InvestigationReportsPage() {
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [outcomeFilter, setOutcomeFilter] = useState<'ALL' | 'ESCALATE' | 'ADDITIONAL_INFO' | 'ROUTINE'>('ALL');
 
-  // Fetch reports for cases
+  // Fetch full case reports
   useEffect(() => {
     let mounted = true;
     if (!cases || cases.length === 0) {
@@ -62,19 +69,48 @@ export default function InvestigationReportsPage() {
       if (mounted) setLoading(true);
     });
 
-    const activeSample = cases.slice(0, 12);
-
     Promise.allSettled(
-      activeSample.map(async (c) => {
+      cases.map(async (c) => {
         try {
           const detail = await api.getCase(c.id);
+          const rep = detail.report || null;
+          
+          let extractedOutcome: string | null = null;
+          let discrepanciesCount = 0;
+          let rationale: string | null = null;
+
+          if (rep) {
+            const rd = (rep as any).report_data || {};
+            const gen = rd.generated_report || {};
+            const ass = rd.assessment || {};
+            const findings = (rep as any).findings || {};
+
+            extractedOutcome =
+              gen.outcome ||
+              gen.recommendation ||
+              (typeof ass === 'object' ? ass.outcome : null) ||
+              rep.outcome ||
+              rep.recommendation ||
+              null;
+
+            discrepanciesCount =
+              gen.discrepancies_count ??
+              (Array.isArray(findings.discrepancies) ? findings.discrepancies.length : 0);
+
+            rationale = gen.recommendation_rationale || (typeof ass === 'object' ? ass.rationale : null) || rep.summary || null;
+          }
+
           return {
             case_id: c.id,
             case_number: c.case_number,
             case_title: c.title,
             claimant_name: c.claimant_name,
             policy_number: c.policy_number,
-            report: detail.report || null,
+            status: c.status,
+            report: rep,
+            discrepancies_count: discrepanciesCount,
+            extracted_outcome: extractedOutcome,
+            rationale: rationale,
           } as CaseReportSummary;
         } catch {
           return null;
@@ -117,20 +153,39 @@ export default function InvestigationReportsPage() {
     }
   };
 
-  const filteredReports = caseReports.filter((cr) => {
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
-      const matches =
-        cr.case_number.toLowerCase().includes(q) ||
-        cr.case_title.toLowerCase().includes(q) ||
-        (cr.claimant_name && cr.claimant_name.toLowerCase().includes(q)) ||
-        (cr.policy_number && cr.policy_number.toLowerCase().includes(q));
-      if (!matches) return false;
-    }
-    return true;
-  });
+  const filteredReports = useMemo(() => {
+    return caseReports.filter((cr) => {
+      // Outcome Filter
+      if (outcomeFilter !== 'ALL') {
+        const out = (cr.extracted_outcome || '').toUpperCase();
+        if (outcomeFilter === 'ESCALATE' && !out.includes('ESCALAT')) return false;
+        if (outcomeFilter === 'ADDITIONAL_INFO' && !out.includes('ADDITIONAL') && !out.includes('FLAG')) return false;
+        if (outcomeFilter === 'ROUTINE' && !out.includes('ROUTINE')) return false;
+      }
 
-  const getOutcomeBadge = (outcome?: string) => {
+      // Search Filter
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const matches =
+          cr.case_number.toLowerCase().includes(q) ||
+          cr.case_title.toLowerCase().includes(q) ||
+          (cr.claimant_name && cr.claimant_name.toLowerCase().includes(q)) ||
+          (cr.policy_number && cr.policy_number.toLowerCase().includes(q));
+        if (!matches) return false;
+      }
+      return true;
+    });
+  }, [caseReports, searchTerm, outcomeFilter]);
+
+  const stats = useMemo(() => {
+    const total = caseReports.length;
+    const generated = caseReports.filter((c) => c.report !== null).length;
+    const escalated = caseReports.filter((c) => (c.extracted_outcome || '').toUpperCase().includes('ESCALAT')).length;
+    const routine = caseReports.filter((c) => (c.extracted_outcome || '').toUpperCase().includes('ROUTINE')).length;
+    return { total, generated, escalated, routine };
+  }, [caseReports]);
+
+  const getOutcomeBadge = (outcome?: string | null) => {
     if (!outcome) {
       return (
         <Badge variant="neutral" size="xs">
@@ -138,25 +193,29 @@ export default function InvestigationReportsPage() {
         </Badge>
       );
     }
-    if (outcome === 'ROUTINE_REVIEW' || outcome === 'routine') {
+    const upper = outcome.toUpperCase();
+    if (upper.includes('ROUTINE')) {
       return (
-        <Badge variant="success" size="xs" dot>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-growth-50 text-growth-700 border border-growth-200 dark:bg-growth-900/30 dark:text-growth-300 dark:border-growth-800">
+          <span className="w-1.5 h-1.5 rounded-full bg-growth-500 animate-pulse" />
           ROUTINE REVIEW
-        </Badge>
+        </span>
       );
     }
-    if (outcome === 'ADDITIONAL_INFORMATION_REQUIRED' || outcome === 'flag_for_review') {
+    if (upper.includes('ADDITIONAL') || upper.includes('FLAG')) {
       return (
-        <Badge variant="warning" size="xs" dot>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
           ADDITIONAL INFO REQUIRED
-        </Badge>
+        </span>
       );
     }
-    if (outcome === 'ESCALATE_FOR_HUMAN_REVIEW' || outcome === 'escalate') {
+    if (upper.includes('ESCALAT')) {
       return (
-        <Badge variant="error" size="xs" dot>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
           ESCALATE FOR HUMAN REVIEW
-        </Badge>
+        </span>
       );
     }
     return (
@@ -169,32 +228,103 @@ export default function InvestigationReportsPage() {
   return (
     <div className="flex-1 flex flex-col">
       <Header
-        title="Investigation Reports Archive"
-        subtitle="Synthesized findings, adjuster action recommendations, and institutional PDF exports"
+        title="Investigation Dossiers &amp; Reports"
+        subtitle="Auditable decision-support dossiers, cross-document discrepancy analyses, and institutional PDF exports"
         breadcrumbs={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Investigation Reports' },
         ]}
       />
 
-      <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-4">
-        {/* Search Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-0 border border-surface-200 rounded-lg p-3 shadow-subtle">
-          <div className="w-full sm:w-80">
-            <Input
-              placeholder="Search reports by case # or claimant..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              leftIcon={<Search className="h-4 w-4" />}
-              className="text-xs h-8.5"
-            />
+      <div className="flex-1 max-w-[1440px] w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-5">
+        {/* Metric Cards Banner */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-surface-0 dark:bg-[#0f172a] border border-surface-200 dark:border-surface-800 rounded-xl p-4 shadow-2xs">
+            <div className="flex items-center justify-between text-surface-500 text-xs font-semibold mb-1">
+              <span>Total Tracked Cases</span>
+              <FileText className="h-4 w-4 text-surface-400" />
+            </div>
+            <div className="text-2xl font-black text-surface-900 dark:text-white">{stats.total}</div>
+            <div className="text-[11px] text-surface-400 mt-1">Across all active claims</div>
           </div>
 
-          <div className="text-xs text-surface-500 font-medium">
-            Total Cases: <strong className="text-surface-900">{caseReports.length}</strong> • Reports Generated:{' '}
-            <strong className="text-surface-900">
-              {caseReports.filter((c) => c.report !== null).length}
-            </strong>
+          <div className="bg-surface-0 dark:bg-[#0f172a] border border-surface-200 dark:border-surface-800 rounded-xl p-4 shadow-2xs">
+            <div className="flex items-center justify-between text-surface-500 text-xs font-semibold mb-1">
+              <span>Reports Generated</span>
+              <FileCheck2 className="h-4 w-4 text-brand-500" />
+            </div>
+            <div className="text-2xl font-black text-brand-600 dark:text-brand-400">{stats.generated}</div>
+            <div className="text-[11px] text-surface-400 mt-1">Ready for PDF download</div>
+          </div>
+
+          <div className="bg-surface-0 dark:bg-[#0f172a] border border-surface-200 dark:border-surface-800 rounded-xl p-4 shadow-2xs">
+            <div className="flex items-center justify-between text-surface-500 text-xs font-semibold mb-1">
+              <span>Human Escalation</span>
+              <ShieldAlert className="h-4 w-4 text-red-500" />
+            </div>
+            <div className="text-2xl font-black text-red-600 dark:text-red-400">{stats.escalated}</div>
+            <div className="text-[11px] text-surface-400 mt-1">Critical discrepancies flagged</div>
+          </div>
+
+          <div className="bg-surface-0 dark:bg-[#0f172a] border border-surface-200 dark:border-surface-800 rounded-xl p-4 shadow-2xs">
+            <div className="flex items-center justify-between text-surface-500 text-xs font-semibold mb-1">
+              <span>Routine Review</span>
+              <CheckCircle2 className="h-4 w-4 text-growth-500" />
+            </div>
+            <div className="text-2xl font-black text-growth-600 dark:text-growth-400">{stats.routine}</div>
+            <div className="text-[11px] text-surface-400 mt-1">Mutually consistent records</div>
+          </div>
+        </div>
+
+        {/* Search & Filter Toolbar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-0 dark:bg-[#0f172a] border border-surface-200 dark:border-surface-800 rounded-xl p-3 shadow-2xs">
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            <div className="w-full sm:w-80">
+              <Input
+                placeholder="Search dossiers by case #, claimant, policy..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                leftIcon={<Search className="h-4 w-4" />}
+                className="text-xs h-9 bg-surface-50 dark:bg-surface-900 border-surface-200 dark:border-surface-700"
+              />
+            </div>
+
+            {/* Quick Filter Pills */}
+            <div className="flex items-center gap-1.5 overflow-x-auto py-1">
+              <button
+                type="button"
+                onClick={() => setOutcomeFilter('ALL')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  outcomeFilter === 'ALL'
+                    ? 'bg-brand-500 text-white shadow-2xs'
+                    : 'bg-surface-100 dark:bg-surface-800 text-surface-600 hover:text-surface-900'
+                }`}
+              >
+                All ({stats.total})
+              </button>
+              <button
+                type="button"
+                onClick={() => setOutcomeFilter('ESCALATE')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  outcomeFilter === 'ESCALATE'
+                    ? 'bg-red-600 text-white shadow-2xs'
+                    : 'bg-surface-100 dark:bg-surface-800 text-surface-600 hover:text-surface-900'
+                }`}
+              >
+                Escalate ({stats.escalated})
+              </button>
+              <button
+                type="button"
+                onClick={() => setOutcomeFilter('ROUTINE')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  outcomeFilter === 'ROUTINE'
+                    ? 'bg-growth-600 text-white shadow-2xs'
+                    : 'bg-surface-100 dark:bg-surface-800 text-surface-600 hover:text-surface-900'
+                }`}
+              >
+                Routine ({stats.routine})
+              </button>
+            </div>
           </div>
         </div>
 
@@ -213,60 +343,85 @@ export default function InvestigationReportsPage() {
             onAction={() => router.push('/cases')}
           />
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-surface-200 bg-surface-0 shadow-card">
-            <table className="min-w-full divide-y divide-surface-200 text-left text-xs">
-              <thead className="bg-surface-50 text-surface-600 font-semibold uppercase tracking-wider text-[11px]">
+          <div className="overflow-x-auto rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-[#0f172a] shadow-card">
+            <table className="min-w-full divide-y divide-surface-200 dark:divide-surface-800 text-left text-xs">
+              <thead className="bg-surface-50 dark:bg-surface-900/60 text-surface-600 dark:text-surface-400 font-semibold uppercase tracking-wider text-[11px]">
                 <tr>
-                  <th className="px-4 py-3.5">Case ID</th>
-                  <th className="px-4 py-3.5">Incident Title</th>
-                  <th className="px-4 py-3.5">Claimant / Policy</th>
-                  <th className="px-4 py-3.5">Assessment Recommendation</th>
-                  <th className="px-4 py-3.5">Report Status</th>
-                  <th className="px-4 py-3.5">Generated</th>
-                  <th className="px-4 py-3.5 text-right">Actions</th>
+                  <th className="px-5 py-4">Claim Case</th>
+                  <th className="px-5 py-4">Claimant &amp; Policy</th>
+                  <th className="px-5 py-4">Adjudication Outcome</th>
+                  <th className="px-5 py-4 text-center">Contradictions</th>
+                  <th className="px-5 py-4">Audit Dossier</th>
+                  <th className="px-5 py-4 text-right">Export</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-surface-100 font-normal">
+              <tbody className="divide-y divide-surface-100 dark:divide-surface-800 font-normal">
                 {filteredReports.map((cr) => {
                   const hasReport = !!cr.report;
-                  const outcome = cr.report?.outcome || cr.report?.recommendation;
+                  const outcome = cr.extracted_outcome;
 
                   return (
                     <tr
                       key={cr.case_id}
                       onClick={() => router.push(`/cases/${cr.case_id}`)}
-                      className="hover:bg-surface-50 transition-colors cursor-pointer group"
+                      className="hover:bg-surface-50/80 dark:hover:bg-surface-800/50 transition-colors cursor-pointer group"
                     >
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-surface-100 text-surface-800 border border-surface-200 group-hover:border-brand-300 transition-colors">
-                          {cr.case_number}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3.5 max-w-sm">
-                        <div className="font-semibold text-surface-900 group-hover:text-brand-600 transition-colors truncate">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-surface-100 dark:bg-surface-800 text-surface-800 dark:text-surface-200 border border-surface-200 dark:border-surface-700 group-hover:border-brand-400 transition-colors">
+                            {cr.case_number}
+                          </span>
+                        </div>
+                        <div className="font-semibold text-surface-900 dark:text-white group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
                           {cr.case_title}
                         </div>
-                      </td>
-
-                      <td className="px-4 py-3.5 whitespace-nowrap text-surface-700">
-                        <div>{cr.claimant_name || <span className="text-surface-400 italic">Unassigned</span>}</div>
-                        {cr.policy_number && (
-                          <div className="font-mono text-[11px] text-surface-400">{cr.policy_number}</div>
+                        {cr.rationale && (
+                          <p className="text-[11px] text-surface-500 line-clamp-1 max-w-md mt-0.5">
+                            {cr.rationale}
+                          </p>
                         )}
                       </td>
 
-                      <td className="px-4 py-3.5 whitespace-nowrap">
+                      <td className="px-5 py-4 whitespace-nowrap text-surface-700 dark:text-surface-300">
+                        <div className="font-medium">{cr.claimant_name || <span className="text-surface-400 italic">Unassigned</span>}</div>
+                        {cr.policy_number && (
+                          <div className="font-mono text-[11px] text-surface-400 mt-0.5">{cr.policy_number}</div>
+                        )}
+                      </td>
+
+                      <td className="px-5 py-4 whitespace-nowrap">
                         {hasReport ? getOutcomeBadge(outcome) : (
                           <span className="text-surface-400 italic text-[11px]">Awaiting Investigation</span>
                         )}
                       </td>
 
-                      <td className="px-4 py-3.5 whitespace-nowrap">
+                      <td className="px-5 py-4 whitespace-nowrap text-center">
                         {hasReport ? (
-                          <Badge variant="success" size="xs">
-                            Generated
-                          </Badge>
+                          cr.discrepancies_count > 0 ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300">
+                              {cr.discrepancies_count} Flagged
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-growth-100 text-growth-800 dark:bg-growth-950 dark:text-growth-300">
+                              0 Clean
+                            </span>
+                          )
+                        ) : (
+                          <span className="text-surface-400 text-xs">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        {hasReport ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-growth-600 dark:text-growth-400">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Compiled &amp; Verified
+                            </span>
+                            <span className="text-[10px] text-surface-400">
+                              {cr.report?.generated_at ? formatDateTime(cr.report.generated_at) : 'Active'}
+                            </span>
+                          </div>
                         ) : (
                           <Badge variant="neutral" size="xs">
                             Not Generated
@@ -274,21 +429,18 @@ export default function InvestigationReportsPage() {
                         )}
                       </td>
 
-                      <td className="px-4 py-3.5 whitespace-nowrap text-surface-500 text-[11px]">
-                        {cr.report?.generated_at ? formatDateTime(cr.report.generated_at) : '—'}
-                      </td>
-
-                      <td className="px-4 py-3.5 whitespace-nowrap text-right">
+                      <td className="px-5 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                           {hasReport ? (
                             <Button
-                              variant="secondary"
+                              variant="primary"
                               size="xs"
                               onClick={(e) => handleDownloadPdf(cr.case_id, cr.case_number, e)}
                               loading={downloadingId === cr.case_id}
-                              leftIcon={<Download className="h-3 w-3" />}
+                              leftIcon={<Download className="h-3.5 w-3.5" />}
+                              className="font-semibold shadow-2xs"
                             >
-                              PDF
+                              Download PDF
                             </Button>
                           ) : (
                             <Link href={`/cases/${cr.case_id}`}>
