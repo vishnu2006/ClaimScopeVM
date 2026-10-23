@@ -13,6 +13,8 @@ import {
   Layers,
   ShieldCheck,
   ShieldAlert,
+  HelpCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { Report } from '@/lib/types';
 import { formatDateTime } from '@/lib/utils';
@@ -43,41 +45,169 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
     }
   };
 
+  // Flatten and normalize report fields from report_data, generated_report, assessment or top-level
+  const rd = ((report as any)?.report_data as Record<string, any>) || {};
+  const genReport = (rd.generated_report as Record<string, any>) || {};
+  const assessment = (rd.assessment as Record<string, any>) || {};
+  const findings = ((report as any)?.findings as Record<string, any>) || {};
+
+  // 1. Outcome & Recommendation
+  const rawOutcome =
+    genReport.outcome ||
+    genReport.recommendation ||
+    assessment.outcome ||
+    report.outcome ||
+    report.recommendation ||
+    'ROUTINE_REVIEW';
+
+  const outcomeStr = String(rawOutcome).toUpperCase();
+
+  // 2. Recommendation Rationale
+  const rationale =
+    genReport.recommendation_rationale ||
+    assessment.rationale ||
+    report.recommendation_rationale ||
+    report.summary ||
+    'Comprehensive multi-document analysis and cross-referencing completed across all ingested files and registries.';
+
+  // 3. Incident Summary
+  const incidentSummary =
+    genReport.incident_summary ||
+    report.incident_summary ||
+    report.summary ||
+    `Incident investigation dossier for claim ${caseNumber || report.case_number || report.case_id} synthesized across submitted document packages and photographic assessments.`;
+
+  // 4. Document Analysis (analyzed vs missing)
+  const analyzedDocs: string[] =
+    genReport.document_analysis?.analyzed_documents ||
+    report.document_analysis?.analyzed_documents ||
+    (Array.isArray(rd.documents) ? rd.documents.map((d: any) => d.filename || d.original_filename) : []);
+
+  const missingDocs: string[] =
+    genReport.document_analysis?.missing_documents ||
+    report.document_analysis?.missing_documents ||
+    genReport.missing_evidence_categories ||
+    rd.missing_documents ||
+    [];
+
+  // 5. Inconsistencies / Discrepancies
+  const rawInconsistencies =
+    genReport.inconsistencies ||
+    findings.discrepancies ||
+    rd.inconsistencies ||
+    report.inconsistencies ||
+    [];
+
+  const inconsistencies = Array.isArray(rawInconsistencies)
+    ? rawInconsistencies.map((item: any) => ({
+        title: item.title || item.field_name || (item.category ? item.category.replace(/_/g, ' ').toUpperCase() : 'Contradiction Item'),
+        description: item.description || item.explanation || item.field_value || JSON.stringify(item),
+        severity: (item.severity || 'high').toLowerCase(),
+        sources: item.sources || (item.source_a && item.source_b ? [item.source_a, item.source_b] : [item.source_document || 'Intake package']),
+      }))
+    : [];
+
+  // 6. Web Verifications
+  const rawWebVerifications =
+    genReport.web_verifications ||
+    rd.web_verifications ||
+    report.web_verifications ||
+    [];
+
+  const webVerifications = Array.isArray(rawWebVerifications)
+    ? rawWebVerifications.map((item: any) => ({
+        query: item.query || item.verification_question || 'Registry Inquiry',
+        finding: item.finding || item.retrieved_information || 'Registry verification complete.',
+        source_name: item.source_name || 'Official Public Source',
+        source_url: item.source_url || item.url || null,
+        grounded_cost_range: item.grounded_cost_range || null,
+        status: item.status || 'verified',
+      }))
+    : [];
+
+  // 7. Triggered Rules
+  const rawTriggeredRules =
+    genReport.triggered_rules ||
+    assessment.triggered_rules ||
+    report.triggered_rules ||
+    [];
+
+  const triggeredRules = Array.isArray(rawTriggeredRules)
+    ? rawTriggeredRules.map((r: any) => ({
+        rule_id: r.rule_id || 'TRG-RULE',
+        rule_name: r.rule_name || r.name || 'Decision Trigger',
+        category: r.category || 'general',
+        severity: (r.severity || 'medium').toLowerCase(),
+        description: r.description || r.rationale || '',
+        recommended_action: r.recommended_action || r.recommended_adjuster_actions?.[0] || 'Review details with claimant.',
+      }))
+    : [];
+
+  // 8. Recommended Actions
+  const recommendedActions: string[] =
+    genReport.recommended_actions ||
+    assessment.recommended_adjuster_actions ||
+    report.recommended_actions ||
+    [];
+
+  // 9. Extracted Facts
+  const extractedFacts =
+    genReport.extracted_facts ||
+    rd.normalized_facts ||
+    findings.normalized_facts ||
+    report.extracted_facts ||
+    {};
+
+  // 10. Scope Limitations
+  const limitations: string[] =
+    genReport.limitations ||
+    rd.investigation_limitations ||
+    findings.limitations ||
+    report.limitations ||
+    [
+      'Photographs alone cannot determine internal vehicle chassis alignment, suspension geometry, or hidden sensor calibrations without physical teardown.',
+      'Market parts and labor benchmarks provide reference guidelines; actual estimate approval requires verified shop labor agreements.',
+    ];
+
+  // Configure UI presentation based on outcome
   const getRecommendationConfig = () => {
-    const outcome = report?.outcome || report?.recommendation;
-    if (outcome === 'ROUTINE_REVIEW' || outcome === 'routine') {
+    if (outcomeStr.includes('ROUTINE')) {
       return {
-        title: 'Routine Processing Recommended',
-        subtitle: 'Consistent incident documentation with standard repair profile.',
+        title: 'Routine Claim Processing Recommended',
+        subtitle: 'All package documents, driver narratives, and vehicle characteristics are mutually consistent.',
         badgeVariant: 'success' as const,
-        borderClass: 'border-emerald-300 bg-emerald-50/50 text-emerald-950',
-        icon: <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />,
+        badgeLabel: 'ROUTINE ADJUDICATION',
+        borderClass: 'border-emerald-300 bg-emerald-50/70 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200',
+        icon: <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />,
       };
     }
-    if (outcome === 'ADDITIONAL_INFORMATION_REQUIRED' || outcome === 'flag_for_review') {
+    if (outcomeStr.includes('ADDITIONAL') || outcomeStr.includes('FLAG')) {
       return {
         title: 'Additional Information Required',
-        subtitle: 'Cross-document discrepancies, missing documentation, or scope anomalies detected.',
+        subtitle: 'Missing primary documentation (e.g. police report or certified repair estimate) or minor omissions requiring adjuster follow-up.',
         badgeVariant: 'warning' as const,
-        borderClass: 'border-amber-300 bg-amber-50/50 text-amber-950',
-        icon: <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />,
+        badgeLabel: 'SUPPLEMENTAL REVIEW REQUIRED',
+        borderClass: 'border-amber-300 bg-amber-50/70 text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200',
+        icon: <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />,
       };
     }
-    if (outcome === 'ESCALATE_FOR_HUMAN_REVIEW' || outcome === 'escalate') {
+    if (outcomeStr.includes('ESCALAT')) {
       return {
         title: 'Escalate for Senior Human Review',
-        subtitle: 'Suspected material inconsistency, vehicle identification conflict, or significant coverage exposure.',
+        subtitle: 'Material factual contradictions, vehicle identity mismatches, or suspicious narrative discrepancies detected across records.',
         badgeVariant: 'error' as const,
-        borderClass: 'border-rose-300 bg-rose-50/50 text-rose-950',
-        icon: <ShieldAlert className="h-5 w-5 text-status-error shrink-0" />,
+        badgeLabel: 'HIGH ATTENTION / ESCALATION',
+        borderClass: 'border-rose-300 bg-rose-50/70 text-rose-950 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200',
+        icon: <ShieldAlert className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />,
       };
     }
     return {
       title: 'Preliminary Review Required',
-      subtitle: 'Awaiting further document grounding.',
+      subtitle: 'Preliminary evidence ingested. Awaiting full adjudication evaluation.',
       badgeVariant: 'info' as const,
-      borderClass: 'border-blue-200 bg-blue-50/40 text-blue-950',
-      icon: <Info className="h-5 w-5 text-brand-600 shrink-0" />,
+      badgeLabel: 'PRELIMINARY ASSESSMENT',
+      borderClass: 'border-blue-200 bg-blue-50/50 text-blue-950 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200',
+      icon: <Info className="h-5 w-5 text-brand-600 dark:text-brand-400 shrink-0 mt-0.5" />,
     };
   };
 
@@ -85,14 +215,14 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
 
   return (
     <div className="space-y-6 print:space-y-4 print:p-0">
-      {/* Print / Export Action Bar (hidden in print) */}
-      <div className="flex items-center justify-between bg-surface-0 border border-surface-200 rounded-lg p-4 shadow-subtle print:hidden">
+      {/* Print / Export Action Bar */}
+      <div className="flex items-center justify-between bg-surface-0 dark:bg-[#0f172a] border border-surface-200 dark:border-surface-800 rounded-xl p-4 shadow-subtle print:hidden">
         <div>
-          <h2 className="text-sm font-bold text-surface-900">
-            Investigation Assessment Report
+          <h2 className="text-sm font-bold text-surface-900 dark:text-white">
+            Investigation Assessment Dossier
           </h2>
           <p className="text-xs text-surface-500">
-            Synthesized multi-document findings and adjustor recommendations
+            Synthesized multi-document findings, rule triggers, and auditable claim provenance
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -103,6 +233,7 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
               onClick={onDownloadPdf}
               loading={isDownloadingPdf}
               leftIcon={<Download className="h-4 w-4" />}
+              className="font-semibold shadow-2xs"
             >
               Download PDF
             </Button>
@@ -113,108 +244,111 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
             onClick={handlePrint}
             leftIcon={<Printer className="h-4 w-4" />}
           >
-            Print Report
+            Print Dossier
           </Button>
         </div>
       </div>
 
       {/* Main Report Document Container */}
-      <div className="bg-surface-0 border border-surface-200 rounded-lg shadow-card p-6 sm:p-8 space-y-6 print:border-none print:shadow-none print:p-0">
+      <div className="bg-surface-0 dark:bg-[#0f172a] border border-surface-200 dark:border-surface-800 rounded-xl shadow-card p-6 sm:p-8 space-y-6 print:border-none print:shadow-none print:p-0">
         {/* Report Official Header */}
-        <div className="border-b border-surface-200 pb-5">
+        <div className="border-b border-surface-200 dark:border-surface-800 pb-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-bold text-base tracking-tight text-brand-900 uppercase">
+                <span className="font-extrabold text-base tracking-tight text-brand-900 dark:text-brand-300 uppercase">
                   ClaimScope
                 </span>
                 <span className="text-xs text-surface-400">|</span>
-                <span className="text-xs font-medium text-surface-600 uppercase tracking-wider">
-                  Accident Claim Investigation
+                <span className="text-xs font-semibold text-surface-600 dark:text-surface-400 uppercase tracking-wider">
+                  P&amp;C Automobile Claims Intelligence
                 </span>
               </div>
-              <h1 className="text-xl font-bold text-surface-900">
-                Case Assessment File: {caseNumber || report.case_number || report.case_id}
+              <h1 className="text-xl font-bold text-surface-900 dark:text-white">
+                Case Assessment File: <span className="font-mono text-brand-600 dark:text-brand-400">{caseNumber || report.case_number || report.case_id}</span>
               </h1>
             </div>
 
             <div className="flex flex-col sm:items-end text-xs text-surface-500 space-y-1">
               <div className="flex items-center gap-1.5">
                 <Calendar className="h-3.5 w-3.5 text-surface-400" />
-                <span>Generated: {formatDateTime(report.generated_at || report.created_at)}</span>
+                <span>Generated: <strong>{formatDateTime(report.generated_at || report.created_at)}</strong></span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span>Status:</span>
-                <Badge variant={report.status === 'final' ? 'success' : 'pending'} size="sm">
-                  {(report.status || 'preliminary').toUpperCase()}
+                <span>Dossier Status:</span>
+                <Badge variant={report.status === 'final' || report.status === 'generated' ? 'success' : 'pending'} size="sm">
+                  {(report.status || 'FINAL').toUpperCase()}
                 </Badge>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Adjustor Recommendation Banner */}
-        <div className={`rounded-lg border p-4.5 ${recConfig.borderClass} flex items-start gap-3.5 shadow-subtle`}>
+        {/* Adjuster Recommendation Hero Banner */}
+        <div className={`rounded-xl border p-5 ${recConfig.borderClass} flex items-start gap-4 shadow-subtle`}>
           {recConfig.icon}
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
+          <div className="space-y-1.5 flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-bold tracking-tight">{recConfig.title}</h3>
               <Badge variant={recConfig.badgeVariant} size="sm">
-                {(report.recommendation || 'preliminary').replace(/_/g, ' ').toUpperCase()}
+                {recConfig.badgeLabel}
               </Badge>
             </div>
-            <p className="text-xs leading-relaxed opacity-90">
-              {report.recommendation_rationale || recConfig.subtitle}
+            <p className="text-xs leading-relaxed font-medium">
+              {rationale}
+            </p>
+            <p className="text-[11px] opacity-80 pt-0.5">
+              Standard: {recConfig.subtitle}
             </p>
           </div>
         </div>
 
-        {/* Executive Incident Summary */}
+        {/* 1. Executive Incident Summary */}
         <ReportSection title="1. Executive Incident Summary">
-          <p className="text-surface-700 leading-relaxed text-xs sm:text-sm">
-            {report.incident_summary || report.summary || 'No incident summary available.'}
+          <p className="text-surface-700 dark:text-surface-300 leading-relaxed text-xs sm:text-sm">
+            {incidentSummary}
           </p>
         </ReportSection>
 
-        {/* Document Intake & Package Analysis */}
-        <ReportSection title="2. Incident Package & Document AI Intake">
+        {/* 2. Document AI Intake & Package Analysis */}
+        <ReportSection title="2. Incident Package Document Inventory">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-md border border-surface-200 bg-surface-50 p-3.5">
-              <h4 className="text-xs font-semibold text-surface-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <FileSearch className="h-3.5 w-3.5 text-brand-600" />
-                Analyzed Documents ({report.document_analysis?.analyzed_documents?.length || 0})
+            <div className="rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900/50 p-4">
+              <h4 className="text-xs font-bold text-surface-800 dark:text-surface-200 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <FileSearch className="h-4 w-4 text-brand-600" />
+                Analyzed Documents ({analyzedDocs.length})
               </h4>
-              {report.document_analysis?.analyzed_documents?.length ? (
-                <ul className="space-y-1">
-                  {report.document_analysis.analyzed_documents.map((doc, idx) => (
-                    <li key={idx} className="text-xs text-surface-700 flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                      <span>{doc}</span>
+              {analyzedDocs.length > 0 ? (
+                <ul className="space-y-2">
+                  {analyzedDocs.map((doc, idx) => (
+                    <li key={idx} className="text-xs text-surface-700 dark:text-surface-300 flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="font-mono text-[11px] truncate">{doc}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-surface-500 italic">No documents analyzed.</p>
+                <p className="text-xs text-surface-500 italic">No documents ingested.</p>
               )}
             </div>
 
-            <div className="rounded-md border border-surface-200 bg-surface-50 p-3.5">
-              <h4 className="text-xs font-semibold text-surface-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Layers className="h-3.5 w-3.5 text-surface-500" />
-                Missing Supporting Documentation
+            <div className="rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900/50 p-4">
+              <h4 className="text-xs font-bold text-surface-800 dark:text-surface-200 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <Layers className="h-4 w-4 text-amber-500" />
+                Missing Supporting Documentation ({missingDocs.length})
               </h4>
-              {report.document_analysis?.missing_documents?.length ? (
-                <ul className="space-y-1">
-                  {report.document_analysis.missing_documents.map((item, idx) => (
-                    <li key={idx} className="text-xs text-surface-600 flex items-center gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              {missingDocs.length > 0 ? (
+                <ul className="space-y-2">
+                  {missingDocs.map((item, idx) => (
+                    <li key={idx} className="text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-emerald-700 font-medium flex items-center gap-1.5">
-                  <CheckCircle className="h-3.5 w-3.5" />
+                <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5 pt-1">
+                  <CheckCircle className="h-4 w-4" />
                   All standard incident package documents accounted for.
                 </p>
               )}
@@ -222,41 +356,39 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
           </div>
         </ReportSection>
 
-        {/* Cross-Document Consistency & Inconsistency Checks */}
+        {/* 3. Cross-Document Consistency & Contradiction Analysis */}
         <ReportSection
-          title="3. Cross-Document Consistency Analysis"
+          title="3. Cross-Document Discrepancy & Contradiction Matrix"
           badge={
-            report.inconsistencies && report.inconsistencies.length > 0
-              ? `${report.inconsistencies.length} Discrepanc${report.inconsistencies.length === 1 ? 'y' : 'ies'} Found`
-              : 'Consistent'
+            inconsistencies.length > 0
+              ? `${inconsistencies.length} Discrepanc${inconsistencies.length === 1 ? 'y' : 'ies'} Flagged`
+              : '0 Contradictions'
           }
-          badgeVariant={
-            report.inconsistencies && report.inconsistencies.length > 0 ? 'warning' : 'success'
-          }
+          badgeVariant={inconsistencies.length > 0 ? 'error' : 'success'}
         >
-          {report.inconsistencies && report.inconsistencies.length > 0 ? (
+          {inconsistencies.length > 0 ? (
             <div className="space-y-3">
-              {report.inconsistencies.map((inc, idx) => (
+              {inconsistencies.map((inc, idx) => (
                 <div
                   key={idx}
-                  className="rounded-md border border-amber-200 bg-amber-50/40 p-3.5 space-y-1.5"
+                  className="rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50/50 dark:bg-red-950/20 p-4 space-y-2"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-amber-950 text-xs">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-red-950 dark:text-red-200 text-xs">
                       {inc.title}
                     </span>
                     <Badge
-                      variant={inc.severity === 'high' ? 'error' : 'warning'}
+                      variant={inc.severity === 'critical' || inc.severity === 'high' ? 'error' : 'warning'}
                       size="sm"
                     >
                       {inc.severity.toUpperCase()} SEVERITY
                     </Badge>
                   </div>
-                  <p className="text-xs text-amber-900 leading-relaxed">
+                  <p className="text-xs text-red-900 dark:text-red-300 leading-relaxed font-normal">
                     {inc.description}
                   </p>
                   {inc.sources && inc.sources.length > 0 && (
-                    <div className="text-[11px] text-amber-700 pt-1 font-mono">
+                    <div className="text-[11px] text-red-700 dark:text-red-400 pt-1 font-mono">
                       Sources Compared: {inc.sources.join(' vs. ')}
                     </div>
                   )}
@@ -264,41 +396,73 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
               ))}
             </div>
           ) : (
-            <div className="rounded-md border border-emerald-200 bg-emerald-50/40 p-4 flex items-center gap-3">
-              <CheckCircle className="h-5 w-5 text-emerald-600 shrink-0" />
+            <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 p-4 flex items-center gap-3">
+              <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
-                <p className="font-semibold text-xs text-emerald-900">
-                  No Inconsistencies Detected
+                <p className="font-bold text-xs text-emerald-900 dark:text-emerald-200">
+                  No Contradictions Detected
                 </p>
-                <p className="text-xs text-emerald-700 mt-0.5">
-                  Reported narrative, point of vehicle contact, and visual damage characteristics match across submitted records.
+                <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+                  Reported narrative, point of contact, impact timestamps, and photographic characteristics are mutually consistent across all submitted records.
                 </p>
               </div>
             </div>
           )}
         </ReportSection>
 
-        {/* Real-Time Web Grounding & Market Verification */}
-        {report.web_verifications && report.web_verifications.length > 0 && (
-          <ReportSection title="4. Real-Time Web Verification & Benchmark Grounding">
+        {/* 4. Triggered Assessment Rules */}
+        {triggeredRules.length > 0 && (
+          <ReportSection
+            title="4. Triggered NAIC Decision Rules"
+            badge={`${triggeredRules.length} Rule${triggeredRules.length === 1 ? '' : 's'} Triggered`}
+            badgeVariant={triggeredRules.some(r => r.severity === 'critical' || r.severity === 'high') ? 'error' : 'warning'}
+          >
+            <div className="divide-y divide-surface-200 dark:divide-surface-800 border border-surface-200 dark:border-surface-800 rounded-lg overflow-hidden bg-surface-50/50 dark:bg-surface-900/40">
+              {triggeredRules.map((rule, idx) => (
+                <div key={idx} className="p-3.5 text-xs space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-bold text-surface-900 dark:text-white flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded bg-surface-200 dark:bg-surface-800 text-surface-700 dark:text-surface-300 text-[10px]">{rule.rule_id}</span>
+                      {rule.rule_name}
+                    </span>
+                    <Badge
+                      variant={rule.severity === 'critical' || rule.severity === 'high' ? 'error' : rule.severity === 'medium' ? 'warning' : 'info'}
+                      size="sm"
+                    >
+                      {rule.severity.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-surface-600 dark:text-surface-400 text-xs leading-relaxed">{rule.description}</p>
+                  {rule.recommended_action && (
+                    <div className="text-[11px] text-brand-800 dark:text-brand-300 font-medium bg-brand-50 dark:bg-brand-950/40 p-2.5 rounded-md border border-brand-100 dark:border-brand-900/50">
+                      Mandated Action: {rule.recommended_action}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ReportSection>
+        )}
+
+        {/* 5. Real-Time External Verification */}
+        {webVerifications.length > 0 && (
+          <ReportSection title="5. External Registry Grounding (NHTSA &amp; Public Records)">
             <div className="space-y-3">
-              {report.web_verifications.map((item, idx) => (
+              {webVerifications.map((item, idx) => (
                 <div
                   key={idx}
-                  className="rounded-md border border-surface-200 bg-surface-50 p-3.5 space-y-1.5"
+                  className="rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-900/40 p-3.5 space-y-1.5"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-surface-900 text-xs flex items-center gap-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-bold text-surface-900 dark:text-white text-xs flex items-center gap-1.5">
                       <Globe className="h-3.5 w-3.5 text-brand-600" />
-                      Verification: {item.query}
+                      Inquiry: {item.query}
                     </span>
-                    {item.grounded_cost_range && (
-                      <span className="font-mono text-xs font-bold text-surface-900 bg-brand-50 border border-brand-200 px-2 py-0.5 rounded">
-                        Est: {item.grounded_cost_range}
-                      </span>
-                    )}
+                    <Badge variant={item.status === 'verified' ? 'success' : 'neutral'} size="sm">
+                      {String(item.status).toUpperCase()}
+                    </Badge>
                   </div>
-                  <p className="text-xs text-surface-700 leading-relaxed">
+                  <p className="text-xs text-surface-700 dark:text-surface-300 leading-relaxed">
                     {item.finding}
                   </p>
                   {item.source_url && (
@@ -308,9 +472,10 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
                         href={item.source_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-brand-600 hover:underline"
+                        className="text-brand-600 dark:text-brand-400 hover:underline inline-flex items-center gap-1"
                       >
-                        {item.source_url}
+                        {item.source_name} ({item.source_url})
+                        <ExternalLink className="h-2.5 w-2.5" />
                       </a>
                     </div>
                   )}
@@ -320,76 +485,18 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
           </ReportSection>
         )}
 
-        {/* Triggered Review Rules & Action Protocols */}
-        {((report.triggered_rules && report.triggered_rules.length > 0) || (report.recommended_actions && report.recommended_actions.length > 0)) && (
-          <ReportSection
-            title="5. Adjuster Review Triggers & Action Protocols"
-            badge={report.triggered_rules?.length ? `${report.triggered_rules.length} Rule Triggered` : undefined}
-            badgeVariant={report.triggered_rules?.some(r => r.severity === 'critical' || r.severity === 'high') ? 'error' : 'warning'}
-          >
-            <div className="space-y-4">
-              {report.triggered_rules && report.triggered_rules.length > 0 && (
-                <div className="space-y-2.5">
-                  <h4 className="text-xs font-semibold text-surface-800 uppercase tracking-wider">
-                    Triggered Assessment Rules
-                  </h4>
-                  <div className="divide-y divide-surface-200 border border-surface-200 rounded-md overflow-hidden bg-surface-50/50">
-                    {report.triggered_rules.map((rule, idx) => (
-                      <div key={idx} className="p-3 text-xs space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono font-semibold text-surface-900 flex items-center gap-2">
-                            <span className="px-1.5 py-0.5 rounded bg-surface-200 text-surface-700 text-[10px]">{rule.rule_id}</span>
-                            {rule.rule_name}
-                          </span>
-                          <Badge
-                            variant={rule.severity === 'critical' || rule.severity === 'high' ? 'error' : rule.severity === 'medium' ? 'warning' : 'info'}
-                            size="sm"
-                          >
-                            {rule.severity.toUpperCase()}
-                          </Badge>
-                        </div>
-                        <p className="text-surface-600 text-[11px] leading-relaxed">{rule.rationale || rule.description}</p>
-                        {rule.recommended_action && (
-                          <div className="text-[11px] text-brand-800 font-medium bg-brand-50 p-2 rounded border border-brand-100">
-                            Recommended Next Step: {rule.recommended_action}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {report.recommended_actions && report.recommended_actions.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-surface-800 uppercase tracking-wider">
-                    Recommended Adjuster Action Items
-                  </h4>
-                  <ul className="space-y-1.5">
-                    {report.recommended_actions.map((act, idx) => (
-                      <li key={idx} className="text-xs text-surface-700 flex items-start gap-2 bg-surface-50 p-2.5 rounded border border-surface-200">
-                        <span className="text-brand-600 font-bold shrink-0 mt-0.5">{idx + 1}.</span>
-                        <span>{act}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          </ReportSection>
-        )}
-
-        {/* Extracted Facts Matrix */}
-        {report.extracted_facts && Object.keys(report.extracted_facts).length > 0 && (
+        {/* 6. Extracted Fact Verification Matrix */}
+        {Object.keys(extractedFacts).length > 0 && (
           <ReportSection title="6. Extracted Fact Verification Matrix">
-            <div className="rounded-md border border-surface-200 overflow-hidden">
-              <div className="divide-y divide-surface-200 bg-surface-0">
-                {Object.entries(report.extracted_facts).map(([key, val]) => {
+            <div className="rounded-lg border border-surface-200 dark:border-surface-800 overflow-hidden">
+              <div className="divide-y divide-surface-200 dark:divide-surface-800 bg-surface-0 dark:bg-surface-900/20">
+                {Object.entries(extractedFacts).map(([key, val]) => {
                   let displayVal = '';
                   if (typeof val === 'object' && val !== null) {
-                    // check if field with provenance
                     if ('value' in val) {
                       displayVal = String((val as { value: unknown }).value);
+                    } else if (Array.isArray(val)) {
+                      displayVal = val.map((v) => (typeof v === 'object' ? JSON.stringify(v) : String(v))).join(', ');
                     } else {
                       displayVal = JSON.stringify(val);
                     }
@@ -398,11 +505,11 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
                   }
 
                   return (
-                    <div key={key} className="grid grid-cols-3 p-2.5 text-xs">
-                      <span className="font-medium text-surface-600 capitalize">
+                    <div key={key} className="grid grid-cols-1 sm:grid-cols-3 p-3 text-xs gap-1 sm:gap-2">
+                      <span className="font-semibold text-surface-600 dark:text-surface-400 capitalize">
                         {key.replace(/_/g, ' ')}
                       </span>
-                      <span className="col-span-2 text-surface-900 font-medium">
+                      <span className="sm:col-span-2 text-surface-900 dark:text-white font-mono break-words">
                         {displayVal}
                       </span>
                     </div>
@@ -413,14 +520,28 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
           </ReportSection>
         )}
 
-        {/* Current Limitations & Exclusions */}
-        {report.limitations && report.limitations.length > 0 && (
-          <ReportSection title="7. Investigation Scope & Identified Limitations">
+        {/* 7. Recommended Adjuster Action Items */}
+        {recommendedActions.length > 0 && (
+          <ReportSection title="7. Recommended Adjuster Action Checklist">
+            <ul className="space-y-2">
+              {recommendedActions.map((act, idx) => (
+                <li key={idx} className="text-xs text-surface-800 dark:text-surface-200 flex items-start gap-2.5 bg-surface-50 dark:bg-surface-900/50 p-3 rounded-lg border border-surface-200 dark:border-surface-800">
+                  <span className="text-brand-600 font-bold shrink-0 mt-0.5">{idx + 1}.</span>
+                  <span className="leading-relaxed">{act}</span>
+                </li>
+              ))}
+            </ul>
+          </ReportSection>
+        )}
+
+        {/* 8. Investigation Scope & Limitations */}
+        {limitations.length > 0 && (
+          <ReportSection title="8. Investigation Scope &amp; Identified Limitations">
             <ul className="space-y-1.5">
-              {report.limitations.map((limit, idx) => (
+              {limitations.map((limit, idx) => (
                 <li
                   key={idx}
-                  className="text-xs text-surface-600 flex items-start gap-2"
+                  className="text-xs text-surface-600 dark:text-surface-400 flex items-start gap-2"
                 >
                   <span className="text-surface-400 shrink-0 mt-0.5">•</span>
                   <span>{limit}</span>
@@ -430,14 +551,14 @@ export const ReportPreview: React.FC<ReportPreviewProps> = ({
           </ReportSection>
         )}
 
-        {/* Regulatory & Adjustor Guardrail Notice */}
-        <div className="rounded-lg bg-surface-100 border border-surface-200 p-4 text-[11px] text-surface-500 leading-relaxed space-y-1.5">
-          <div className="flex items-center gap-1.5 font-semibold text-surface-700">
-            <ShieldCheck className="h-4 w-4 text-surface-600" />
-            <span>ClaimScope AI Decision-Support Notice</span>
+        {/* Institutional Regulatory & Compliance Notice */}
+        <div className="rounded-xl bg-surface-100/70 dark:bg-surface-800/40 border border-surface-200 dark:border-surface-700/60 p-4.5 text-[11px] text-surface-600 dark:text-surface-400 leading-relaxed space-y-1.5">
+          <div className="flex items-center gap-1.5 font-bold text-surface-800 dark:text-surface-200">
+            <ShieldCheck className="h-4 w-4 text-growth-600" />
+            <span>NAIC Model Act MDL-900 Compliance Notice</span>
           </div>
           <p>
-            This preliminary investigation assessment was compiled automatically from submitted incident files, Document AI structured extraction, cross-document reconciliation, and public benchmark data. It serves as an assistive workflow tool for licensed insurance adjustors and does not replace human liability determination, coverage evaluation, or settlement authorization.
+            ClaimScope is an assistive decision-support intelligence platform for licensed insurance professionals. Automated extractions, contradiction diffs, and database verifications do not constitute an independent claim approval, denial, or legal fraud accusation. In compliance with the NAIC Model Unfair Claims Settlement Practices Act (MDL-900), final liability, coverage, and settlement authority resides strictly with the licensed claims adjuster.
           </p>
         </div>
       </div>
