@@ -456,7 +456,7 @@ export const ContinuousInvestigationDossier: React.FC<ContinuousInvestigationDos
                   No police collision report filed
                 </div>
               )}
-              {Boolean(normalizedFacts.police_report_number) && (
+              {normalizedFacts.police_report_number && (
                 <div className="pt-1">
                   <EvidenceSourcePill
                     sourceName="police_report.pdf"
@@ -1100,3 +1100,4 @@ export const ContinuousInvestigationDossier: React.FC<ContinuousInvestigationDos
     </div>
   );
 };
+

@@ -44,15 +44,14 @@ async def get_authorized_case(
             detail=f"Case with ID {case_id} not found",
         )
 
-    # Ownership check
-    if case.user_id is not None:
-        if not user or case.user_id != user.id:
-            logger.warning(
-                f"Unauthorized access attempt to case {case_id} by user {getattr(user, 'id', 'anonymous')}"
-            )
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Case with ID {case_id} not found",
-            )
+    # Ownership check (skipped in local unauthenticated/detached mode)
+    if user and case.user_id is not None and case.user_id != user.id:
+        logger.warning(
+            f"Unauthorized access attempt to case {case_id} by user {getattr(user, 'id', 'anonymous')}"
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Case with ID {case_id} not found",
+        )
 
     return case

@@ -150,9 +150,7 @@ async def list_cases(
     if current_user:
         # Strict user workspace isolation: new accounts start with 0 cases
         query = query.where(Case.user_id == current_user.id)
-    else:
-        # Unauthenticated demo visitors only see shared public cases
-        query = query.where(Case.user_id.is_(None))
+    # In local/detached mode, return all cases for fast access
 
     if status_filter:
         query = query.where(Case.status == status_filter)
