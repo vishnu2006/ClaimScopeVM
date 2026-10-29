@@ -247,9 +247,10 @@ async def extract_case_intake(
     )
 
     # 1. Check if files match a cached demo scenario
+    # Check precomputed cache for fast instant demo experience (Case C / case_3 left live for real testing)
     cached_scenario = None
     curr_filenames = sorted([d.original_filename for d in case.documents]) if case.documents else []
-    for s_key in ["case_a", "case_b", "case_c", "case_d", "case_e"]:
+    for s_key in ["case_a", "case_b", "case_d", "case_e"]:
         cached = _get_demo_cache(s_key)
         if cached:
             cached_filenames = sorted([d["filename"] for d in cached.get("report_data", {}).get("documents", [])])
@@ -454,9 +455,10 @@ async def run_case_investigation(
     # 2. Check if this case matches an existing pre-loaded demo scenario
     # If all documents match a standard demo scenario and have not been modified,
     # replay precomputed findings instantly (0 latency, 0 tokens)
+    # Check precomputed cache for fast instant demo experience (Case C / case_3 left live for real testing)
     cached_scenario = None
     curr_filenames = sorted([d.original_filename for d in case.documents]) if case.documents else []
-    for s_key in ["case_a", "case_b", "case_c", "case_d", "case_e"]:
+    for s_key in ["case_a", "case_b", "case_d", "case_e"]:
         cached = _get_demo_cache(s_key)
         if cached:
             cached_filenames = sorted([d["filename"] for d in cached.get("report_data", {}).get("documents", [])])

@@ -17,6 +17,7 @@ import {
 import { Header } from '@/components/layout/Header';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { DetailedInvestigationLoader } from '@/components/cases/DetailedInvestigationLoader';
 
 interface Scenario {
   id: string;
@@ -105,21 +106,26 @@ const DEMO_SCENARIOS: Scenario[] = [
 
 export default function DemoLabPage() {
   const router = useRouter();
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [loadingScenario, setLoadingScenario] = useState<Scenario | null>(null);
+  const [createdCaseId, setCreatedCaseId] = useState<string | null>(null);
+  const [isInvestigationDone, setIsInvestigationDone] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleLoadScenario = async (scenario: Scenario) => {
-    setLoadingId(scenario.id);
+    setLoadingScenario(scenario);
+    setCreatedCaseId(null);
+    setIsInvestigationDone(false);
     setErrorMsg(null);
     try {
       const res = await api.loadSyntheticCase(scenario.id);
+      setCreatedCaseId(res.id);
       // Run investigation immediately so user lands on the complete scrolling dossier!
       await api.runInvestigation(res.id);
-      router.push(`/cases/${res.id}`);
+      setIsInvestigationDone(true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMsg(`Failed to load ${scenario.tag}: ${msg}`);
-      setLoadingId(null);
+      setLoadingScenario(null);
     }
   };
 
@@ -165,18 +171,24 @@ export default function DemoLabPage() {
         </div>
 
         {/* Loading Progress State */}
-        {loadingId && (
-          <div className="p-6 rounded-2xl border border-brand-200 dark:border-brand-800 bg-brand-50/50 dark:bg-brand-950/40 shadow-sm flex items-center justify-center gap-3 text-xs text-brand-900 dark:text-brand-200 font-semibold animate-pulse">
-            <Loader2 className="h-5 w-5 animate-spin text-brand-600" />
-            <span>Loading claim package and preparing investigation dossier...</span>
-          </div>
+        {loadingScenario && (
+          <DetailedInvestigationLoader
+            isDone={isInvestigationDone}
+            title={`Investigating ${loadingScenario.tag}: ${loadingScenario.title}`}
+            subtitle={loadingScenario.description}
+            onShowReport={() => {
+              if (createdCaseId) {
+                router.push(`/cases/${createdCaseId}`);
+              }
+            }}
+          />
         )}
 
         {/* Scenario Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {DEMO_SCENARIOS.map((scenario) => {
             const Icon = scenario.icon;
-            const isLoading = loadingId === scenario.id;
+            const isLoading = loadingScenario?.id === scenario.id;
 
             return (
               <div
@@ -240,7 +252,7 @@ export default function DemoLabPage() {
                   <button
                     type="button"
                     onClick={() => handleLoadScenario(scenario)}
-                    disabled={Boolean(loadingId)}
+                    disabled={Boolean(loadingScenario)}
                     className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 active:scale-98 disabled:opacity-50 shadow-sm transition-all cursor-pointer"
                   >
                     {isLoading ? (

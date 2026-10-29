@@ -29,13 +29,17 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
+    if (typeof window !== 'undefined') {
+      if (isOpen) {
+        window.document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', handleKeyDown);
+      }
     }
     return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
+      if (typeof window !== 'undefined') {
+        window.document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+      }
     };
   }, [isOpen, onClose]);
 

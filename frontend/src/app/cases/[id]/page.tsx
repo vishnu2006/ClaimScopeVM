@@ -18,6 +18,7 @@ import { useDocuments } from '@/hooks/useDocuments';
 import { api } from '@/lib/api';
 import { CaseHeader } from '@/components/cases/CaseHeader';
 import { ContinuousInvestigationDossier } from '@/components/cases/ContinuousInvestigationDossier';
+import { DetailedInvestigationLoader } from '@/components/cases/DetailedInvestigationLoader';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { CaseState } from '@/lib/types';
@@ -163,37 +164,12 @@ export default function CaseDetailPage() {
           />
         ) : isInvestigating ? (
           /* Live Investigation In Progress State */
-          <div className="max-w-2xl mx-auto py-16 px-4 text-center">
-            <div className="bg-surface-0 dark:bg-surface-850 p-8 sm:p-12 rounded-2xl border border-surface-200 dark:border-surface-800 shadow-xl space-y-6">
-              <div className="inline-flex items-center justify-center p-4 bg-brand-50 dark:bg-brand-950/60 rounded-full text-brand-600 dark:text-brand-400">
-                <Loader2 className="h-10 w-10 animate-spin" />
-              </div>
-
-              <div className="space-y-2">
-                <h2 className="text-xl sm:text-2xl font-bold text-surface-900 dark:text-white">
-                  Investigating Claim Evidence
-                </h2>
-                <p className="text-xs sm:text-sm text-surface-500 max-w-md mx-auto">
-                  Cross-referencing documentation, evaluating vehicle photographs, and preparing adjuster findings...
-                </p>
-              </div>
-
-              <div className="space-y-2.5 text-left max-w-md mx-auto pt-4 border-t border-surface-100 dark:border-surface-800 text-xs text-surface-600 dark:text-surface-300">
-                <div className="flex items-center gap-2.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span>Verified submitted accident documents</span>
-                </div>
-                <div className="flex items-center gap-2.5 font-semibold text-brand-600 dark:text-brand-400">
-                  <Loader2 className="h-4 w-4 animate-spin text-brand-600" />
-                  <span>Inspecting vehicle damage photos and checking consistency...</span>
-                </div>
-                <div className="flex items-center gap-2.5 text-surface-400">
-                  <div className="h-4 w-4 rounded-full border border-surface-300" />
-                  <span>Synthesizing findings for claims adjuster review</span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <DetailedInvestigationLoader
+            isDone={false}
+            caseNumber={caseData.case_number}
+            title={`Investigating Claim #${caseData.case_number}`}
+            subtitle="Cross-referencing documentation, evaluating vehicle photographs, and preparing adjuster findings..."
+          />
         ) : (
           /* Case Ready For Investigation */
           <div className="max-w-3xl mx-auto py-12 px-4">

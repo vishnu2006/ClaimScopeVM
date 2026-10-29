@@ -25,6 +25,7 @@ import {
 import { api } from '@/lib/api';
 import { IntakeFieldItem, IntakeExtractionResult } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { DetailedInvestigationLoader } from '@/components/cases/DetailedInvestigationLoader';
 
 interface UploadedFileItem {
   id: string;
@@ -296,45 +297,12 @@ export const ClaimIntakeFlow: React.FC = () => {
   // -------------------------------------------------------------
   if (step === 'investigating') {
     return (
-      <div className="max-w-2xl mx-auto py-16 px-4 text-center">
-        <div className="bg-surface-0 dark:bg-surface-850 p-8 sm:p-12 rounded-2xl border border-surface-200 dark:border-surface-800 shadow-xl space-y-6">
-          <div className="inline-flex items-center justify-center p-4 bg-brand-50 dark:bg-brand-950/60 rounded-full text-brand-600 dark:text-brand-400 animate-pulse">
-            <Loader2 className="h-10 w-10 animate-spin" />
-          </div>
-
-          <div className="space-y-2">
-            <h2 className="text-xl sm:text-2xl font-bold text-surface-900 dark:text-white">
-              Investigating Claim Evidence
-            </h2>
-            <p className="text-sm text-surface-500 max-w-md mx-auto">
-              Please wait while ClaimScope cross-references your submitted documents, evaluates vehicle damage photos, and verifies facts.
-            </p>
-          </div>
-
-          {/* Business-friendly step progress */}
-          <div className="space-y-3 text-left max-w-md mx-auto pt-4 border-t border-surface-100 dark:border-surface-800">
-            <div className="flex items-center gap-3 text-xs text-surface-700 dark:text-surface-300">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span>Accident package documents classified &amp; verified</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-surface-700 dark:text-surface-300">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span>Confirmed accident details and policy credentials</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-brand-600 dark:text-brand-400 font-semibold animate-pulse">
-              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-              <span>Analyzing vehicle damage severity and corroborating statements...</span>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-surface-400">
-              <div className="h-4 w-4 rounded-full border border-surface-300 shrink-0" />
-              <span>Preparing complete evidence-backed adjuster findings</span>
-            </div>
-          </div>
-
-          <div className="text-[11px] text-surface-400 pt-2">
-            This typically takes only 5–15 seconds. You will be redirected automatically.
-          </div>
-        </div>
+      <div className="max-w-3xl mx-auto py-8 px-4">
+        <DetailedInvestigationLoader
+          isDone={false}
+          title="Investigating Claim Package"
+          subtitle="Cross-referencing submitted documentation, running computer vision on vehicle photographs, and preparing adjuster findings..."
+        />
       </div>
     );
   }
