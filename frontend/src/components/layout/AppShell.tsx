@@ -4,7 +4,6 @@ import React, { Suspense, useEffect } from 'react';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { WorkspaceNavbar } from './WorkspaceNavbar';
-import { TargetCursor } from '@/components/ui/TargetCursor';
 import { useAuth } from '@/context/AuthContext';
 
 export interface AppShellProps {
@@ -35,23 +34,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   if (isPublicPage || isAuthPage) {
     return (
       <main className="min-h-screen flex flex-col bg-surface-50 dark:bg-[#0c1322] text-surface-900">
-        <TargetCursor
-          targetSelector=".cursor-target"
-          cursorColor="#086afc"
-          cursorColorOnTarget="#5eba46"
-          spinDuration={4.5}
-          hoverDuration={0.2}
-          parallaxOn={true}
-          hideDefaultCursor={false}
-          size={20}
-          cornerSize={8}
-          thickness={2}
-          padding={5}
-          matchRadius={true}
-          dotSize={3.5}
-          showLabel={true}
-          clickEffect={true}
-        />
         {children}
       </main>
     );
@@ -90,23 +72,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-surface-50 dark:bg-[#0c1322] text-surface-800 flex flex-col">
-      <TargetCursor
-        targetSelector=".cursor-target"
-        cursorColor="#086afc"
-        cursorColorOnTarget="#5eba46"
-        spinDuration={4.5}
-        hoverDuration={0.2}
-        parallaxOn={true}
-        hideDefaultCursor={false}
-        size={20}
-        cornerSize={8}
-        thickness={2}
-        padding={5}
-        matchRadius={true}
-        dotSize={3.5}
-        showLabel={true}
-        clickEffect={true}
-      />
       {/* Refined Enterprise Horizontal Workspace Header */}
       <Suspense
         fallback={

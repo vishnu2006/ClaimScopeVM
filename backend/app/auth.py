@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Query, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,14 +19,21 @@ security_scheme = HTTPBearer(auto_error=False)
 
 async def get_optional_current_user(
     auth_header: Optional[HTTPAuthorizationCredentials] = Security(security_scheme),
+    token: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> Optional[User]:
     """
-    Extracts Bearer token from Authorization header, verifies via Firebase Admin,
-    and returns or provisions the corresponding PostgreSQL User record.
+    Extracts Bearer token from Authorization header or 'token' query parameter,
+    verifies via Firebase Admin, and returns or provisions the corresponding PostgreSQL User record.
     Returns None if no token or invalid token (when REQUIRE_AUTH=False).
     """
-    if not auth_header or not auth_header.credentials:
+    raw_token = None
+    if auth_header and auth_header.credentials:
+        raw_token = auth_header.credentials.strip()
+    elif token:
+        raw_token = token.strip()
+
+    if not raw_token:
         if settings.REQUIRE_AUTH:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

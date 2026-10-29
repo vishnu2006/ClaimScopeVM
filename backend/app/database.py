@@ -64,6 +64,10 @@ async def init_db() -> None:
         # Auto-migrate: ensure cases table has user_id column if created prior to auth model addition
         try:
             from sqlalchemy import text
-            await conn.execute(text('ALTER TABLE cases ADD COLUMN user_id UUID REFERENCES users(id) ON DELETE SET NULL'))
+            is_sqlite = "sqlite" in str(conn.engine.url)
+            if is_sqlite:
+                await conn.execute(text('ALTER TABLE cases ADD COLUMN user_id VARCHAR(36)'))
+            else:
+                await conn.execute(text('ALTER TABLE cases ADD COLUMN user_id UUID REFERENCES users(id) ON DELETE SET NULL'))
         except Exception:
             pass

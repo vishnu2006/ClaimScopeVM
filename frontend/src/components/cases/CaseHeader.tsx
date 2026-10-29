@@ -23,7 +23,6 @@ import {
 } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { StarBorder } from '@/components/ui/StarBorder';
 import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
 
@@ -92,26 +91,16 @@ export const CaseHeader: React.FC<CaseHeaderProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
-              {caseData.report && onDownloadPdf && (
-                <StarBorder
-                  as="button"
+              {onDownloadPdf && (
+                <button
+                  type="button"
                   onClick={onDownloadPdf}
                   disabled={isDownloadingPdf}
-                  color="#086afc"
-                  trailColor="#5eba46"
-                  duration={3.5}
-                  thickness={1.5}
-                  radius={6}
-                  glow={0.6}
-                  hover="lap"
-                  backgroundColor="#ffffff"
-                  textColor="#086afc"
-                  borderColor="rgba(8, 106, 252, 0.3)"
-                  className="!py-1 !px-2.5 !text-[11px] !font-bold border border-surface-200 shadow-2xs transition-transform active:scale-95 cursor-pointer inline-flex items-center dark:!bg-[#121c2e] dark:!text-white"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 active:scale-98 shadow-sm transition-all cursor-pointer disabled:opacity-50"
                 >
                   <Download className="h-3 w-3 mr-1" />
                   <span>{isDownloadingPdf ? 'Exporting...' : 'PDF Report'}</span>
-                </StarBorder>
+                </button>
               )}
               <Button
                 variant="ghost"

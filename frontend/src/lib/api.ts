@@ -6,6 +6,7 @@ import {
   Document,
   DocumentUploadResult,
   Evidence,
+  IntakeExtractionResult,
   ProcessingResult,
   Report,
 } from './types';
@@ -230,8 +231,16 @@ class ApiClient {
     });
   }
 
-  getDocumentRawUrl(caseId: string, docId: string): string {
-    return `${this.baseUrl}/cases/${caseId}/documents/${docId}/raw`;
+  getDocumentRawUrl(caseId: string, docId: string, token?: string): string {
+    const base = `${this.baseUrl}/cases/${caseId}/documents/${docId}/raw`;
+    return token ? `${base}?token=${encodeURIComponent(token)}` : base;
+  }
+
+  // Fast intake details extraction for Confirmation step
+  async extractIntakeDetails(caseId: string): Promise<IntakeExtractionResult> {
+    return this.request<IntakeExtractionResult>(`/cases/${caseId}/extract-intake`, {
+      method: 'POST',
+    });
   }
 
   // Evidence

@@ -364,3 +364,21 @@ export interface CreateCaseData {
   incident_date?: string;
   priority?: CasePriority;
 }
+
+export interface IntakeFieldItem {
+  value?: string | null;
+  source_document?: string | null;
+  source_text?: string | null;
+  confidence?: number | null;
+  is_user_edited?: boolean;
+  original_value?: string | null;
+}
+
+export interface IntakeExtractionResult {
+  case_id: string;
+  case_number: string;
+  fields: Record<string, IntakeFieldItem>;
+  missing_fields: string[];
+  document_count: number;
+}
+

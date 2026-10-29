@@ -1,55 +1,36 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
-  Shield,
-  ArrowRight,
+  UploadCloud,
+  FileCheck2,
+  Search,
   FileText,
   Camera,
-  GitCompare,
-  Globe,
-  Cpu,
-  FileCheck2,
-  CheckCircle2,
-  AlertTriangle,
-  Building2,
-  Lock,
-  ChevronRight,
   Layers,
-  Sparkles,
-  Search,
-  Eye,
+  ShieldCheck,
   ShieldAlert,
-  ArrowUpRight,
-  Scale,
-  Car,
-  FileSpreadsheet,
-  Check,
-  CheckCircle,
-  Menu,
-  X,
+  ArrowRight,
+  CheckCircle2,
+  Download,
+  ScanLine,
 } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
-import { StarBorder } from '@/components/ui/StarBorder';
-import { GooeyNav, GooeyNavItem } from '@/components/ui/GooeyNav';
-import { SystemArchitectureSection } from '@/components/home/SystemArchitectureSection';
 import { UserProfileMenu } from '@/components/layout/UserProfileMenu';
 
 export default function PublicHomePage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-surface-50 text-surface-900 flex flex-col selection:bg-brand-100 selection:text-brand-900">
-      {/* 1. Refined Corporate Enterprise Header (Standard 64px Height) */}
-      <header className="sticky top-0 z-50 border-b border-surface-200/80 bg-surface-0/95 dark:bg-[#0c1322]/95 backdrop-blur-md">
+    <div className="min-h-screen bg-surface-50 dark:bg-[#0c1322] text-surface-900 dark:text-surface-100 flex flex-col">
+      {/* Clean Navigation Header */}
+      <header className="sticky top-0 z-50 border-b border-surface-200/80 dark:border-surface-800 bg-surface-0/95 dark:bg-[#0c1322]/95 backdrop-blur-md">
         <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Logo & Identity */}
-          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg brand-logo-container shadow-2xs group-hover:scale-105 transition-transform p-1">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg brand-logo-container p-1 shadow-2xs group-hover:scale-105 transition-transform">
               <Image
                 src="/brand/vmlogo.png"
                 alt="ClaimScope"
@@ -59,495 +40,292 @@ export default function PublicHomePage() {
                 priority
               />
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5 leading-none">
-                <span className="text-base sm:text-lg font-black tracking-tight text-[#0a1f44] dark:text-white">
-                  ClaimScope
-                </span>
-                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-growth-50 dark:bg-growth-900/40 text-growth-700 dark:text-growth-300 border border-growth-200 dark:border-growth-800 uppercase tracking-wider">
-                  P&amp;C
-                </span>
-              </div>
-              <span className="text-[9px] font-medium tracking-wider text-surface-400 uppercase mt-0.5">
-                Claims Decision Intelligence
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-extrabold tracking-tight text-[#0a1f44] dark:text-white">
+                ClaimScope
+              </span>
+              <span className="text-[10px] font-semibold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 px-1.5 py-0.5 rounded border border-brand-200 dark:border-brand-800">
+                Auto Claims
               </span>
             </div>
           </Link>
 
-          {/* Interactive Gooey Nav for Public Header */}
-          <div className="hidden lg:flex items-center">
-            <GooeyNav
-              items={[
-                { label: 'Capabilities', href: '#capabilities' },
-                { label: 'Architecture', href: '#architecture' },
-                { label: 'Workbench', href: '#preview' },
-                { label: 'Governance', href: '#governance' },
-              ]}
-              initialActiveIndex={0}
-              size="sm"
-              frame={false}
-              color="#086afc"
-              activeTextColor="#ffffff"
-              spread={45}
-              animationTime={500}
-              gooeyness={0.4}
-              wobble={0.4}
-              hoverEffect={true}
-            />
-          </div>
-
-          {/* Right Action Cluster */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/cases"
+              className="hidden sm:inline-block text-xs font-semibold text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-white px-3 py-1.5"
+            >
+              Claims History
+            </Link>
+            <Link
+              href="/demo"
+              className="hidden sm:inline-block text-xs font-semibold text-surface-600 hover:text-surface-900 dark:text-surface-400 dark:hover:text-white px-3 py-1.5"
+            >
+              Sample Cases
+            </Link>
             <ThemeToggle className="h-8 w-8 p-1.5 rounded-lg" />
             <UserProfileMenu />
-            <Link href="/dashboard" className="hidden sm:inline-flex">
-              <StarBorder
-                as="span"
-                color="#086afc"
-                trailColor="#5eba46"
-                duration={3.5}
-                thickness={2}
-                radius={8}
-                glow={0.7}
-                hover="lap"
-                backgroundColor="#086afc"
-                textColor="#ffffff"
-                borderColor="rgba(8, 106, 252, 0.4)"
-                className="!py-2 !px-4 !text-xs !font-bold text-white shadow-sm transition-transform active:scale-95 inline-flex items-center"
-              >
-                <span>Launch Workspace</span>
-                <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-              </StarBorder>
-            </Link>
-
-            {/* Mobile Menu Button */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-1.5 rounded-md text-surface-600 hover:text-surface-900 hover:bg-surface-100 transition-colors cursor-pointer"
-              aria-label="Toggle navigation menu"
+            <Link
+              href="/cases/new"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 active:scale-98 shadow-sm transition-all"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+              <span>Start New Claim</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </div>
-
-        {/* Responsive Mobile Drawer */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-surface-200 bg-surface-0 dark:bg-[#0c1322] px-4 sm:px-6 py-4 shadow-elevated space-y-3 animate-in slide-in-from-top-2 duration-150">
-            <nav className="flex flex-col space-y-2 text-xs font-semibold text-surface-700 dark:text-surface-300">
-              <a
-                href="#capabilities"
-                onClick={() => setMobileMenuOpen(false)}
-                className="hover:text-brand-600 py-1.5"
-              >
-                Capabilities
-              </a>
-              <a
-                href="#architecture"
-                onClick={() => setMobileMenuOpen(false)}
-                className="hover:text-brand-600 py-1.5"
-              >
-                Architecture
-              </a>
-              <a
-                href="#preview"
-                onClick={() => setMobileMenuOpen(false)}
-                className="hover:text-brand-600 py-1.5"
-              >
-                Workbench
-              </a>
-              <a
-                href="#governance"
-                onClick={() => setMobileMenuOpen(false)}
-                className="hover:text-brand-600 py-1.5"
-              >
-                Governance
-              </a>
-            </nav>
-            <div className="pt-2 border-t border-surface-100 dark:border-surface-200/50">
-              <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)} className="block w-full">
-                <Button variant="vm-primary" size="sm" className="w-full justify-center">
-                  <span>Launch Workspace</span>
-                  <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        )}
       </header>
 
-      {/* 2. Hero Section: Editorial Proportions & Balanced Density */}
-      <section className="relative pt-8 pb-10 sm:pt-12 sm:pb-14 lg:pt-14 lg:pb-16 border-b border-surface-200 overflow-hidden bg-gradient-to-b from-surface-0 via-surface-0 to-surface-50">
-        {/* Subtle geometric grid */}
-        <div className="absolute inset-0 pointer-events-none z-0 opacity-[0.03] dark:opacity-[0.05] [background-image:linear-gradient(to_right,#0a1f44_1px,transparent_1px),linear-gradient(to_bottom,#0a1f44_1px,transparent_1px)] bg-[size:36px_36px]" />
-        
-        {/* Soft brand glow */}
-        <div className="absolute top-0 right-1/4 w-[500px] h-[350px] bg-gradient-to-br from-[#086afc]/10 via-[#5eba46]/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-            {/* Left 7 Columns: Editorial Headline & Value Narrative */}
-            <div className="lg:col-span-7 space-y-4 sm:space-y-5">
-              {/* Context Pill */}
-              <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-surface-0 dark:bg-surface-100/90 border border-surface-200 text-surface-700 text-[11px] font-semibold shadow-2xs">
-                <span className="flex h-1.5 w-1.5 rounded-full bg-growth-500" />
-                <span className="font-bold text-[#0a1f44] dark:text-white">P&amp;C Insurance Technology</span>
-                <span className="text-surface-300">•</span>
-                <span className="text-surface-500 font-medium">Auto Accident Claim Investigation</span>
-              </div>
-
-              {/* Authority Heading - Calibrated Scale */}
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.65rem] font-black tracking-tight text-[#0a1f44] dark:text-white leading-[1.12]">
-                Domain expertise meets{' '}
-                <span className="text-[#086afc] relative inline-block">
-                  agentic execution.
-                </span>
-              </h1>
-
-              {/* Subtitle */}
-              <p className="text-xs sm:text-sm lg:text-[14px] text-surface-600 dark:text-surface-400 max-w-xl leading-relaxed font-normal">
-                An adaptive, multimodal decision-support platform engineered specifically for Property &amp; Casualty claims adjusters and SIU investigators. Transform chaotic FNOL forms, police reports, repair estimates, and scene photos into verified, audit-ready adjudications.
-              </p>
-
-              {/* Call-to-actions */}
-              <div className="flex flex-wrap items-center gap-3 pt-1">
-                <Link href="/dashboard">
-                  <StarBorder
-                    as="span"
-                    color="#086afc"
-                    trailColor="#5eba46"
-                    duration={3.5}
-                    thickness={2}
-                    radius={10}
-                    glow={0.7}
-                    hover="lap"
-                    backgroundColor="#086afc"
-                    textColor="#ffffff"
-                    borderColor="rgba(8, 106, 252, 0.4)"
-                    className="!py-2.5 !px-5 !text-xs !font-bold text-white shadow-sm transition-transform active:scale-95 inline-flex items-center"
-                  >
-                    <span>Launch Adjuster Cockpit</span>
-                    <ArrowRight className="h-3.5 w-3.5 ml-2" />
-                  </StarBorder>
-                </Link>
-                <Link href="/demo">
-                  <Button variant="secondary" size="sm">
-                    Examine 5 Test Scenarios
-                  </Button>
-                </Link>
-              </div>
-
-              {/* 3 Core Trust Signals */}
-              <div className="pt-3 grid grid-cols-3 gap-3 border-t border-surface-200/80 text-xs">
-                <div className="space-y-0.5">
-                  <span className="font-bold text-surface-900 block text-xs">NAIC MDL-900</span>
-                  <span className="text-surface-500 text-[10px]">Human-in-the-Loop Standard</span>
-                </div>
-                <div className="space-y-0.5">
-                  <span className="font-bold text-surface-900 block text-xs">NHTSA + Meteo</span>
-                  <span className="text-surface-500 text-[10px]">Authoritative Public Grounding</span>
-                </div>
-                <div className="space-y-0.5">
-                  <span className="font-bold text-surface-900 block text-xs">100% Provenance</span>
-                  <span className="text-surface-500 text-[10px]">Audit-Traceable Citations</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right 5 Columns: Asymmetric Live Cockpit Preview Card */}
-            <div className="lg:col-span-5">
-              <div className="rounded-xl border border-surface-200 bg-surface-0 dark:bg-[#121c2e] p-4.5 sm:p-5 shadow-subtle relative overflow-hidden space-y-3.5">
-                <div className="flex items-center justify-between border-b border-surface-100 dark:border-surface-200/80 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-2 w-2 rounded-full bg-growth-500 animate-pulse" />
-                    <span className="text-xs font-bold text-surface-900 uppercase tracking-wider font-mono">
-                      CS-2026-000003
-                    </span>
-                  </div>
-                  <Badge variant="warning" size="xs" dot>
-                    Escalate For Review
-                  </Badge>
-                </div>
-
-                {/* Conflict Showcase */}
-                <div className="space-y-2.5">
-                  <div className="rounded-lg bg-surface-50 dark:bg-[#17243b] p-3 border border-surface-200 text-xs space-y-1">
-                    <div className="flex items-center justify-between text-[10.5px] font-semibold text-surface-500">
-                      <span>Statement vs. Physical Evidence</span>
-                      <span className="text-rose-600 dark:text-rose-400 font-bold uppercase text-[9px]">Critical Mismatch</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-[10.5px] pt-1">
-                      <div className="bg-surface-0 dark:bg-surface-200/40 p-2 rounded border border-surface-200">
-                        <span className="font-bold text-surface-700 block text-[9.5px] uppercase">Driver FNOL</span>
-                        <p className="text-surface-600 italic mt-0.5 leading-snug">&quot;Hit deer at 25mph, minor bumper scrape.&quot;</p>
-                      </div>
-                      <div className="bg-surface-0 dark:bg-surface-200/40 p-2 rounded border border-surface-200">
-                        <span className="font-bold text-surface-700 block text-[9.5px] uppercase">Police + Photos</span>
-                        <p className="text-surface-600 italic mt-0.5 leading-snug">&quot;Red-light T-bone impact. Airbags deployed.&quot;</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Grounded External Check */}
-                  <div className="flex items-center justify-between text-xs p-2 rounded-lg border border-growth-200 dark:border-growth-900/60 bg-growth-50/50 dark:bg-growth-900/20">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-3.5 w-3.5 text-growth-600" />
-                      <span className="font-medium text-surface-800 text-[11px]">NHTSA VIN vPIC Database</span>
-                    </div>
-                    <Badge variant="growth" size="xs">
-                      Factory Verified
-                    </Badge>
-                  </div>
-                </div>
-
-                <div className="pt-1 flex items-center justify-between text-xs">
-                  <span className="text-surface-500 text-[10.5px]">LangGraph Multi-Agent Pass: Complete</span>
-                  <Link
-                    href="/cases"
-                    className="text-[#086afc] font-semibold text-[11px] hover:underline inline-flex items-center gap-1"
-                  >
-                    <span>Inspect Case</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              </div>
-            </div>
+      {/* Main Content */}
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 text-center max-w-4xl mx-auto space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            <span>Designed for Insurance Claims Adjusters &amp; Business Users</span>
           </div>
-        </div>
-      </section>
 
-      {/* 3. Strategic Value Pillars (Compact 4-Column Strip) */}
-      <section className="py-8 sm:py-10 border-b border-surface-200 bg-surface-0 dark:bg-[#0c1322]">
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <div className="border-l-2 border-[#086afc] pl-3.5 space-y-0.5">
-              <span className="text-[10px] font-bold text-[#086afc] uppercase tracking-wider block">Domain Precision</span>
-              <h3 className="text-xs sm:text-sm font-bold text-surface-900">P&amp;C Automobile Claims</h3>
-              <p className="text-[11px] text-surface-500 leading-relaxed">
-                Tuned specifically for FNOL forms, police collision reports, body shop estimates, and vehicle photography.
-              </p>
-            </div>
+          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#0a1f44] dark:text-white leading-tight">
+            Effortless auto accident claim review with evidence you can see.
+          </h1>
 
-            <div className="border-l-2 border-[#5eba46] pl-3.5 space-y-0.5">
-              <span className="text-[10px] font-bold text-[#5eba46] uppercase tracking-wider block">Adaptive Speed</span>
-              <h3 className="text-xs sm:text-sm font-bold text-surface-900">Conditional Orchestration</h3>
-              <p className="text-[11px] text-surface-500 leading-relaxed">
-                Supervisor routes only relevant extractors. Gracefully skips missing paperwork without hallucinating or crashing.
-              </p>
-            </div>
-
-            <div className="border-l-2 border-[#febc10] pl-3.5 space-y-0.5">
-              <span className="text-[10px] font-bold text-amber-600 uppercase tracking-wider block">Continuous Grounding</span>
-              <h3 className="text-xs sm:text-sm font-bold text-surface-900">Official Government Registries</h3>
-              <p className="text-[11px] text-surface-500 leading-relaxed">
-                Decodes VINs directly via US DOT NHTSA vPIC and correlates weather with Open-Meteo historical archives.
-              </p>
-            </div>
-
-            <div className="border-l-2 border-[#0a1f44] dark:border-surface-400 pl-3.5 space-y-0.5">
-              <span className="text-[10px] font-bold text-surface-700 uppercase tracking-wider block">Regulatory Defense</span>
-              <h3 className="text-xs sm:text-sm font-bold text-surface-900">Institutional Audit PDF</h3>
-              <p className="text-[11px] text-surface-500 leading-relaxed">
-                ReportLab multi-page reports with complete source quotes, field confidence scores, and adjuster checklist.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Comprehensive Capabilities Section */}
-      <section id="capabilities" className="py-10 sm:py-14 max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-8">
-        <div className="max-w-2xl space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/60 text-[#086afc] text-[10px] font-bold uppercase tracking-wider">
-            <span>Specialized Capabilities</span>
-          </div>
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[#0a1f44] dark:text-white">
-            Engineered for the reality of modern claim packages.
-          </h2>
-          <p className="text-xs sm:text-sm text-surface-600 leading-relaxed">
-            Incident files arrive incomplete, inconsistent, and unstructured. ClaimScope provides licensed adjusters with verifiable decision support.
+          <p className="text-base sm:text-lg text-surface-600 dark:text-surface-400 max-w-2xl mx-auto leading-relaxed">
+            Drag and drop your claim documents and photographs. Verify automatically extracted accident details, scroll through evidence-backed findings on one page, and download a professional adjuster dossier.
           </p>
-        </div>
 
-        {/* 3 Balanced Capability Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {/* Card 1: Multimodal Intake */}
-          <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 space-y-2.5 shadow-subtle hover:border-[#086afc]/40 transition-colors">
-            <div className="w-8 h-8 rounded-lg bg-brand-50 text-[#086afc] flex items-center justify-center">
-              <FileText className="h-4 w-4" />
-            </div>
-            <h3 className="text-sm font-bold text-surface-900">Multimodal Intake &amp; OCR</h3>
-            <p className="text-xs text-surface-600 leading-relaxed">
-              Native vector PDF parsing via PyMuPDF with seamless Google Gemini multimodal vision fallback for handwritten police statements and low-contrast faxes.
-            </p>
-            <ul className="pt-2 space-y-1 text-[11px] text-surface-500 border-t border-surface-100">
-              <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-growth-500" /> Digital PDF vector extraction</li>
-              <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-growth-500" /> Scanned handwritten note OCR</li>
-            </ul>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link
+              href="/cases/new"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 active:scale-98 shadow-md transition-all"
+            >
+              <span>Start New Claim</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/demo"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-semibold text-surface-700 dark:text-surface-200 bg-surface-0 dark:bg-surface-800 border border-surface-200 dark:border-surface-700 hover:bg-surface-100 transition-colors shadow-2xs"
+            >
+              <span>Explore 5 Sample Claims</span>
+            </Link>
           </div>
 
-          {/* Card 2: Damage Vision */}
-          <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 space-y-2.5 shadow-subtle hover:border-[#086afc]/40 transition-colors">
-            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-              <Camera className="h-4 w-4" />
+          {/* Quick value highlights */}
+          <div className="pt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 text-left max-w-3xl mx-auto">
+            <div className="p-4 rounded-xl bg-surface-0 dark:bg-surface-850 border border-surface-200 dark:border-surface-800 space-y-1">
+              <div className="text-xs font-bold text-surface-900 dark:text-white">Evidence Beside Every Finding</div>
+              <div className="text-[11px] text-surface-500">Photographs and documents are displayed directly next to conclusions.</div>
             </div>
-            <h3 className="text-sm font-bold text-surface-900">Photographic Damage Inspection</h3>
-            <p className="text-xs text-surface-600 leading-relaxed">
-              Standardized physical damage evaluation categorizing visible impact zones, affected body panels, and severity ratings (Minor, Moderate, Severe, Total Loss).
-            </p>
-            <ul className="pt-2 space-y-1 text-[11px] text-surface-500 border-t border-surface-100">
-              <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-growth-500" /> Multi-angle vehicle inspection</li>
-              <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-growth-500" /> Camera limitation notes</li>
-            </ul>
+            <div className="p-4 rounded-xl bg-surface-0 dark:bg-surface-850 border border-surface-200 dark:border-surface-800 space-y-1">
+              <div className="text-xs font-bold text-surface-900 dark:text-white">One Scrolling Results Page</div>
+              <div className="text-[11px] text-surface-500">No clicking across separate technical tabs to piece findings together.</div>
+            </div>
+            <div className="p-4 rounded-xl bg-surface-0 dark:bg-surface-850 border border-surface-200 dark:border-surface-800 space-y-1">
+              <div className="text-xs font-bold text-surface-900 dark:text-white">Human Adjuster in Control</div>
+              <div className="text-[11px] text-surface-500">Assistive decision support that never automatically approves or denies claims.</div>
+            </div>
           </div>
+        </section>
 
-          {/* Card 3: Discrepancy Engine */}
-          <div className="rounded-xl border border-surface-200 bg-surface-0 p-5 space-y-2.5 shadow-subtle hover:border-[#086afc]/40 transition-colors">
-            <div className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center">
-              <GitCompare className="h-4 w-4" />
+        {/* 5-Step Intuitive Journey Section */}
+        <section className="py-12 bg-surface-0 dark:bg-surface-850 border-y border-surface-200/80 dark:border-surface-800">
+          <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+            <div className="text-center space-y-2 max-w-xl mx-auto">
+              <h2 className="text-xl sm:text-2xl font-bold text-surface-900 dark:text-white">
+                One Intuitive Journey from Intake to Report
+              </h2>
+              <p className="text-xs sm:text-sm text-surface-500">
+                Simple, fast, and completely transparent for insurance professionals.
+              </p>
             </div>
-            <h3 className="text-sm font-bold text-surface-900">Cross-Document Contradiction Engine</h3>
-            <p className="text-xs text-surface-600 leading-relaxed">
-              Deterministic cross-referencing detecting narrative conflicts (driver claims deer strike while police record cites red-light collision), VIN mismatches, and photo discrepancies.
-            </p>
-            <ul className="pt-2 space-y-1 text-[11px] text-surface-500 border-t border-surface-100">
-              <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-growth-500" /> Side-by-side comparative diffs</li>
-              <li className="flex items-center gap-1.5"><Check className="h-3 w-3 text-growth-500" /> Materiality &amp; severity scoring</li>
-            </ul>
+
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {/* Step 1 */}
+              <div className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-brand-600 bg-brand-50 dark:bg-brand-950 px-2 py-0.5 rounded">
+                    Step 1
+                  </span>
+                  <UploadCloud className="h-5 w-5 text-brand-600" />
+                </div>
+                <h3 className="text-sm font-bold text-surface-900 dark:text-white">Upload</h3>
+                <p className="text-xs text-surface-500 leading-relaxed">
+                  Drag and drop First Notice of Loss, police reports, repair estimates, and vehicle damage photos together.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-brand-600 bg-brand-50 dark:bg-brand-950 px-2 py-0.5 rounded">
+                    Step 2
+                  </span>
+                  <FileCheck2 className="h-5 w-5 text-brand-600" />
+                </div>
+                <h3 className="text-sm font-bold text-surface-900 dark:text-white">Confirm Details</h3>
+                <p className="text-xs text-surface-500 leading-relaxed">
+                  Verify extracted accident dates, locations, and policy details. Edit any field while source provenance is preserved.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-brand-600 bg-brand-50 dark:bg-brand-950 px-2 py-0.5 rounded">
+                    Step 3
+                  </span>
+                  <Search className="h-5 w-5 text-brand-600" />
+                </div>
+                <h3 className="text-sm font-bold text-surface-900 dark:text-white">Investigate</h3>
+                <p className="text-xs text-surface-500 leading-relaxed">
+                  Automatically analyze vehicle damage severity, check timeline consistency, and corroborate facts across all records.
+                </p>
+              </div>
+
+              {/* Step 4 */}
+              <div className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-brand-600 bg-brand-50 dark:bg-brand-950 px-2 py-0.5 rounded">
+                    Step 4
+                  </span>
+                  <Camera className="h-5 w-5 text-brand-600" />
+                </div>
+                <h3 className="text-sm font-bold text-surface-900 dark:text-white">Review Findings</h3>
+                <p className="text-xs text-surface-500 leading-relaxed">
+                  Scroll down one unified dossier. See supporting photographs right next to damage observations and side-by-side discrepancies.
+                </p>
+              </div>
+
+              {/* Step 5 */}
+              <div className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-50/50 dark:bg-surface-900 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-brand-600 bg-brand-50 dark:bg-brand-950 px-2 py-0.5 rounded">
+                    Step 5
+                  </span>
+                  <Download className="h-5 w-5 text-brand-600" />
+                </div>
+                <h3 className="text-sm font-bold text-surface-900 dark:text-white">Download Report</h3>
+                <p className="text-xs text-surface-500 leading-relaxed">
+                  Download a court-ready, professional claims investigation PDF with NAIC compliance disclosures and action checklists.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* 5. System Architecture Section */}
-      <SystemArchitectureSection />
-
-      {/* 6. Product Preview Section */}
-      <section id="preview" className="py-10 sm:py-14 max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-growth-50 text-growth-700 text-[10px] font-bold uppercase tracking-wider">
-              <span>Operational Workbench</span>
-            </div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-[#0a1f44] dark:text-white">
-              6-Tab Adjuster Investigation Interface
+        {/* 5 Sample Insurance Scenarios Section */}
+        <section className="py-16 max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="text-center space-y-2 max-w-xl mx-auto">
+            <h2 className="text-xl sm:text-2xl font-bold text-surface-900 dark:text-white">
+              Try Five Realistic Insurance Scenarios
             </h2>
-            <p className="text-xs sm:text-sm text-surface-600 max-w-xl leading-relaxed">
-              Inspect raw files, evaluate field-level provenance, review comparative discrepancies, check external NHTSA records, and export institutional PDF packets.
+            <p className="text-xs sm:text-sm text-surface-500">
+              Test how ClaimScope handles common auto collision claims, from minor parking incidents to complex contradictory narratives.
             </p>
           </div>
-          <Link href="/cases">
-            <Button variant="vm-primary" size="sm" rightIcon={<ArrowRight className="h-3.5 w-3.5" />}>
-              Open Claims Registry
-            </Button>
-          </Link>
-        </div>
 
-        {/* Workbench Mock Showcase */}
-        <div className="rounded-xl border border-surface-200 bg-surface-0 dark:bg-[#121c2e] p-5 shadow-subtle space-y-4">
-          <div className="flex items-center justify-between border-b border-surface-200 pb-3">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs font-bold text-surface-900">Claim CS-2026-000003</span>
-              <Badge variant="brand" size="xs">Toyota RAV4 XLE</Badge>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Scenario A */}
+            <div
+              onClick={() => router.push('/demo')}
+              className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-850 hover:border-brand-500 hover:shadow-md transition-all cursor-pointer space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-surface-500 uppercase">Case A</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-surface-100 text-surface-700">1 Document</span>
+              </div>
+              <h3 className="text-sm font-bold text-surface-900 dark:text-white">Minor Parking Lot Incident</h3>
+              <p className="text-xs text-surface-500">Single FNOL document submitted. Demonstrates routine review with partial records.</p>
+              <div className="text-xs text-brand-600 font-semibold inline-flex items-center gap-1 pt-1">
+                <span>View Scenario</span>
+                <ArrowRight className="h-3 w-3" />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-surface-500">Adjudication Outcome:</span>
-              <Badge variant="warning" size="xs" dot>ESCALATE FOR HUMAN REVIEW</Badge>
+
+            {/* Scenario B */}
+            <div
+              onClick={() => router.push('/demo')}
+              className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-850 hover:border-brand-500 hover:shadow-md transition-all cursor-pointer space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-surface-500 uppercase">Case B</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-100 text-brand-800">Photos Included</span>
+              </div>
+              <h3 className="text-sm font-bold text-surface-900 dark:text-white">Front Collision with Damage Photos</h3>
+              <p className="text-xs text-surface-500">FNOL plus 2 scene photographs. Demonstrates component damage analysis and severity scoring.</p>
+              <div className="text-xs text-brand-600 font-semibold inline-flex items-center gap-1 pt-1">
+                <span>View Scenario</span>
+                <ArrowRight className="h-3 w-3" />
+              </div>
+            </div>
+
+            {/* Scenario C */}
+            <div
+              onClick={() => router.push('/demo')}
+              className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-850 hover:border-brand-500 hover:shadow-md transition-all cursor-pointer space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-surface-500 uppercase">Case C</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">Complete Package</span>
+              </div>
+              <h3 className="text-sm font-bold text-surface-900 dark:text-white">Comprehensive Collision Package</h3>
+              <p className="text-xs text-surface-500">Complete package: FNOL, police report, certified estimate, and photographs all corroborated.</p>
+              <div className="text-xs text-brand-600 font-semibold inline-flex items-center gap-1 pt-1">
+                <span>View Scenario</span>
+                <ArrowRight className="h-3 w-3" />
+              </div>
+            </div>
+
+            {/* Scenario D */}
+            <div
+              onClick={() => router.push('/demo')}
+              className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-850 hover:border-brand-500 hover:shadow-md transition-all cursor-pointer space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-surface-500 uppercase">Case D</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">Contradictions</span>
+              </div>
+              <h3 className="text-sm font-bold text-surface-900 dark:text-white">Contradictory Narrative &amp; VIN Mismatch</h3>
+              <p className="text-xs text-surface-500">Conflicting accident dates and VIN suffix discrepancy between FNOL and police report.</p>
+              <div className="text-xs text-brand-600 font-semibold inline-flex items-center gap-1 pt-1">
+                <span>View Scenario</span>
+                <ArrowRight className="h-3 w-3" />
+              </div>
+            </div>
+
+            {/* Scenario E */}
+            <div
+              onClick={() => router.push('/demo')}
+              className="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-850 hover:border-brand-500 hover:shadow-md transition-all cursor-pointer space-y-2.5"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-surface-500 uppercase">Case E</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">Scanned Statement</span>
+              </div>
+              <h3 className="text-sm font-bold text-surface-900 dark:text-white">Incomplete Scanned Intake Form</h3>
+              <p className="text-xs text-surface-500">Handwritten statement with missing information. Demonstrates uncertainty reporting.</p>
+              <div className="text-xs text-brand-600 font-semibold inline-flex items-center gap-1 pt-1">
+                <span>View Scenario</span>
+                <ArrowRight className="h-3 w-3" />
+              </div>
+            </div>
+
+            {/* All Scenarios Card */}
+            <div
+              onClick={() => router.push('/demo')}
+              className="p-5 rounded-2xl border border-dashed border-brand-300 dark:border-brand-700 bg-brand-50/30 dark:bg-brand-950/20 hover:bg-brand-50/60 transition-all cursor-pointer flex flex-col justify-center items-center text-center space-y-2"
+            >
+              <Layers className="h-8 w-8 text-brand-600" />
+              <h3 className="text-sm font-bold text-brand-900 dark:text-brand-200">Open Evaluation Demo Lab</h3>
+              <p className="text-xs text-surface-500">Compare all 5 claim scenarios side-by-side</p>
             </div>
           </div>
+        </section>
+      </main>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
-            <div className="p-3.5 rounded-lg bg-surface-50 dark:bg-surface-100/50 border border-surface-200 space-y-1">
-              <span className="font-bold text-surface-800 uppercase tracking-wider text-[10px] block">Discrepancy Severity</span>
-              <div className="text-lg font-black text-rose-600">CRITICAL</div>
-              <p className="text-[11px] text-surface-500">Point of impact and narrative direct liability contradiction.</p>
-            </div>
-            <div className="p-3.5 rounded-lg bg-surface-50 dark:bg-surface-100/50 border border-surface-200 space-y-1">
-              <span className="font-bold text-surface-800 uppercase tracking-wider text-[10px] block">Federal VIN Grounding</span>
-              <div className="text-lg font-black text-growth-600">VERIFIED</div>
-              <p className="text-[11px] text-surface-500">Matched 17-character VIN factory specifications in NHTSA database.</p>
-            </div>
-            <div className="p-3.5 rounded-lg bg-surface-50 dark:bg-surface-100/50 border border-surface-200 space-y-1">
-              <span className="font-bold text-surface-800 uppercase tracking-wider text-[10px] block">Audit-Ready Export</span>
-              <div className="text-lg font-black text-[#086afc]">READY</div>
-              <p className="text-[11px] text-surface-500">11-section institutional PDF package with official letterhead.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. Responsible AI & NAIC MDL-900 Governance */}
-      <section id="governance" className="py-10 sm:py-12 bg-surface-0 border-t border-b border-surface-200">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center space-y-3">
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-surface-100 text-[#0a1f44] text-[10px] font-bold uppercase tracking-wider">
-            <Lock className="h-3 w-3 text-growth-600" />
-            <span>NAIC Model Act MDL-900 Compliance</span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#0a1f44] dark:text-white">
-            Assistive Intelligence. Licensed Human Authority.
-          </h2>
-          <p className="text-xs sm:text-[13px] text-surface-600 leading-relaxed max-w-2xl mx-auto">
-            In compliance with the <strong>National Association of Insurance Commissioners (NAIC) Model Unfair Claims Settlement Practices Act</strong>, ClaimScope never autonomously denies coverage, cancels policies, or makes unsubstantiated legal fraud accusations. It serves as a rigorous decision-support companion—surfacing verifiable facts, calculating explainable risk scores, and empowering licensed adjusters.
-          </p>
-        </div>
-      </section>
-
-      {/* 8. Call to Action Banner */}
-      <section className="py-10 sm:py-14 bg-gradient-to-br from-[#0a1f44] to-[#086afc] text-white">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center space-y-4">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-snug">
-            Ready to modernize auto accident claim investigation?
-          </h2>
-          <p className="text-xs sm:text-sm text-blue-100 max-w-lg mx-auto leading-relaxed">
-            Experience our adaptive multi-agent system on real synthetic packages or ingest new claim files.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-1">
-            <Link href="/dashboard">
-              <Button
-                variant="growth"
-                size="sm"
-                rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
-              >
-                Launch Adjuster Workspace
-              </Button>
-            </Link>
-            <Link href="/demo">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-surface-0 hover:bg-surface-100 text-surface-900 border-surface-200 shadow-2xs font-semibold"
-              >
-                Test 5 Demo Scenarios
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 9. ValueMomentum-Grade Corporate Footer */}
-      <footer className="py-6 sm:py-8 bg-surface-0 border-t border-surface-200 text-surface-500 text-xs">
-        <div className="max-w-[1240px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg brand-logo-container p-1">
-              <Image
-                src="/brand/vmlogo.png"
-                alt="ValueMomentum ClaimScope"
-                width={20}
-                height={20}
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-[#0a1f44] dark:text-white text-xs">ClaimScope</span>
-              <span className="text-[10px] text-surface-400">P&amp;C Automobile Claims Adjudication Platform</span>
-            </div>
-          </div>
-
-          <div className="text-[11px] text-surface-400 text-center sm:text-right">
-            <span>Enterprise Decision-Support System • Built by </span>
-            <strong className="text-surface-700 font-semibold">Vishnu Pandrangi</strong>
-          </div>
-        </div>
+      {/* Clean Corporate Footer */}
+      <footer className="border-t border-surface-200/80 dark:border-surface-800 bg-surface-0 dark:bg-[#0c1322] py-8 px-4 text-center text-xs text-surface-500 space-y-2">
+        <div>ClaimScope • Auto Accident Claim Investigation Platform</div>
+        <div className="text-[11px] text-surface-400">Strictly Confidential • Decision-Support System for Licensed Insurance Adjusters</div>
       </footer>
     </div>
   );

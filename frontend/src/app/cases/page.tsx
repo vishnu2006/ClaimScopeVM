@@ -21,7 +21,6 @@ import {
 import { useCases } from '@/hooks/useCases';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/Button';
-import { StarBorder } from '@/components/ui/StarBorder';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -30,7 +29,6 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { CaseCard } from '@/components/cases/CaseCard';
 import { formatDate, formatPriority, formatStatus, getPriorityBadgeVariant, getStatusBadgeVariant } from '@/lib/utils';
 import { CaseSummary } from '@/lib/types';
-import { ThoughtLine } from '@/components/ui/ThoughtLine';
 
 type SortField = 'case_number' | 'created_at' | 'priority' | 'document_count';
 type SortOrder = 'asc' | 'desc';
@@ -121,11 +119,10 @@ export default function CasesPage() {
   return (
     <div className="flex-1 flex flex-col">
       <Header
-        title="Claim Cases Registry"
-        subtitle="Operational case management, search, sorting, and investigation intake"
+        title="Claims History"
+        subtitle="Review previously investigated auto claims, check evidence, and access reports"
         breadcrumbs={[
-          { label: 'Dashboard', href: '/dashboard' },
-          { label: 'All Cases' },
+          { label: 'Claims' },
         ]}
         actions={
           <div className="flex items-center gap-2">
@@ -135,26 +132,16 @@ export default function CasesPage() {
               onClick={() => router.push('/demo')}
               leftIcon={<FlaskConical className="h-4 w-4 text-brand-600" />}
             >
-              Demo Lab
+              Sample Claims
             </Button>
-            <StarBorder
-              as="button"
+            <button
+              type="button"
               onClick={() => router.push('/cases/new')}
-              color="#086afc"
-              trailColor="#5eba46"
-              duration={3.5}
-              thickness={2}
-              radius={8}
-              glow={0.7}
-              hover="lap"
-              backgroundColor="#086afc"
-              textColor="#ffffff"
-              borderColor="rgba(8, 106, 252, 0.4)"
-              className="!py-2 !px-4 !text-xs !font-bold text-white shadow-sm transition-transform active:scale-95 cursor-pointer inline-flex items-center"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 active:scale-98 shadow-sm transition-all cursor-pointer"
             >
-              <PlusCircle className="h-4 w-4 mr-1.5" />
-              <span>New Investigation</span>
-            </StarBorder>
+              <PlusCircle className="h-4 w-4" />
+              <span>New Claim</span>
+            </button>
           </div>
         }
       />
@@ -251,22 +238,7 @@ export default function CasesPage() {
         {/* Main Content Area */}
         {loading ? (
           <div className="space-y-4">
-            <div className="p-4 rounded-xl border border-surface-200/90 dark:border-surface-800 bg-surface-0/90 dark:bg-surface-900/60 shadow-xs flex justify-center">
-              <ThoughtLine
-                working={loading}
-                steps={[
-                  'Querying claims docket database',
-                  'Aggregating attached documents and forensic artifacts',
-                  'Evaluating investigation priority and claim statuses',
-                ]}
-                label="Retrieving Claims Registry…"
-                doneLabel="Claims loaded in"
-                fontSize={14}
-                showTimer
-                color="var(--color-brand-600, #2563eb)"
-              />
-            </div>
-            <LoadingState variant="card-skeleton" count={5} />
+            <LoadingState variant="card-skeleton" count={5} message="Loading claims registry..." />
           </div>
         ) : error ? (
           <ErrorState
