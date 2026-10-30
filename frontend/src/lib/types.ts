@@ -87,10 +87,11 @@ export interface RepairEstimateExtraction {
 }
 
 export interface PhotoDamageAnalysis {
+  is_claim_relevant?: boolean;
   visible_vehicle_region: string;
   observable_damage: string[];
   affected_components: string[];
-  severity_category: 'minor' | 'moderate' | 'severe' | 'catastrophic_total_loss' | string;
+  severity_category: 'not_applicable' | 'minor' | 'moderate' | 'severe' | 'catastrophic_total_loss' | string;
   severity_explanation: string;
   supporting_visual_observations: string[];
   image_quality_limitations: string[];
@@ -365,6 +366,12 @@ export interface CreateCaseData {
   priority?: CasePriority;
 }
 
+export interface ConflictingValueOption {
+  value: string;
+  source_document: string;
+  source_text?: string | null;
+}
+
 export interface IntakeFieldItem {
   value?: string | null;
   source_document?: string | null;
@@ -372,6 +379,7 @@ export interface IntakeFieldItem {
   confidence?: number | null;
   is_user_edited?: boolean;
   original_value?: string | null;
+  conflicting_values?: ConflictingValueOption[];
 }
 
 export interface IntakeExtractionResult {

@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 import pymupdf
 from google.genai import types
 
+from app.prompts import DOCUMENT_TRANSCRIPTION_PROMPT
 from app.services.llm_provider import ConfigurationError, LLMProvider, get_llm_provider
 
 
@@ -51,12 +52,14 @@ class DocumentProcessor:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        rendered_pages: List[bytes] = []
         doc = pymupdf.open(file_path)
+        rendered_pages: List[bytes] = []
+
         try:
-            for i, page in enumerate(doc):
-                if i >= max_pages:
-                    break
+            total_pages = min(len(doc), max_pages)
+            for page_idx in range(total_pages):
+                page = doc[page_idx]
+                # 150 DPI provides adequate fidelity for Gemini multimodal without bloated payloads
                 pix = page.get_pixmap(dpi=150)
                 rendered_pages.append(pix.tobytes("png"))
             return rendered_pages
@@ -73,13 +76,7 @@ class DocumentProcessor:
         provider = llm_provider or get_llm_provider()
 
         parts: List[Any] = []
-        prompt = (
-            "You are an insurance document transcription expert. "
-            "Transcribe all visible printed, typed, and handwritten text from these document pages. "
-            "Maintain structural layout, headings, and labels. Do not invent missing or illegible words; "
-            "mark truly illegible sections as [illegible]."
-        )
-        parts.append(prompt)
+        parts.append(DOCUMENT_TRANSCRIPTION_PROMPT)
 
         if ext == ".pdf":
             image_bytes_list = self.render_pdf_pages_as_images(file_path, max_pages=5)
@@ -98,53 +95,6 @@ class DocumentProcessor:
         transcription = await provider.client.aio.models.generate_content(
             model=provider.model,
             contents=parts,
-            config=types.GenerateContentConfig(
-                temperature=0.1,
-                max_output_tokens=provider.max_tokens,
-            ),
         )
-        return transcription.text or ""
 
-    def process_document(
-        self,
-        file_path: str,
-        mime_type: Optional[str] = None,
-        file_extension: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """Process any supported document type, extracting native text or metadata."""
-        ext = (file_extension or os.path.splitext(file_path)[1]).lower()
-
-        if ext == ".pdf":
-            return self.extract_text_from_pdf(file_path)
-
-        if ext in [".jpg", ".jpeg", ".png", ".tiff", ".tif", ".webp"]:
-            return {
-                "text": "",
-                "pages": [],
-                "page_count": 1,
-                "metadata": {"file_type": "image", "extension": ext},
-                "has_native_text": False,
-                "extraction_method": "vision_analysis_required",
-            }
-
-        # Plain text fallback
-        if ext in [".txt", ".csv", ".json", ".log"]:
-            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-                content = f.read()
-            return {
-                "text": content.strip(),
-                "pages": [{"page_number": 1, "text": content}],
-                "page_count": 1,
-                "metadata": {"file_type": "text"},
-                "has_native_text": len(content.strip()) > 0,
-                "extraction_method": "plain_text",
-            }
-
-        return {
-            "text": "",
-            "pages": [],
-            "page_count": None,
-            "metadata": {"file_type": "binary", "extension": ext},
-            "has_native_text": False,
-            "extraction_method": "unsupported_native_parser",
-        }
+        return transcription.text.strip() if transcription.text else ""

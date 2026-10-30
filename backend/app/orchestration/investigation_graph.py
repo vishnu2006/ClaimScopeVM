@@ -455,7 +455,7 @@ class ClaimInvestigationOrchestrator:
                 logs.append(
                     ProcessingLogEntry(
                         stage="vision_agent",
-                        message=f"Photo '{photo.filename}' evaluated as {analysis.severity_category.upper()} (conf: {analysis.confidence_score:.2f}).",
+                        message=f"Photo '{photo.filename}' evaluated as {'NOT RELEVANT' if (not getattr(analysis, 'is_claim_relevant', True) or analysis.severity_category == 'not_applicable') else analysis.severity_category.upper()} (conf: {analysis.confidence_score:.2f}).",
                     )
                 )
             except Exception as e:

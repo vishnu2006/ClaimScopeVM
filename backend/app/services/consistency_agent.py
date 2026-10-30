@@ -3,6 +3,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
+from app.prompts import CONSISTENCY_CHECK_SYSTEM_PROMPT, get_consistency_check_user_prompt
 from app.schemas.evidence import InconsistencyFinding, PhotoDamageAnalysis
 from app.services.llm_provider import ConfigurationError, LLMProvider, get_llm_provider
 
@@ -61,62 +62,101 @@ class CrossDocumentConsistencyAgent:
                 if norm_fnol_date and norm_police_date and norm_fnol_date != norm_police_date:
                     discrepancies.append(
                         InconsistencyFinding(
-                            discrepancy_id=str(uuid.uuid4())[:8],
-                            category="date_time",
+                            discrepancy_id=f"disc_date_{uuid.uuid4().hex[:8]}",
                             field_name="incident_date",
-                            source_a=f"FNOL: {fnol_date}",
-                            value_a=str(fnol_date),
-                            source_b=f"Police Report: {police_date}",
-                            value_b=str(police_date),
-                            explanation="Incident date reported in the First Notice of Loss conflicts with official police collision report date.",
+                            category="date_time",
                             severity="high",
+                            source_a="FNOL Incident Report",
+                            value_a=str(fnol_date),
+                            source_b="Police Collision Report",
+                            value_b=str(police_date),
                             is_contradiction=True,
-                            confidence=0.95,
-                            investigation_notes="Verify dispatch logs or towing invoices to confirm the true incident timeline.",
+                            explanation=(
+                                f"Accident dates differ between FNOL report ('{fnol_date}') and "
+                                f"Police collision documentation ('{police_date}')."
+                            ),
+                            investigation_notes="Verify dispatch logs or date-stamped tow receipt to establish exact collision occurrence date.",
                         )
                     )
 
-        # 2. Vehicle Identification (VIN Mismatch)
-        # Gather VINs across available documents
-        vin_sources = []
-        if fnol_data:
-            vehicles = fnol_data.get("vehicles") or []
+        # 2. VIN Discrepancy (Estimate vs Police Report / FNOL)
+        vin_sources: Dict[str, str] = {}
+        for doc_id, data in extractions.items():
+            if not isinstance(data, dict):
+                continue
+            doc_type = doc_type_map.get(doc_id, "document")
+            # Extract VIN from vehicles list or vehicle_info
+            vehicles = data.get("vehicles") or data.get("vehicles_involved") or []
             if isinstance(vehicles, list) and vehicles:
-                v0 = vehicles[0]
-                if isinstance(v0, dict) and v0.get("vin"):
-                    vin_sources.append(("FNOL", str(v0.get("vin")).strip().upper()))
-        if police_data:
-            vehicles = police_data.get("vehicles_involved") or []
-            if isinstance(vehicles, list) and vehicles:
-                v0 = vehicles[0]
-                if isinstance(v0, dict) and v0.get("vin"):
-                    vin_sources.append(("Police Report", str(v0.get("vin")).strip().upper()))
-        if estimate_data:
-            v_info = estimate_data.get("vehicle_info") or {}
+                for v in vehicles:
+                    cand_vin = v.get("vin") if isinstance(v, dict) else None
+                    if cand_vin and isinstance(cand_vin, dict):
+                        cand_vin = cand_vin.get("value")
+                    if cand_vin and len(str(cand_vin).strip()) >= 10:
+                        vin_sources[f"{doc_type}"] = str(cand_vin).strip().upper()
+                        break
+            v_info = data.get("vehicle_info")
             if isinstance(v_info, dict) and v_info.get("vin"):
-                vin_sources.append(("Repair Estimate", str(v_info.get("vin")).strip().upper()))
+                v_cand = v_info.get("vin")
+                if isinstance(v_cand, dict):
+                    v_cand = v_cand.get("value")
+                if v_cand and len(str(v_cand).strip()) >= 10:
+                    vin_sources[f"{doc_type}"] = str(v_cand).strip().upper()
 
-        if len(vin_sources) >= 2:
-            src1_name, src1_vin = vin_sources[0]
-            for src2_name, src2_vin in vin_sources[1:]:
-                # Only compare if both have valid VIN strings > 8 chars
-                if len(src1_vin) > 8 and len(src2_vin) > 8 and src1_vin != src2_vin:
-                    discrepancies.append(
-                        InconsistencyFinding(
-                            discrepancy_id=str(uuid.uuid4())[:8],
-                            category="vehicle_identity",
-                            field_name="vehicle_vin",
-                            source_a=f"{src1_name}: {src1_vin}",
-                            value_a=src1_vin,
-                            source_b=f"{src2_name}: {src2_vin}",
-                            value_b=src2_vin,
-                            explanation=f"Vehicle Identification Number (VIN) differs between {src1_name} and {src2_name}.",
-                            severity="critical",
-                            is_contradiction=True,
-                            confidence=0.98,
-                            investigation_notes="Check physical VIN plate or vehicle registration to confirm coverage matches the insured asset.",
+        if len(set(vin_sources.values())) > 1:
+            sources = list(vin_sources.keys())
+            discrepancies.append(
+                InconsistencyFinding(
+                    discrepancy_id=f"disc_vin_{uuid.uuid4().hex[:8]}",
+                    field_name="vehicle_identification_number",
+                    category="vehicle_identity",
+                    severity="critical",
+                    source_a=f"{sources[0].replace('_', ' ').title()}",
+                    value_a=vin_sources[sources[0]],
+                    source_b=f"{sources[1].replace('_', ' ').title()}",
+                    value_b=vin_sources[sources[1]],
+                    is_contradiction=True,
+                    explanation=(
+                        f"Inconsistent Vehicle Identification Numbers (VINs) cited across submitted claim records: "
+                        f"{vin_sources[sources[0]]} vs {vin_sources[sources[1]]}."
+                    ),
+                    investigation_notes="Adjuster must inspect vehicle door jamb B-pillar VIN tag or vehicle title prior to total settlement authorization.",
+                )
+            )
+
+        # 3. Location Discrepancy
+        if fnol_data and police_data:
+            loc_fnol = fnol_data.get("incident_location")
+            if isinstance(loc_fnol, dict) and "value" in loc_fnol:
+                loc_fnol = loc_fnol.get("value")
+            loc_police = police_data.get("incident_location")
+            if isinstance(loc_police, dict) and "value" in loc_police:
+                loc_police = loc_police.get("value")
+
+            str_fnol = str(loc_fnol.get("address") if isinstance(loc_fnol, dict) else loc_fnol or "")
+            str_police = str(loc_police.get("address") if isinstance(loc_police, dict) else loc_police or "")
+
+            if str_fnol and str_police:
+                norm_fnol_loc = self._normalize_string(str_fnol)
+                norm_police_loc = self._normalize_string(str_police)
+                # Check for significant mismatch (excluding common directional abbreviations)
+                if len(norm_fnol_loc) > 5 and len(norm_police_loc) > 5:
+                    if norm_fnol_loc not in norm_police_loc and norm_police_loc not in norm_fnol_loc:
+                        discrepancies.append(
+                            InconsistencyFinding(
+                                discrepancy_id=f"disc_loc_{uuid.uuid4().hex[:8]}",
+                                field_name="incident_location",
+                                category="location_discrepancy",
+                                severity="medium",
+                                source_a="FNOL Report",
+                                value_a=str_fnol,
+                                source_b="Police Collision Report",
+                                value_b=str_police,
+                                is_contradiction=True,
+                                explanation=f"Reported collision scene location differs: '{str_fnol}' vs '{str_police}'.",
+                                investigation_notes="Verify precise mile marker or intersection from officer CAD CAD report notes.",
+                            )
                         )
-                    )
 
         return discrepancies
 
@@ -126,55 +166,42 @@ class CrossDocumentConsistencyAgent:
         vision_observations: Dict[str, PhotoDamageAnalysis],
         doc_type_map: Dict[str, str],
     ) -> List[InconsistencyFinding]:
-        """Detect narrative, damage description, and photographic severity discrepancies via Gemini."""
-        # Check if we have multiple sources to compare
-        has_multiple = (len(extractions) + len(vision_observations)) >= 2
-        if not has_multiple:
-            return []
-
-        # Prepare evidence summaries for comparison
-        evidence_summary_blocks = []
+        """Detect subtle narrative contradictions and damage severity conflicts using Gemini."""
+        evidence_summary_blocks: List[str] = []
 
         for doc_id, data in extractions.items():
-            dtype = doc_type_map.get(doc_id, "document")
-            evidence_summary_blocks.append(f"### DOCUMENT [{dtype.upper()} - ID: {doc_id[:8]}]:\n{data}")
+            if not isinstance(data, dict):
+                continue
+            doc_type = doc_type_map.get(doc_id, "Document")
+            desc = data.get("incident_description") or data.get("narrative")
+            if isinstance(desc, dict):
+                desc = desc.get("value")
+            damages = data.get("property_damage") or data.get("identified_damage_regions")
+            if isinstance(damages, dict):
+                damages = damages.get("value")
+            summary = (
+                f"Document: {doc_type.upper()} (ID: {doc_id[:8]})\n"
+                f"- Narrative: {desc or 'N/A'}\n"
+                f"- Reported Damage: {damages or 'N/A'}"
+            )
+            evidence_summary_blocks.append(summary)
 
-        for doc_id, vision in vision_observations.items():
+        for photo_id, vision in vision_observations.items():
             evidence_summary_blocks.append(
-                f"### PHOTOGRAPHIC DAMAGE ANALYSIS [Photo ID: {doc_id[:8]}]:\n"
-                f"- Visible Region: {vision.visible_vehicle_region}\n"
-                f"- Apparent Severity: {vision.severity_category}\n"
-                f"- Severity Explanation: {vision.severity_explanation}\n"
-                f"- Observable Damage: {', '.join(vision.observable_damage)}\n"
-                f"- Affected Components: {', '.join(vision.affected_components)}\n"
+                f"Evidence: PHOTOGRAPH (ID: {photo_id[:8]})\n"
+                f"- Visible Area: {vision.visible_vehicle_region}\n"
+                f"- Assessed Severity: {vision.severity_category}\n"
+                f"- Observed Damages: {', '.join(vision.observable_damage)}\n"
                 f"- Supporting Observations: {', '.join(vision.supporting_visual_observations)}"
             )
 
         combined_evidence = "\n\n".join(evidence_summary_blocks)
 
-        system_prompt = """You are an objective claims discrepancy investigator for US P&C Auto Insurance.
-Cross-reference the submitted evidence pieces and identify genuine factual contradictions.
-
-DISCREPANCY DOMAINS:
-1. Reported Damage vs Photographic Evidence: e.g., FNOL reports 'minor bumper scratch', but damage photo reveals 'severe: crushed quarter panel and deployed airbags'.
-2. Collision Story / Narrative Conflict: e.g., FNOL claims single-vehicle collision with pole, but police report describes two-vehicle intersection collision.
-3. Impact Location Conflict: e.g., FNOL claims rear-end impact, but photo/estimate shows front-end damage.
-4. Parties / Driver Conflict: e.g., different driver named in police report vs FNOL.
-
-GUARDRAILS & ETHICAL CONSTRAINTS:
-- Identify ONLY factual conflicts between sources.
-- An inconsistency is NOT proof of fraud or bad faith; treat it as an evidentiary discrepancy requiring adjuster clarification.
-- Distinguish between actual contradictions vs simple omission / missing information.
-- Severity levels: 'low' (minor detail/time variance), 'medium' (part description/scope difference), 'high' (opposing collision accounts or severe damage under-reporting), 'critical' (vehicle identity conflict).
-"""
+        system_prompt = CONSISTENCY_CHECK_SYSTEM_PROMPT
 
         try:
             provider = self.llm or get_llm_provider()
-            prompt = (
-                "Review the following claims evidence extracted from distinct documents and photographs. "
-                "List all genuine factual inconsistencies and contradictions:\n\n"
-                f"{combined_evidence}"
-            )
+            prompt = get_consistency_check_user_prompt(combined_evidence)
             result = await provider.extract_structured(
                 text=prompt,
                 system_prompt=system_prompt,

@@ -27,6 +27,11 @@ from app.schemas.case_state import CaseState, DocumentInventoryItem
 from app.schemas.common import CasePriority, CaseStatus, DocumentType, EvidenceType, ProcessingStatus, ReportStatus, ReportType
 from app.schemas.evidence import EvidenceResponse
 from app.services.document_classifier import DocumentClassifier
+from app.services.document_processor import DocumentProcessor
+from app.services.fnol_extractor import FNOLExtractor
+from app.services.police_report_extractor import PoliceReportExtractor
+from app.services.repair_estimate_extractor import RepairEstimateExtractor
+from app.services.llm_provider import get_llm_provider
 from app.services.pdf_generator import ReportPDFGenerator
 
 logger = logging.getLogger(__name__)
@@ -364,63 +369,238 @@ async def extract_case_intake(
             "confidence": 0.95 if pr_num else None,
         }
     else:
-        fnol_doc = None
-        police_doc = None
-        for d in case.documents:
-            fname = d.original_filename.lower()
-            if d.document_type == DocumentType.FNOL or "fnol" in fname or "incident" in fname:
-                fnol_doc = d
-            elif d.document_type == DocumentType.POLICE_REPORT or "police" in fname:
-                police_doc = d
+        # Dynamically extract facts from all uploaded documents in the case package
+        provider = None
+        try:
+            provider = get_llm_provider()
+        except Exception as e:
+            logger.warning(f"LLM provider unavailable for live intake extraction: {e}")
 
-        fields["claimant_name"] = {
-            "value": case.claimant_name,
-            "source_document": fnol_doc.original_filename if fnol_doc else None,
-            "source_text": None,
-            "confidence": 0.9 if case.claimant_name else None,
+        doc_proc = DocumentProcessor()
+        extracted_per_doc: Dict[str, Any] = {}
+
+        for doc in (case.documents or []):
+            fname = doc.original_filename
+            fpath = doc.file_path
+            # Only process PDF/text documents, skip raw photos
+            if not fpath or not os.path.exists(fpath) or fname.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                continue
+
+            try:
+                pdf_res = doc_proc.extract_text_from_pdf(fpath)
+                doc_text = pdf_res.get("text", "")
+                if not doc_text or len(doc_text.strip()) < 20:
+                    continue
+
+                flwr = fname.lower()
+                if "police" in flwr or "collision" in flwr or doc.document_type == DocumentType.POLICE_REPORT:
+                    if provider:
+                        pext = PoliceReportExtractor(provider)
+                        extracted_per_doc[fname] = await pext.extract(doc_text, fname)
+                elif "estimate" in flwr or "repair" in flwr or doc.document_type == DocumentType.REPAIR_ESTIMATE:
+                    if provider:
+                        rext = RepairEstimateExtractor(provider)
+                        extracted_per_doc[fname] = await rext.extract(doc_text, fname)
+                else:
+                    # Treat FNOL, statements, notices as general claim forms
+                    if provider:
+                        fext = FNOLExtractor(provider)
+                        extracted_per_doc[fname] = await fext.extract(doc_text, fname)
+            except Exception as e:
+                logger.error(f"Error extracting intake info from {fname}: {e}")
+
+        # Helper to extract value string from provenance field or raw value
+        def get_prov_val(field_obj):
+            if field_obj is None:
+                return None
+            if hasattr(field_obj, "value"):
+                return field_obj.value
+            if isinstance(field_obj, dict):
+                return field_obj.get("value")
+            return field_obj
+
+        # Helpers to collect candidates from all parsed documents
+        # Each candidate is { "value": str, "source_document": str, "source_text": str, "confidence": float }
+        candidates_map: Dict[str, List[Dict[str, Any]]] = {
+            "claimant_name": [],
+            "policy_number": [],
+            "incident_date": [],
+            "incident_time": [],
+            "incident_location": [],
+            "vehicle_details": [],
+            "incident_description": [],
+            "police_report_number": [],
         }
-        fields["policy_number"] = {
-            "value": case.policy_number,
-            "source_document": fnol_doc.original_filename if fnol_doc else None,
-            "source_text": None,
-            "confidence": 0.9 if case.policy_number else None,
-        }
-        fields["incident_date"] = {
-            "value": case.incident_date.strftime("%B %d, %Y") if case.incident_date else None,
-            "source_document": fnol_doc.original_filename if fnol_doc else None,
-            "source_text": None,
-            "confidence": 0.9 if case.incident_date else None,
-        }
-        fields["incident_time"] = {
-            "value": None,
-            "source_document": None,
-            "source_text": None,
-            "confidence": None,
-        }
-        fields["incident_location"] = {
-            "value": None,
-            "source_document": None,
-            "source_text": None,
-            "confidence": None,
-        }
-        fields["vehicle_details"] = {
-            "value": None,
-            "source_document": None,
-            "source_text": None,
-            "confidence": None,
-        }
-        fields["incident_description"] = {
-            "value": case.description,
-            "source_document": fnol_doc.original_filename if fnol_doc else None,
-            "source_text": None,
-            "confidence": 0.9 if case.description else None,
-        }
-        fields["police_report_number"] = {
-            "value": None,
-            "source_document": police_doc.original_filename if police_doc else None,
-            "source_text": None,
-            "confidence": None,
-        }
+
+        for fname, ext in extracted_per_doc.items():
+            # Policy Number
+            pol = getattr(ext, "policy_number", None)
+            pol_val = get_prov_val(pol)
+            if pol_val:
+                candidates_map["policy_number"].append({
+                    "value": str(pol_val).strip(),
+                    "source_document": fname,
+                    "source_text": getattr(pol, "source_text", None) or f"Policy Number: {pol_val}",
+                    "confidence": getattr(pol, "confidence", 0.95) or 0.95,
+                })
+
+            # Claimant Name (from parties, or party with role claimant/insured)
+            parties = getattr(ext, "parties", None) or getattr(ext, "parties_involved", None) or []
+            for p in parties:
+                p_name = getattr(p, "name", None) if hasattr(p, "name") else p.get("name")
+                p_role = getattr(p, "role", "") if hasattr(p, "role") else p.get("role", "")
+                if p_name and ("claimant" in str(p_role).lower() or "insured" in str(p_role).lower() or not candidates_map["claimant_name"]):
+                    candidates_map["claimant_name"].append({
+                        "value": str(p_name).strip(),
+                        "source_document": fname,
+                        "source_text": getattr(p, "source_reference", None) or f"Party: {p_name} ({p_role})",
+                        "confidence": getattr(p, "confidence", 0.90) or 0.90,
+                    })
+
+            # Incident Date
+            dt = getattr(ext, "incident_date", None)
+            dt_val = get_prov_val(dt)
+            if dt_val:
+                candidates_map["incident_date"].append({
+                    "value": str(dt_val).strip(),
+                    "source_document": fname,
+                    "source_text": getattr(dt, "source_text", None) or f"Date: {dt_val}",
+                    "confidence": getattr(dt, "confidence", 0.95) or 0.95,
+                })
+
+            # Incident Time
+            tm = getattr(ext, "incident_time", None)
+            tm_val = get_prov_val(tm)
+            if tm_val:
+                candidates_map["incident_time"].append({
+                    "value": str(tm_val).strip(),
+                    "source_document": fname,
+                    "source_text": getattr(tm, "source_text", None) or f"Time: {tm_val}",
+                    "confidence": getattr(tm, "confidence", 0.90) or 0.90,
+                })
+
+            # Incident Location
+            loc = getattr(ext, "incident_location", None)
+            loc_val = get_prov_val(loc)
+            if loc_val:
+                if isinstance(loc_val, dict):
+                    addr = loc_val.get("address") or ""
+                    city = loc_val.get("city") or ""
+                    st = loc_val.get("state") or ""
+                    zp = loc_val.get("zip") or ""
+                    loc_str = f"{addr}, {city} {st} {zp}".strip(", ")
+                elif hasattr(loc_val, "address"):
+                    loc_str = f"{loc_val.address or ''}, {loc_val.city or ''} {loc_val.state or ''} {loc_val.zip or ''}".strip(", ")
+                else:
+                    loc_str = str(loc_val)
+
+                if loc_str:
+                    candidates_map["incident_location"].append({
+                        "value": loc_str,
+                        "source_document": fname,
+                        "source_text": getattr(loc, "source_text", None) or f"Location: {loc_str}",
+                        "confidence": getattr(loc, "confidence", 0.90) or 0.90,
+                    })
+
+            # Vehicles (focus on insured/claimant primary vehicle or unit 1)
+            vehs = getattr(ext, "vehicles", None) or getattr(ext, "vehicles_involved", None)
+            if not vehs and getattr(ext, "vehicle_info", None):
+                vehs = [getattr(ext, "vehicle_info")]
+            if vehs:
+                # Keep unit 1 / primary vehicle
+                primary_v = vehs[0]
+                yr = getattr(primary_v, "year", "") or (primary_v.get("year", "") if isinstance(primary_v, dict) else "")
+                mk = getattr(primary_v, "make", "") or (primary_v.get("make", "") if isinstance(primary_v, dict) else "")
+                md = getattr(primary_v, "model", "") or (primary_v.get("model", "") if isinstance(primary_v, dict) else "")
+                vin = getattr(primary_v, "vin", "") or (primary_v.get("vin", "") if isinstance(primary_v, dict) else "")
+                plate = getattr(primary_v, "plate", "") or (primary_v.get("plate", "") if isinstance(primary_v, dict) else "")
+                veh_str = f"{yr} {mk} {md}".strip()
+                if vin:
+                    veh_str += f" (VIN: {vin})"
+                if plate:
+                    veh_str += f" [Plate: {plate}]"
+                if veh_str and len(veh_str) > 4:
+                    candidates_map["vehicle_details"].append({
+                        "value": veh_str,
+                        "source_document": fname,
+                        "source_text": veh_str,
+                        "confidence": getattr(primary_v, "confidence", 0.95) if hasattr(primary_v, "confidence") else 0.95,
+                    })
+
+            # Incident Description / Narrative
+            desc = getattr(ext, "incident_description", None) or getattr(ext, "narrative", None)
+            desc_val = get_prov_val(desc)
+            if desc_val:
+                candidates_map["incident_description"].append({
+                    "value": str(desc_val).strip(),
+                    "source_document": fname,
+                    "source_text": getattr(desc, "source_text", None) or str(desc_val)[:100],
+                    "confidence": getattr(desc, "confidence", 0.90) or 0.90,
+                })
+
+            # Police Report Number
+            pr = getattr(ext, "report_number", None) or getattr(ext, "police_report_number", None)
+            pr_val = get_prov_val(pr)
+            if pr_val:
+                candidates_map["police_report_number"].append({
+                    "value": str(pr_val).strip(),
+                    "source_document": fname,
+                    "source_text": getattr(pr, "source_text", None) or f"Police Report #{pr_val}",
+                    "confidence": getattr(pr, "confidence", 0.95) or 0.95,
+                })
+
+        # Synthesize best field value & detect conflicts
+        for fkey, cand_list in candidates_map.items():
+            if not cand_list:
+                # Fallback to existing case values if present
+                case_val = None
+                if fkey == "claimant_name":
+                    case_val = case.claimant_name
+                elif fkey == "policy_number":
+                    case_val = case.policy_number
+                elif fkey == "incident_date" and case.incident_date:
+                    case_val = case.incident_date.strftime("%B %d, %Y")
+                elif fkey == "incident_description":
+                    case_val = case.description
+
+                fields[fkey] = {
+                    "value": case_val,
+                    "source_document": None,
+                    "source_text": None,
+                    "confidence": 0.8 if case_val else None,
+                    "conflicting_values": [],
+                }
+            else:
+                # Pick the primary candidate (prefer highest confidence or first from police/FNOL)
+                best_cand = cand_list[0]
+                for c in cand_list:
+                    if "police" in c["source_document"].lower() and fkey in ["police_report_number", "incident_time", "incident_location"]:
+                        best_cand = c
+                        break
+                    elif "fnol" in c["source_document"].lower() and fkey in ["policy_number", "claimant_name"]:
+                        best_cand = c
+                        break
+
+                # Check if distinct/conflicting values exist across documents
+                distinct_options = []
+                seen_vals = set()
+                for c in cand_list:
+                    norm_val = c["value"].strip().lower()
+                    if norm_val not in seen_vals:
+                        seen_vals.add(norm_val)
+                        distinct_options.append({
+                            "value": c["value"],
+                            "source_document": c["source_document"],
+                            "source_text": c.get("source_text"),
+                        })
+
+                fields[fkey] = {
+                    "value": best_cand["value"],
+                    "source_document": best_cand["source_document"],
+                    "source_text": best_cand.get("source_text"),
+                    "confidence": best_cand.get("confidence", 0.95),
+                    "conflicting_values": distinct_options if len(distinct_options) > 1 else [],
+                }
 
     for k, v in fields.items():
         if not v.get("value"):

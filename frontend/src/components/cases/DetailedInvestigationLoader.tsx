@@ -276,3 +276,4 @@ export const DetailedInvestigationLoader: React.FC<DetailedInvestigationLoaderPr
     </div>
   );
 };
+

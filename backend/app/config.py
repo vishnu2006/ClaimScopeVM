@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     # File Upload
     UPLOAD_DIR: str = "uploads"
     MAX_FILE_SIZE_MB: int = 50
-    ALLOWED_EXTENSIONS: str = ".pdf,.jpg,.jpeg,.png,.tiff,.tif,.doc,.docx"
+    ALLOWED_EXTENSIONS: str = ".pdf,.jpg,.jpeg,.png,.webp,.tiff,.tif,.doc,.docx"
 
     # Gemini-only AI Configuration
     GEMINI_API_KEY: Optional[str] = None

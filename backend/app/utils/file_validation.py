@@ -10,10 +10,11 @@ ALLOWED_MIME_TYPES = {
     "application/pdf": [".pdf"],
     "image/jpeg": [".jpg", ".jpeg"],
     "image/png": [".png"],
+    "image/webp": [".webp"],
     "image/tiff": [".tiff", ".tif"],
     "application/msword": [".doc"],
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
-    "application/octet-stream": [".pdf", ".jpg", ".jpeg", ".png", ".tiff", ".tif", ".doc", ".docx"],
+    "application/octet-stream": [".pdf", ".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif", ".doc", ".docx"],
 }
 
 
@@ -31,9 +32,6 @@ def validate_upload(
         return False, "File must have a non-empty filename."
 
     _, ext = os.path.splitext(file.filename.lower())
-    if not ext:
-        return False, f"File '{file.filename}' has no extension."
-
     if ext not in config.allowed_extensions_list:
         allowed = ", ".join(config.allowed_extensions_list)
         return False, f"File extension '{ext}' is not allowed. Supported extensions: {allowed}"
@@ -53,25 +51,20 @@ def infer_document_type(filename: str, content_type: Optional[str] = None) -> Do
     lower_name = filename.lower()
     _, ext = os.path.splitext(lower_name)
 
-    if ext in [".jpg", ".jpeg", ".png", ".tiff", ".tif"]:
+    if ext in [".jpg", ".jpeg", ".png", ".webp", ".tiff", ".tif"]:
         return DocumentType.PHOTO
 
-    if "fnol" in lower_name or "notice_of_loss" in lower_name or "incident_form" in lower_name:
-        return DocumentType.FNOL
-
-    if "police" in lower_name or "crash_report" in lower_name or "accident_report" in lower_name:
+    if "police" in lower_name or "accident_report" in lower_name:
         return DocumentType.POLICE_REPORT
-
-    if "estimate" in lower_name or "repair" in lower_name or "appraisal" in lower_name:
+    elif "fnol" in lower_name or "first_notice" in lower_name or "incident" in lower_name:
+        return DocumentType.FNOL
+    elif "estimate" in lower_name or "repair" in lower_name or "appraisal" in lower_name:
         return DocumentType.REPAIR_ESTIMATE
-
-    if "medical" in lower_name or "hospital" in lower_name or "physician" in lower_name:
+    elif "medical" in lower_name or "treatment" in lower_name or "billing" in lower_name:
         return DocumentType.MEDICAL_RECORD
-
-    if "letter" in lower_name or "statement" in lower_name or "email" in lower_name:
+    elif "statement" in lower_name or "witness" in lower_name:
         return DocumentType.CORRESPONDENCE
-
-    if ext in [".pdf", ".doc", ".docx"]:
+    elif "note" in lower_name or "handwritten" in lower_name:
         return DocumentType.OTHER
 
     return DocumentType.UNKNOWN

@@ -351,6 +351,11 @@ async def process_document(
             photo_analysis = await vision_agent.analyze_photo(doc.file_path, doc.original_filename)
             structured_extraction = photo_analysis.model_dump()
 
+            if not getattr(photo_analysis, "is_claim_relevant", True) or photo_analysis.severity_category == "not_applicable":
+                field_val = f"Not Relevant: {photo_analysis.severity_explanation}"
+            else:
+                field_val = f"Severity: {photo_analysis.severity_category.upper()}. {photo_analysis.severity_explanation}"
+
             db.add(
                 Evidence(
                     case_id=case_id,
@@ -358,10 +363,11 @@ async def process_document(
                     evidence_type=EvidenceType.VISUAL_OBSERVATION,
                     category="visual_damage",
                     field_name=photo_analysis.visible_vehicle_region,
-                    field_value=f"Severity: {photo_analysis.severity_category.upper()}. {photo_analysis.severity_explanation}",
+                    field_value=field_val,
                     confidence=photo_analysis.confidence_score,
                     source_document=doc.original_filename,
                     conflicting_values={
+                        "is_claim_relevant": getattr(photo_analysis, "is_claim_relevant", True),
                         "observable_damage": photo_analysis.observable_damage,
                         "affected_components": photo_analysis.affected_components,
                     },

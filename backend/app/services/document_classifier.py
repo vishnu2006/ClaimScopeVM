@@ -3,6 +3,10 @@ import re
 from typing import Optional, Tuple
 from pydantic import BaseModel, Field
 
+from app.prompts import (
+    DOCUMENT_CLASSIFIER_SYSTEM_PROMPT,
+    get_document_classification_prompt,
+)
 from app.schemas.common import DocumentType
 from app.services.document_processor import DocumentProcessor
 from app.services.llm_provider import ConfigurationError, LLMProvider, get_llm_provider
@@ -58,138 +62,131 @@ class DocumentClassifier:
             "FIRST NOTICE OF LOSS",
             "AUTOMOBILE LOSS NOTICE",
             "POLICYHOLDER'S REPORT",
-            "POLICYHOLDER REPORT",
-            "ACORD 1",
-            "STATEMENT OF LOSS",
-            "CLAIM NOTICE",
-            "CLAIMANT STATEMENT",
-            "INSURED'S ACCIDENT REPORT",
-            "INSURED REPORT OF LOSS",
-            "INCIDENT FORM",
+            "CLAIM REPORT",
+            "ACCIDENT REPORT FORM",
+            "INSURED STATEMENT",
+            "DRIVER REPORT OF ACCIDENT",
+            "FNOL",
         ]
+        for marker in fnol_markers:
+            if marker in top_snippet:
+                return ClassificationResult(
+                    document_type=DocumentType.FNOL,
+                    confidence=0.95,
+                    classification_method="content_heuristics",
+                    rationale=f"Header explicitly identifies document as FNOL/Incident Form ('{marker}').",
+                )
 
         police_markers = [
-            "POLICE DEPARTMENT",
+            "POLICE ACCIDENT REPORT",
+            "POLICE CRASH REPORT",
+            "MOTOR VEHICLE CRASH REPORT",
+            "TRAFFIC COLLISION REPORT",
             "STATE POLICE",
             "HIGHWAY PATROL",
-            "TRAFFIC COLLISION REPORT",
-            "MOTOR VEHICLE ACCIDENT REPORT",
-            "TRAFFIC CRASH REPORT",
-            "OFFICER'S NARRATIVE",
-            "OFFICER NARRATIVE",
-            "REPORTING OFFICER",
-            "INVESTIGATING OFFICER",
-            "CITATIONS ISSUED",
             "DEPARTMENT OF PUBLIC SAFETY",
+            "OFFICER'S REPORT",
+            "BADGE #",
+            "CAD INCIDENT",
         ]
+        for marker in police_markers:
+            if marker in top_snippet or marker in upper_text[:800]:
+                return ClassificationResult(
+                    document_type=DocumentType.POLICE_REPORT,
+                    confidence=0.95,
+                    classification_method="content_heuristics",
+                    rationale=f"Document contains official law enforcement collision markers ('{marker}').",
+                )
 
-        repair_markers = [
+        estimate_markers = [
             "ESTIMATE OF RECORD",
             "COLLISION ESTIMATE",
-            "REPAIR ORDER",
-            "BODY SHOP",
-            "COLLISION CENTER",
-            "PARTS TOTAL",
-            "LABOR TOTAL",
-            "PAINT TOTAL",
-            "GROSS TOTAL",
-            "GROSS REPAIR TOTAL",
+            "BODY SHOP ESTIMATE",
             "CCC ONE",
             "MITCHELL",
             "AUDATEX",
-            "REPAIR ESTIMATE",
+            "PARTS & LABOR ESTIMATE",
+            "PRELIMINARY ESTIMATE",
+            "REPAIR ORDER",
+            "AUTO BODY",
         ]
+        for marker in estimate_markers:
+            if marker in top_snippet or marker in upper_text[:800]:
+                return ClassificationResult(
+                    document_type=DocumentType.REPAIR_ESTIMATE,
+                    confidence=0.95,
+                    classification_method="content_heuristics",
+                    rationale=f"Document contains certified automotive repair estimate markers ('{marker}').",
+                )
 
-        # Calculate weighted scores
-        fnol_score = sum(2 for m in fnol_markers if m in upper_text)
-        if any(m in top_snippet for m in ["FIRST NOTICE OF LOSS", "AUTOMOBILE LOSS NOTICE", "POLICYHOLDER", "ACORD 1"]):
-            fnol_score += 10
+        # Keyword density scoring
+        scores = {
+            DocumentType.FNOL: 0,
+            DocumentType.POLICE_REPORT: 0,
+            DocumentType.REPAIR_ESTIMATE: 0,
+            DocumentType.MEDICAL_RECORD: 0,
+        }
 
-        police_score = sum(2 for m in police_markers if m in upper_text)
-        if any(m in top_snippet for m in ["POLICE DEPARTMENT", "HIGHWAY PATROL", "TRAFFIC CRASH REPORT", "TRAFFIC COLLISION REPORT"]):
-            police_score += 10
+        # FNOL keyword matches
+        for kw in ["POLICY NUMBER", "INSURED NAME", "DATE OF LOSS", "TIME OF ACCIDENT", "CLAIMANT", "DEDUCTIBLE"]:
+            if kw in upper_text:
+                scores[DocumentType.FNOL] += 1
 
-        repair_score = sum(2 for m in repair_markers if m in upper_text)
-        if any(m in top_snippet for m in ["ESTIMATE", "COLLISION CENTER", "BODY SHOP", "REPAIR ORDER"]):
-            repair_score += 10
+        # Police Report keyword matches
+        for kw in ["INVESTIGATING OFFICER", "CITATION", "DIAGRAM", "WEATHER CONDITIONS", "ROAD SURFACE", "CONTRIBUTING FACTORS", "DISPATCH"]:
+            if kw in upper_text:
+                scores[DocumentType.POLICE_REPORT] += 1
 
-        if fnol_score > max(police_score, repair_score, 0):
+        # Repair Estimate keyword matches
+        for kw in ["LABOR RATE", "OEM", "AFTERMARKET", "PAINT / MATERIALS", "OVERHAUL", "SUBLET", "PARTS TOTAL", "GROSS TOTAL"]:
+            if kw in upper_text:
+                scores[DocumentType.REPAIR_ESTIMATE] += 1.5
+
+        # Medical keywords
+        for kw in ["EMERGENCY ROOM", "TREATMENT", "DISCHARGE SUMMARY", "ATTENDING PHYSICIAN", "DIAGNOSIS"]:
+            if kw in upper_text:
+                scores[DocumentType.MEDICAL_RECORD] += 1
+
+        best_type = max(scores, key=scores.get)
+        max_score = scores[best_type]
+
+        if max_score >= 3:
             return ClassificationResult(
-                document_type=DocumentType.FNOL,
-                confidence=0.98,
+                document_type=best_type,
+                confidence=min(0.70 + (max_score * 0.05), 0.95),
                 classification_method="content_heuristics",
-                rationale="Matched First Notice of Loss / Automobile Loss Notice structural headings.",
+                rationale=f"High density of domain-specific terminology matched {best_type.value} pattern (score: {max_score}).",
             )
 
-        if police_score > max(fnol_score, repair_score, 0):
-            return ClassificationResult(
-                document_type=DocumentType.POLICE_REPORT,
-                confidence=0.98,
-                classification_method="content_heuristics",
-                rationale="Matched law enforcement incident report headings and officer narrative markers.",
-            )
-
-        if repair_score > max(fnol_score, police_score, 0):
-            return ClassificationResult(
-                document_type=DocumentType.REPAIR_ESTIMATE,
-                confidence=0.98,
-                classification_method="content_heuristics",
-                rationale="Matched auto body collision repair estimate items, labor rates, and part totals.",
-            )
-
-        # Heuristic 4: Medical records
-        medical_markers = [
-            "EMERGENCY DEPARTMENT",
-            "HOSPITAL",
-            "DISCHARGE SUMMARY",
-            "ATTENDING PHYSICIAN",
-            "PATIENT RECORD",
-            "MEDICAL REPORT",
-        ]
-        if any(marker in upper_text for marker in medical_markers):
-            return ClassificationResult(
-                document_type=DocumentType.MEDICAL_RECORD,
-                confidence=0.92,
-                classification_method="content_heuristics",
-                rationale="Matched healthcare/medical facility patient records.",
-            )
-
-        # If text is too short or ambiguous, check filename keywords as fallback
-        base_name = os.path.basename(file_path).lower()
-        if "fnol" in base_name or "notice_of_loss" in base_name or "incident_form" in base_name:
+        # Filename fallback heuristic
+        lower_filename = os.path.basename(file_path).lower()
+        if any(w in lower_filename for w in ["fnol", "incident", "first_notice", "loss_report"]):
             return ClassificationResult(
                 document_type=DocumentType.FNOL,
                 confidence=0.75,
                 classification_method="filename_fallback",
-                rationale="Classified via First Notice of Loss filename pattern.",
+                rationale="Classified from file naming convention.",
             )
-        if "police" in base_name or "crash" in base_name or "officer" in base_name:
+        if any(w in lower_filename for w in ["police", "crash", "traffic_report", "chp", "officer"]):
             return ClassificationResult(
                 document_type=DocumentType.POLICE_REPORT,
                 confidence=0.75,
                 classification_method="filename_fallback",
-                rationale="Classified via police report filename pattern.",
+                rationale="Classified from file naming convention.",
             )
-        if "estimate" in base_name or "repair" in base_name or "quote" in base_name or "bodyshop" in base_name:
+        if any(w in lower_filename for w in ["estimate", "repair", "body_shop", "appraisal"]):
             return ClassificationResult(
                 document_type=DocumentType.REPAIR_ESTIMATE,
                 confidence=0.75,
                 classification_method="filename_fallback",
-                rationale="Classified via repair estimate filename pattern.",
-            )
-        if any(term in base_name for term in ["photo", "image", "damage", "pic", "img"]):
-            return ClassificationResult(
-                document_type=DocumentType.PHOTO,
-                confidence=0.75,
-                classification_method="filename_fallback",
-                rationale="Classified via photographic filename pattern.",
+                rationale="Classified from file naming convention.",
             )
 
         return ClassificationResult(
             document_type=DocumentType.UNKNOWN,
-            confidence=0.5,
-            classification_method="content_heuristics",
-            rationale="Unrecognized document format without distinct claims markers.",
+            confidence=0.0,
+            classification_method="unrecognized",
+            rationale="Insufficient content markers to classify document definitively.",
         )
 
     async def classify_with_gemini_fallback(
@@ -206,12 +203,7 @@ class DocumentClassifier:
         # Attempt Gemini multimodal classification if provider available
         try:
             provider = llm_provider or get_llm_provider()
-            prompt = (
-                "You are an insurance document intake specialist. "
-                "Classify this document content into exactly one category: "
-                "fnol, police_report, repair_estimate, photo, medical_record, correspondence, other.\n"
-                f"Document text snippet:\n{extracted_text[:2000] if extracted_text else 'No native text available.'}"
-            )
+            prompt = get_document_classification_prompt(extracted_text)
 
             class GeminiClassification(BaseModel):
                 category: str
@@ -220,7 +212,7 @@ class DocumentClassifier:
 
             gemini_res = await provider.extract_structured(
                 text=prompt,
-                system_prompt="Classify insurance claims documents with high precision.",
+                system_prompt=DOCUMENT_CLASSIFIER_SYSTEM_PROMPT,
                 response_model=GeminiClassification,
             )
 

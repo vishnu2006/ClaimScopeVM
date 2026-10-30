@@ -350,9 +350,33 @@ export const ClaimIntakeFlow: React.FC = () => {
         </div>
 
         {errorMessage && (
-          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <span>{errorMessage}</span>
+          <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            {caseId && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    setIsProcessingUpload(true);
+                    setErrorMessage(null);
+                    const extraction: IntakeExtractionResult = await api.extractIntakeDetails(caseId);
+                    setFields(extraction.fields || {});
+                    setMissingFieldKeys(extraction.missing_fields || []);
+                  } catch (err: unknown) {
+                    const msg = err instanceof Error ? err.message : 'Retry extraction failed.';
+                    setErrorMessage(msg);
+                  } finally {
+                    setIsProcessingUpload(false);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-900 font-semibold text-xs transition-colors shrink-0 cursor-pointer"
+              >
+                Retry Extraction
+              </button>
+            )}
           </div>
         )}
 
@@ -376,7 +400,7 @@ export const ClaimIntakeFlow: React.FC = () => {
                 currentValue={userEdits.claimant_name ?? fields.claimant_name?.value ?? ''}
                 isMissing={missingFieldKeys.includes('claimant_name')}
                 onChange={(val) => handleFieldChange('claimant_name', val)}
-                placeholder="e.g. Sarah Jenkins"
+                placeholder="e.g. John Doe (Claimant / Policyholder)"
               />
 
               {/* Policy Number */}
@@ -387,7 +411,7 @@ export const ClaimIntakeFlow: React.FC = () => {
                 currentValue={userEdits.policy_number ?? fields.policy_number?.value ?? ''}
                 isMissing={missingFieldKeys.includes('policy_number')}
                 onChange={(val) => handleFieldChange('policy_number', val)}
-                placeholder="e.g. PA-2026-981245"
+                placeholder="e.g. POL-XXXXXX"
               />
             </div>
           </div>
@@ -410,7 +434,7 @@ export const ClaimIntakeFlow: React.FC = () => {
                 currentValue={userEdits.incident_date ?? fields.incident_date?.value ?? ''}
                 isMissing={missingFieldKeys.includes('incident_date')}
                 onChange={(val) => handleFieldChange('incident_date', val)}
-                placeholder="e.g. August 22, 2026"
+                placeholder="e.g. October 14, 2026"
               />
 
               {/* Incident Time */}
@@ -432,7 +456,7 @@ export const ClaimIntakeFlow: React.FC = () => {
                 currentValue={userEdits.incident_location ?? fields.incident_location?.value ?? ''}
                 isMissing={missingFieldKeys.includes('incident_location')}
                 onChange={(val) => handleFieldChange('incident_location', val)}
-                placeholder="e.g. 8th Ave & Pine St, Denver CO"
+                placeholder="e.g. Street / Intersection, City, State"
               />
             </div>
           </div>
@@ -455,7 +479,7 @@ export const ClaimIntakeFlow: React.FC = () => {
                 currentValue={userEdits.vehicle_details ?? fields.vehicle_details?.value ?? ''}
                 isMissing={missingFieldKeys.includes('vehicle_details')}
                 onChange={(val) => handleFieldChange('vehicle_details', val)}
-                placeholder="e.g. 2021 Ford F-150 (VIN: 1FTFW1E84MFA77192)"
+                placeholder="e.g. 2022 Toyota Camry (VIN: 4T1B...)"
               />
 
               {/* Police Report */}
@@ -502,10 +526,21 @@ export const ClaimIntakeFlow: React.FC = () => {
             <div className="text-xs text-surface-500">
               {Object.keys(userEdits).length > 0 ? (
                 <span className="text-brand-600 dark:text-brand-400 font-semibold">
-                  {Object.keys(userEdits).length} field(s) edited by you. Source provenance will be preserved.
+                  {Object.keys(userEdits).length} field(s) customized by you. Source provenance will be preserved.
+                </span>
+              ) : Object.values(fields).some((f) => (f?.conflicting_values?.length ?? 0) > 1) ? (
+                <span className="text-amber-700 dark:text-amber-400 font-medium flex items-center gap-1.5">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>Some documents contain conflicting statements. Review or select the highlighted options above.</span>
+                </span>
+              ) : missingFieldKeys.length > 0 ? (
+                <span className="text-surface-600 dark:text-surface-400">
+                  {missingFieldKeys.length} field(s) were not found in the documents and can be entered manually.
                 </span>
               ) : (
-                <span>All fields match extracted document information.</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                  ✓ All fields successfully extracted and verified across uploaded documents.
+                </span>
               )}
             </div>
 
@@ -770,6 +805,7 @@ const ConfirmFieldInput: React.FC<ConfirmFieldInputProps> = ({
   placeholder,
 }) => {
   const isEdited = item?.value !== undefined && currentValue !== item.value;
+  const hasConflicts = (item?.conflicting_values?.length ?? 0) > 1;
 
   return (
     <div className="space-y-1.5">
@@ -779,7 +815,11 @@ const ConfirmFieldInput: React.FC<ConfirmFieldInputProps> = ({
         </label>
 
         {/* Provenance Badge */}
-        {item?.source_document ? (
+        {hasConflicts ? (
+          <span className="text-[10px] font-bold text-amber-800 bg-amber-100 dark:bg-amber-900/60 dark:text-amber-200 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-700">
+            ⚠ Multiple sources disagree
+          </span>
+        ) : item?.source_document ? (
           <span className="text-[10px] font-medium text-surface-500 bg-surface-100 dark:bg-surface-800 px-2 py-0.5 rounded truncate max-w-[200px]" title={item.source_document}>
             From: {item.source_document}
           </span>
@@ -790,6 +830,41 @@ const ConfirmFieldInput: React.FC<ConfirmFieldInputProps> = ({
         ) : null}
       </div>
 
+      {/* Conflicting options selector pills */}
+      {hasConflicts && item?.conflicting_values && (
+        <div className="p-2.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 space-y-1.5">
+          <div className="text-[11px] font-semibold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+            <span>Sources provide conflicting values. Click one to adopt or enter your own:</span>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-0.5">
+            {item.conflicting_values.map((cand, idx) => {
+              const isSelected = currentValue === cand.value;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => onChange(cand.value)}
+                  className={cn(
+                    'text-left text-[11px] px-2.5 py-1.5 rounded-md border transition-all cursor-pointer',
+                    isSelected
+                      ? 'bg-brand-600 text-white border-brand-700 font-semibold shadow-xs'
+                      : 'bg-white dark:bg-surface-800 text-surface-800 dark:text-surface-200 border-surface-300 dark:border-surface-600 hover:border-brand-500'
+                  )}
+                >
+                  <div className="font-medium truncate max-w-[280px]">{cand.value}</div>
+                  <div className={cn(
+                    'text-[9px] mt-0.5',
+                    isSelected ? 'text-brand-100' : 'text-surface-500 dark:text-surface-400'
+                  )}>
+                    From: {cand.source_document}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <input
         type="text"
         value={currentValue}
@@ -797,7 +872,9 @@ const ConfirmFieldInput: React.FC<ConfirmFieldInputProps> = ({
         placeholder={placeholder}
         className={cn(
           'w-full text-xs p-2.5 rounded-lg border bg-surface-0 dark:bg-surface-900 text-surface-900 dark:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500',
-          isEdited
+          hasConflicts
+            ? 'border-amber-400 dark:border-amber-600'
+            : isEdited
             ? 'border-brand-500 bg-brand-50/20'
             : isMissing && !currentValue
             ? 'border-amber-300 dark:border-amber-700 bg-amber-50/20'

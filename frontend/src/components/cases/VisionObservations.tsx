@@ -31,6 +31,9 @@ export function VisionObservations({ observations }: VisionObservationsProps) {
 
   const getSeverityBadgeVariant = (sev: string) => {
     switch (sev.toLowerCase()) {
+      case 'not_applicable':
+      case 'not relevant':
+        return 'default';
       case 'minor':
         return 'info';
       case 'moderate':

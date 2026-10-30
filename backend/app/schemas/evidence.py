@@ -158,6 +158,10 @@ class RepairEstimateExtraction(BaseModel):
 
 class PhotoDamageAnalysis(BaseModel):
     """Structured vision observation schema for vehicle accident photos."""
+    is_claim_relevant: bool = Field(
+        default=True,
+        description="Whether this photo is relevant to an auto damage claim. Set to false for non-relevant images like cricket stadiums, food, sports, pets, memes, etc.",
+    )
     visible_vehicle_region: str = Field(
         ...,
         description="Visible exterior or interior section of the vehicle (e.g. Front Bumper, Driver Quarter Panel, Rear Liftgate)",
@@ -172,7 +176,7 @@ class PhotoDamageAnalysis(BaseModel):
     )
     severity_category: str = Field(
         ...,
-        description="Apparent damage severity according to rubric: minor, moderate, severe, catastrophic_total_loss",
+        description="Apparent damage severity according to rubric: not_applicable, minor, moderate, severe, catastrophic_total_loss",
     )
     severity_explanation: str = Field(
         ...,
